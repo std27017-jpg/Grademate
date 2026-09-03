@@ -1,0 +1,6 @@
+{
+  "name": "GradeMate",
+  "description": "ระบบจัดการคะแนน คำนวณเกรดล่วงหน้า ตารางสอบ และงาน รองรับ 2 ภาคเรียน (เทอม 1 & เทอม 2) สำหรับนักเรียน",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
