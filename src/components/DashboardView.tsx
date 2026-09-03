@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Sparkles,
   Edit3,
+  Edit2,
   Check,
   User,
 } from 'lucide-react';
@@ -20,6 +21,8 @@ import { useGrade } from '../context/GradeContext';
 import { SemesterToggle } from './SemesterToggle';
 import { NavTab } from './Navbar';
 import { getDaysRemaining, formatShortThaiDate } from '../utils/gradeCalculations';
+import { EditSubjectScoresModal } from './EditSubjectScoresModal';
+import { Subject } from '../types';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
@@ -50,6 +53,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
   const [isEditingNameInline, setIsEditingNameInline] = React.useState(false);
   const [inlineName, setInlineName] = React.useState(academicYear.studentName);
+  const [editingScoresSubject, setEditingScoresSubject] = React.useState<Subject | null>(null);
 
   const isTerm1 = currentSemester === 'term1';
   const semesterBadgeColor = isTerm1 ? 'bg-blue-500' : 'bg-rose-500';
@@ -619,22 +623,44 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   ))}
                 </div>
 
-                {/* Target hint */}
-                <div className="text-[11px] text-slate-600 bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center justify-between">
-                  <span>เป้าหมายเกรด {subject.targetGrade} (A)</span>
-                  <span className={summary.canStillAchieveTarget ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
-                    {summary.targetAchieved
-                      ? 'ถึงเป้าแล้ว 🎉'
-                      : summary.canStillAchieveTarget
-                      ? `ขาด ${summary.pointsNeededForTarget} คะแนน`
-                      : 'เกรดสูงสุดที่ได้ ' + summary.maxPossibleTotal}
-                  </span>
+                {/* Target hint and Edit button */}
+                <div className="flex items-center justify-between gap-2 pt-1">
+                  <div className="text-[11px] text-slate-600 bg-slate-50 px-2.5 py-1.5 rounded-xl border border-slate-100 flex-1 truncate">
+                    <span>เป้าหมาย {subject.targetGrade}: </span>
+                    <span className={summary.canStillAchieveTarget ? 'text-emerald-600 font-semibold' : 'text-amber-600 font-semibold'}>
+                      {summary.targetAchieved
+                        ? 'ถึงเป้าแล้ว 🎉'
+                        : summary.canStillAchieveTarget
+                        ? `ขาด ${summary.pointsNeededForTarget} คะแนน`
+                        : 'สูงสุด ' + summary.maxPossibleTotal}
+                    </span>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setEditingScoresSubject(subject);
+                    }}
+                    className="px-2.5 py-1.5 rounded-xl bg-indigo-50 hover:bg-indigo-600 text-indigo-600 hover:text-white border border-indigo-100 text-[11px] font-bold flex items-center gap-1 transition-all shrink-0 cursor-pointer"
+                    title="แก้ไขคะแนนวิชานี้"
+                  >
+                    <Edit2 className="w-3 h-3" />
+                    <span>แก้คะแนน</span>
+                  </button>
                 </div>
               </div>
             );
           })}
         </div>
       </div>
+
+      {/* Edit Subject Scores Modal */}
+      <EditSubjectScoresModal
+        isOpen={!!editingScoresSubject}
+        onClose={() => setEditingScoresSubject(null)}
+        subject={editingScoresSubject}
+      />
     </div>
   );
 };

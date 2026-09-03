@@ -15,7 +15,7 @@ import {
   DEFAULT_TASKS,
   DEFAULT_EXAMS,
 } from '../data/defaultData';
-import { calculateSemesterSummary } from '../utils/gradeCalculations';
+import { calculateSemesterSummary, PERIOD_CONFIG } from '../utils/gradeCalculations';
 
 interface GradeContextType {
   currentSemester: SemesterId;
@@ -44,6 +44,10 @@ interface GradeContextType {
   addScoreItem: (subjectId: string, periodKey: ScorePeriodKey, item: Omit<ScoreItem, 'id'>) => void;
   updateScoreItem: (subjectId: string, periodKey: ScorePeriodKey, item: ScoreItem) => void;
   deleteScoreItem: (subjectId: string, periodKey: ScorePeriodKey, itemId: string) => void;
+  updateSubjectPeriodScores: (
+    subjectId: string,
+    periodUpdates: Partial<Record<ScorePeriodKey, { score: number; maxScore: number; items?: ScoreItem[] }>>
+  ) => void;
 
   // Task Actions
   addTask: (task: Omit<Task, 'id'>) => void;
@@ -238,6 +242,77 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     );
   };
 
+  const updateSubjectPeriodScores = (
+    subjectId: string,
+    periodUpdates: Partial<Record<ScorePeriodKey, { score: number; maxScore: number; items?: ScoreItem[] }>>
+  ) => {
+    setSubjects((prev) =>
+      prev.map((s) => {
+        if (s.id !== subjectId) return s;
+        const newPeriods = { ...s.periods };
+
+        (Object.keys(periodUpdates) as ScorePeriodKey[]).forEach((key) => {
+          const update = periodUpdates[key];
+          if (!update) return;
+
+          const currentPeriod = newPeriods[key] || {
+            key,
+            label: PERIOD_CONFIG[key].label,
+            shortLabel: PERIOD_CONFIG[key].shortLabel,
+            weight: PERIOD_CONFIG[key].defaultWeight,
+            items: [],
+          };
+
+          if (update.items && Array.isArray(update.items)) {
+            newPeriods[key] = {
+              ...currentPeriod,
+              weight: update.maxScore > 0 ? update.maxScore : currentPeriod.weight,
+              items: update.items,
+            };
+          } else {
+            const existingItems = currentPeriod.items || [];
+            if (existingItems.length <= 1) {
+              const itemId = existingItems[0]?.id || `item_${Date.now()}_${key}`;
+              const title = existingItems[0]?.title || currentPeriod.label;
+              newPeriods[key] = {
+                ...currentPeriod,
+                weight: update.maxScore > 0 ? update.maxScore : currentPeriod.weight,
+                items: [
+                  {
+                    id: itemId,
+                    title,
+                    score: update.score,
+                    maxScore: update.maxScore,
+                  },
+                ],
+              };
+            } else {
+              // If multiple sub-items exist, replace with one consolidated entry with the user's score/maxScore
+              const itemId = existingItems[0]?.id || `item_${Date.now()}_${key}`;
+              newPeriods[key] = {
+                ...currentPeriod,
+                weight: update.maxScore > 0 ? update.maxScore : currentPeriod.weight,
+                items: [
+                  {
+                    id: itemId,
+                    title: currentPeriod.label,
+                    score: update.score,
+                    maxScore: update.maxScore,
+                  },
+                ],
+              };
+            }
+          }
+        });
+
+        return {
+          ...s,
+          periods: newPeriods,
+        };
+      })
+    );
+  };
+
   // Task Handlers
   const addTask = (newTask: Omit<Task, 'id'>) => {
     const id = `task_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
@@ -348,6 +423,7 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         addScoreItem,
         updateScoreItem,
         deleteScoreItem,
+        updateSubjectPeriodScores,
         addTask,
         updateTask,
         deleteTask,

@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { Subject, SemesterId } from '../types';
+import { Subject, SemesterId, ScorePeriodKey, ScoreItem } from '../types';
 import { useGrade } from '../context/GradeContext';
+import { PERIOD_CONFIG, scoreToGrade } from '../utils/gradeCalculations';
+import { Calculator, Award } from 'lucide-react';
 
 interface SubjectModalProps {
   isOpen: boolean;
@@ -26,6 +28,15 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
     classroom: '',
   });
 
+  const [periodScores, setPeriodScores] = useState<
+    Record<ScorePeriodKey, { score: string; maxScore: string }>
+  >({
+    preMidterm: { score: '0', maxScore: '30' },
+    midterm: { score: '0', maxScore: '20' },
+    postMidterm: { score: '0', maxScore: '30' },
+    final: { score: '0', maxScore: '20' },
+  });
+
   useEffect(() => {
     if (editingSubject) {
       setForm({
@@ -38,6 +49,33 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         teacherName: editingSubject.teacherName || '',
         classroom: editingSubject.classroom || '',
       });
+
+      const keys: ScorePeriodKey[] = ['preMidterm', 'midterm', 'postMidterm', 'final'];
+      const newScores: Record<ScorePeriodKey, { score: string; maxScore: string }> = {
+        preMidterm: { score: '0', maxScore: '30' },
+        midterm: { score: '0', maxScore: '20' },
+        postMidterm: { score: '0', maxScore: '30' },
+        final: { score: '0', maxScore: '20' },
+      };
+
+      keys.forEach((key) => {
+        const period = editingSubject.periods[key];
+        const items = period?.items || [];
+        if (items.length > 0) {
+          const totalEarned = items.reduce((sum, item) => sum + (Number(item.score) || 0), 0);
+          const totalMax = items.reduce((sum, item) => sum + (Number(item.maxScore) || 0), 0);
+          newScores[key] = {
+            score: totalEarned.toString(),
+            maxScore: (totalMax > 0 ? totalMax : period?.weight || PERIOD_CONFIG[key].defaultWeight).toString(),
+          };
+        } else {
+          newScores[key] = {
+            score: '0',
+            maxScore: (period?.weight || PERIOD_CONFIG[key].defaultWeight).toString(),
+          };
+        }
+      });
+      setPeriodScores(newScores);
     } else {
       setForm({
         semesterId: currentSemester,
@@ -49,10 +87,31 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         teacherName: '',
         classroom: '',
       });
+      setPeriodScores({
+        preMidterm: { score: '0', maxScore: '30' },
+        midterm: { score: '0', maxScore: '20' },
+        postMidterm: { score: '0', maxScore: '30' },
+        final: { score: '0', maxScore: '20' },
+      });
     }
   }, [editingSubject, currentSemester, isOpen]);
 
   if (!isOpen) return null;
+
+  // Calculate live score and grade
+  const totalEarned =
+    (parseFloat(periodScores.preMidterm.score) || 0) +
+    (parseFloat(periodScores.midterm.score) || 0) +
+    (parseFloat(periodScores.postMidterm.score) || 0) +
+    (parseFloat(periodScores.final.score) || 0);
+
+  const totalMax =
+    (parseFloat(periodScores.preMidterm.maxScore) || 30) +
+    (parseFloat(periodScores.midterm.maxScore) || 20) +
+    (parseFloat(periodScores.postMidterm.maxScore) || 30) +
+    (parseFloat(periodScores.final.maxScore) || 20);
+
+  const { grade: liveGrade, letter: liveLetter } = scoreToGrade(totalEarned);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -61,6 +120,49 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
     const creditsNum = parseFloat(form.credits) || 1.0;
     const targetGradeNum = parseFloat(form.targetGrade) || 4.0;
     const targetScoreNum = parseFloat(form.targetScore) || 80;
+
+    const buildPeriod = (
+      key: ScorePeriodKey,
+      existingPeriod?: any
+    ) => {
+      const earned = Math.max(0, parseFloat(periodScores[key].score) || 0);
+      const max = Math.max(1, parseFloat(periodScores[key].maxScore) || PERIOD_CONFIG[key].defaultWeight);
+
+      const existingItems: ScoreItem[] = existingPeriod?.items || [];
+      let updatedItems: ScoreItem[] = [];
+
+      if (existingItems.length <= 1) {
+        const itemId = existingItems[0]?.id || `item_${Date.now()}_${key}`;
+        const itemTitle = existingItems[0]?.title || PERIOD_CONFIG[key].label;
+        updatedItems = [
+          {
+            id: itemId,
+            title: itemTitle,
+            score: earned,
+            maxScore: max,
+          },
+        ];
+      } else {
+        // Replace consolidated
+        const itemId = existingItems[0]?.id || `item_${Date.now()}_${key}`;
+        updatedItems = [
+          {
+            id: itemId,
+            title: PERIOD_CONFIG[key].label,
+            score: earned,
+            maxScore: max,
+          },
+        ];
+      }
+
+      return {
+        key,
+        label: existingPeriod?.label || PERIOD_CONFIG[key].label,
+        shortLabel: existingPeriod?.shortLabel || PERIOD_CONFIG[key].shortLabel,
+        weight: max,
+        items: updatedItems,
+      };
+    };
 
     if (editingSubject) {
       updateSubject({
@@ -73,6 +175,12 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         targetScore: targetScoreNum,
         teacherName: form.teacherName.trim() || undefined,
         classroom: form.classroom.trim() || undefined,
+        periods: {
+          preMidterm: buildPeriod('preMidterm', editingSubject.periods.preMidterm),
+          midterm: buildPeriod('midterm', editingSubject.periods.midterm),
+          postMidterm: buildPeriod('postMidterm', editingSubject.periods.postMidterm),
+          final: buildPeriod('final', editingSubject.periods.final),
+        },
       });
     } else {
       addSubject({
@@ -87,34 +195,10 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         teacherName: form.teacherName.trim() || undefined,
         classroom: form.classroom.trim() || undefined,
         periods: {
-          preMidterm: {
-            key: 'preMidterm',
-            label: 'คะแนนเก็บก่อนกลางภาค',
-            shortLabel: 'ก่อนกลางภาค',
-            weight: 30,
-            items: [],
-          },
-          midterm: {
-            key: 'midterm',
-            label: 'คะแนนสอบกลางภาค',
-            shortLabel: 'กลางภาค',
-            weight: 20,
-            items: [],
-          },
-          postMidterm: {
-            key: 'postMidterm',
-            label: 'คะแนนเก็บหลังกลางภาค',
-            shortLabel: 'หลังกลางภาค',
-            weight: 30,
-            items: [],
-          },
-          final: {
-            key: 'final',
-            label: 'คะแนนสอบปลายภาค',
-            shortLabel: 'ปลายภาค',
-            weight: 20,
-            items: [],
-          },
+          preMidterm: buildPeriod('preMidterm'),
+          midterm: buildPeriod('midterm'),
+          postMidterm: buildPeriod('postMidterm'),
+          final: buildPeriod('final'),
         },
       });
     }
@@ -289,6 +373,196 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                 onChange={(e) => setForm({ ...form, classroom: e.target.value })}
                 className="w-full px-3.5 py-2 rounded-xl border border-slate-300 text-sm"
               />
+            </div>
+          </div>
+
+          {/* 4-Period Score Inputs Section */}
+          <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3">
+            <div className="flex items-center justify-between flex-wrap gap-2">
+              <div className="flex items-center gap-1.5">
+                <Calculator className="w-4 h-4 text-indigo-600" />
+                <span className="text-xs font-bold text-indigo-950">
+                  คะแนน 4 ช่วงรายวิชา (รวม 100 คะแนน)
+                </span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-xs font-bold text-slate-800 bg-white px-2.5 py-1 rounded-lg border border-indigo-200">
+                  รวม: {totalEarned} / {totalMax} คะแนน
+                </span>
+                <span className="text-xs font-black text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-lg">
+                  เกรด {liveLetter} ({liveGrade})
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+              {/* Pre-midterm */}
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+                <div className="text-[11px] font-bold text-slate-700">
+                  1. คะแนนเก็บก่อนกลางภาค
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex-1">
+                    <span className="text-[10px] text-slate-400">ได้</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={periodScores.preMidterm.score}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          preMidterm: { ...periodScores.preMidterm, score: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs font-bold"
+                    />
+                  </div>
+                  <span className="text-slate-300 mt-3">/</span>
+                  <div className="w-16">
+                    <span className="text-[10px] text-slate-400">เต็ม</span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={periodScores.preMidterm.maxScore}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          preMidterm: { ...periodScores.preMidterm, maxScore: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs text-slate-600 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Midterm */}
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+                <div className="text-[11px] font-bold text-slate-700">
+                  2. คะแนนสอบกลางภาค
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex-1">
+                    <span className="text-[10px] text-slate-400">ได้</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={periodScores.midterm.score}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          midterm: { ...periodScores.midterm, score: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs font-bold"
+                    />
+                  </div>
+                  <span className="text-slate-300 mt-3">/</span>
+                  <div className="w-16">
+                    <span className="text-[10px] text-slate-400">เต็ม</span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={periodScores.midterm.maxScore}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          midterm: { ...periodScores.midterm, maxScore: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs text-slate-600 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Post-midterm */}
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+                <div className="text-[11px] font-bold text-slate-700">
+                  3. คะแนนเก็บหลังกลางภาค
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex-1">
+                    <span className="text-[10px] text-slate-400">ได้</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={periodScores.postMidterm.score}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          postMidterm: { ...periodScores.postMidterm, score: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs font-bold"
+                    />
+                  </div>
+                  <span className="text-slate-300 mt-3">/</span>
+                  <div className="w-16">
+                    <span className="text-[10px] text-slate-400">เต็ม</span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={periodScores.postMidterm.maxScore}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          postMidterm: { ...periodScores.postMidterm, maxScore: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs text-slate-600 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Final */}
+              <div className="p-2.5 rounded-xl bg-white border border-slate-200 space-y-1">
+                <div className="text-[11px] font-bold text-slate-700">
+                  4. คะแนนสอบปลายภาค
+                </div>
+                <div className="flex items-center gap-1.5">
+                  <div className="flex-1">
+                    <span className="text-[10px] text-slate-400">ได้</span>
+                    <input
+                      type="number"
+                      step="0.5"
+                      min="0"
+                      value={periodScores.final.score}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          final: { ...periodScores.final, score: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs font-bold"
+                    />
+                  </div>
+                  <span className="text-slate-300 mt-3">/</span>
+                  <div className="w-16">
+                    <span className="text-[10px] text-slate-400">เต็ม</span>
+                    <input
+                      type="number"
+                      step="1"
+                      min="1"
+                      value={periodScores.final.maxScore}
+                      onChange={(e) =>
+                        setPeriodScores({
+                          ...periodScores,
+                          final: { ...periodScores.final, maxScore: e.target.value },
+                        })
+                      }
+                      className="w-full px-2 py-1 rounded border border-slate-300 text-xs text-slate-600 font-semibold"
+                    />
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
