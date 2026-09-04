@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Trophy,
   AlertTriangle,
@@ -16,13 +16,18 @@ import {
   Edit2,
   Check,
   User,
+  ChevronDown,
+  ChevronUp,
+  RotateCcw,
+  FolderCheck,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
 import { SemesterToggle } from './SemesterToggle';
 import { NavTab } from './Navbar';
 import { getDaysRemaining, formatShortThaiDate } from '../utils/gradeCalculations';
 import { EditSubjectScoresModal } from './EditSubjectScoresModal';
-import { Subject } from '../types';
+import { Subject, Task } from '../types';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
@@ -51,9 +56,10 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     updateStudentName,
   } = useGrade();
 
-  const [isEditingNameInline, setIsEditingNameInline] = React.useState(false);
-  const [inlineName, setInlineName] = React.useState(academicYear.studentName);
-  const [editingScoresSubject, setEditingScoresSubject] = React.useState<Subject | null>(null);
+  const [isEditingNameInline, setIsEditingNameInline] = useState(false);
+  const [inlineName, setInlineName] = useState(academicYear.studentName);
+  const [editingScoresSubject, setEditingScoresSubject] = useState<Subject | null>(null);
+  const [showDashboardCompleted, setShowDashboardCompleted] = useState(false);
 
   const isTerm1 = currentSemester === 'term1';
   const semesterBadgeColor = isTerm1 ? 'bg-blue-500' : 'bg-rose-500';
@@ -62,11 +68,41 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const currentSemesterTasks = tasks.filter((t) => t.semesterId === currentSemester);
   const currentSemesterExams = exams.filter((e) => e.semesterId === currentSemester);
 
-  // Upcoming tasks sorted by due date
-  const upcomingTasks = [...currentSemesterTasks]
-    .filter((t) => t.status !== 'graded')
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime())
-    .slice(0, 4);
+  // Active / pending tasks (hide submitted and graded)
+  const pendingTasks = [...currentSemesterTasks]
+    .filter((t) => t.status !== 'submitted' && t.status !== 'graded')
+    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
+
+  const upcomingTasks = pendingTasks.slice(0, 4);
+
+  // Completed tasks (submitted or graded)
+  const completedTasks = currentSemesterTasks.filter(
+    (t) => t.status === 'submitted' || t.status === 'graded'
+  );
+
+  const handleDashboardChecklistToggle = (task: Task) => {
+    const isDone = task.status === 'submitted' || task.status === 'graded';
+    if (!isDone) {
+      updateTask({
+        ...task,
+        status: 'submitted',
+      });
+      try {
+        confetti({
+          particleCount: 35,
+          spread: 45,
+          origin: { y: 0.8 },
+        });
+      } catch (e) {
+        // Fallback
+      }
+    } else {
+      updateTask({
+        ...task,
+        status: 'todo',
+      });
+    }
+  };
 
   // Upcoming exams sorted by exam date
   const upcomingExams = [...currentSemesterExams]
@@ -389,20 +425,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="flex items-center gap-3 min-w-0">
                       <button
                         type="button"
-                        onClick={() =>
-                          updateTask({
-                            ...task,
-                            status: task.status === 'submitted' ? 'todo' : 'submitted',
-                          })
-                        }
-                        className={`w-5 h-5 rounded-md border flex items-center justify-center transition-all cursor-pointer ${
-                          task.status === 'submitted'
-                            ? 'bg-emerald-500 border-emerald-500 text-white'
-                            : 'border-slate-300 hover:border-indigo-500 bg-white'
-                        }`}
-                        title={task.status === 'submitted' ? 'ส่งแล้ว' : 'กดเพื่อเปลี่ยนสถานะเป็นส่งแล้ว'}
+                        onClick={() => handleDashboardChecklistToggle(task)}
+                        className="w-5 h-5 rounded-md border-2 border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center transition-all cursor-pointer shrink-0"
+                        title="กดเช็คลิสต์เพื่องานนี้เสร็จแล้ว (จะนำไปซ่อนในวิชา)"
                       >
-                        {task.status === 'submitted' && <CheckCircle2 className="w-3.5 h-3.5" />}
+                        <Check className="w-3.5 h-3.5 opacity-0 group-hover:opacity-40" />
                       </button>
                       <div className="min-w-0">
                         <p className="font-semibold text-slate-900 text-sm truncate">
@@ -438,6 +465,73 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   </div>
                 );
               })}
+            </div>
+          )}
+
+          {/* Collapsible Completed Tasks Section (Hidden in Subjects) */}
+          {completedTasks.length > 0 && (
+            <div className="pt-2 border-t border-slate-100 space-y-2">
+              <button
+                type="button"
+                onClick={() => setShowDashboardCompleted(!showDashboardCompleted)}
+                className="w-full py-2.5 px-3.5 bg-slate-50 hover:bg-emerald-50/70 border border-slate-200/80 hover:border-emerald-200 rounded-xl text-xs font-bold text-slate-700 hover:text-emerald-800 flex items-center justify-between transition-colors cursor-pointer"
+              >
+                <span className="flex items-center gap-2">
+                  <FolderCheck className="w-4 h-4 text-emerald-600" />
+                  <span>งานที่เสร็จแล้ว ซ่อนไว้ในวิชา ({completedTasks.length} งาน)</span>
+                </span>
+                <span className="text-indigo-600 text-[11px] flex items-center gap-1">
+                  {showDashboardCompleted ? 'ซ่อน' : 'เปิดดู'}
+                  {showDashboardCompleted ? (
+                    <ChevronUp className="w-3.5 h-3.5" />
+                  ) : (
+                    <ChevronDown className="w-3.5 h-3.5" />
+                  )}
+                </span>
+              </button>
+
+              {showDashboardCompleted && (
+                <div className="space-y-1.5 p-3 bg-slate-50/60 rounded-xl border border-slate-100">
+                  <p className="text-[11px] text-slate-400 font-medium px-1">
+                    คลิก ✓ เพื่อกู้คืนกลับเป็นงานค้างส่ง
+                  </p>
+                  {completedTasks.map((t) => {
+                    const sub = activeSemesterSummary.subjectSummaries.find(
+                      (s) => s.subject.id === t.subjectId
+                    )?.subject;
+                    return (
+                      <div
+                        key={t.id}
+                        className="p-2.5 bg-white rounded-lg border border-slate-200/70 flex items-center justify-between gap-2 shadow-2xs"
+                      >
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => handleDashboardChecklistToggle(t)}
+                            className="w-5 h-5 rounded-md bg-emerald-500 hover:bg-rose-500 text-white flex items-center justify-center transition-all cursor-pointer shrink-0 group/rst"
+                            title="คลิกเพื่อยกเลิกการส่ง และกู้คืนกลับเป็นงานค้างส่ง"
+                          >
+                            <Check className="w-3 h-3 group-rst:hidden" />
+                            <RotateCcw className="w-3 h-3 hidden group-rst:block" />
+                          </button>
+                          <div className="min-w-0">
+                            <p className="text-xs font-semibold text-slate-700 line-through truncate">
+                              {t.title}
+                            </p>
+                            <span className="text-[10px] text-indigo-600 font-medium">
+                              {sub?.name || 'ทั่วไป'}
+                            </span>
+                          </div>
+                        </div>
+
+                        <span className="text-[11px] font-bold px-2 py-0.5 rounded bg-emerald-50 text-emerald-800 shrink-0">
+                          {t.obtainedScore !== undefined ? `${t.obtainedScore}/` : ''}{t.maxScore} คะแนน
+                        </span>
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           )}
         </div>

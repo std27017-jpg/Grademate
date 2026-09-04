@@ -11,10 +11,16 @@ import {
   Calculator,
   Award,
   Layers,
+  FolderCheck,
+  Check,
+  RotateCcw,
+  Calendar,
+  FileText,
 } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
-import { ScorePeriodKey, Subject, ScoreItem } from '../types';
-import { calculateSubjectSummary, PERIOD_CONFIG } from '../utils/gradeCalculations';
+import { ScorePeriodKey, Subject, ScoreItem, Task } from '../types';
+import { calculateSubjectSummary, PERIOD_CONFIG, formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
 import { SemesterToggle } from './SemesterToggle';
 import { EditSubjectScoresModal } from './EditSubjectScoresModal';
 
@@ -30,6 +36,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   const {
     currentSemester,
     activeSemesterSummary,
+    tasks,
+    updateTask,
     addScoreItem,
     updateScoreItem,
     deleteScoreItem,
@@ -41,6 +49,40 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
 
   // Expanded subject accordion state (all open by default for rich visibility)
   const [expandedSubjectIds, setExpandedSubjectIds] = useState<Record<string, boolean>>({});
+
+  // Expanded completed tasks state per subject
+  const [expandedSubjectCompletedTasks, setExpandedSubjectCompletedTasks] = useState<Record<string, boolean>>({});
+
+  const toggleSubjectCompletedTasks = (subjectId: string) => {
+    setExpandedSubjectCompletedTasks((prev) => ({
+      ...prev,
+      [subjectId]: !prev[subjectId],
+    }));
+  };
+
+  const handleSubjectTaskToggle = (task: Task) => {
+    const isDone = task.status === 'submitted' || task.status === 'graded';
+    if (!isDone) {
+      updateTask({
+        ...task,
+        status: 'submitted',
+      });
+      try {
+        confetti({
+          particleCount: 40,
+          spread: 50,
+          origin: { y: 0.8 },
+        });
+      } catch (e) {
+        // Fallback
+      }
+    } else {
+      updateTask({
+        ...task,
+        status: 'todo',
+      });
+    }
+  };
 
   // Add/Edit Sub-score item modal/drawer state
   const [itemModal, setItemModal] = useState<{
@@ -488,6 +530,127 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                         );
                       })}
                     </div>
+
+                    {/* Subject Tasks & Homework Section (Active & Hidden Completed) */}
+                    {(() => {
+                      const subjectTasks = tasks.filter((t) => t.semesterId === currentSemester && t.subjectId === subject.id);
+                      const subjectPendingTasks = subjectTasks.filter((t) => t.status !== 'submitted' && t.status !== 'graded');
+                      const subjectCompletedTasks = subjectTasks.filter((t) => t.status === 'submitted' || t.status === 'graded');
+                      const isCompletedExpanded = !!expandedSubjectCompletedTasks[subject.id];
+
+                      if (subjectTasks.length === 0) return null;
+
+                      return (
+                        <div className="pt-5 border-t border-slate-200/80 space-y-3">
+                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                            <div className="flex items-center gap-2">
+                              <FolderCheck className="w-4 h-4 text-indigo-600" />
+                              <h4 className="font-bold text-slate-900 text-sm">
+                                งานและการบ้านในวิชานี้ ({subjectTasks.length} รายการ)
+                              </h4>
+                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
+                                ค้าง {subjectPendingTasks.length} • เสร็จแล้ว {subjectCompletedTasks.length}
+                              </span>
+                            </div>
+
+                            {subjectCompletedTasks.length > 0 && (
+                              <button
+                                type="button"
+                                onClick={() => toggleSubjectCompletedTasks(subject.id)}
+                                className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
+                              >
+                                <span>{isCompletedExpanded ? 'ซ่อนงานที่เสร็จแล้ว' : `เปิดดูงานที่เสร็จแล้ว (${subjectCompletedTasks.length} งาน)`}</span>
+                                {isCompletedExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+                              </button>
+                            )}
+                          </div>
+
+                          {/* Active / Pending tasks in this subject */}
+                          {subjectPendingTasks.length > 0 && (
+                            <div className="space-y-2">
+                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+                                {subjectPendingTasks.map((t) => {
+                                  const days = getDaysRemaining(t.dueDate);
+                                  const isOverdue = days < 0;
+                                  return (
+                                    <div
+                                      key={t.id}
+                                      className="p-3 bg-slate-50 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 transition-all flex items-center justify-between gap-2 shadow-2xs group"
+                                    >
+                                      <div className="flex items-center gap-2.5 min-w-0">
+                                        <button
+                                          type="button"
+                                          onClick={() => handleSubjectTaskToggle(t)}
+                                          className="w-5 h-5 rounded-md border-2 border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center transition-all cursor-pointer shrink-0"
+                                          title="กดเช็คลิสต์เพื่องานนี้เสร็จแล้ว (จะนำไปซ่อนในวิชานี้)"
+                                        >
+                                          <Check className="w-3 h-3 opacity-0 group-hover:opacity-40" />
+                                        </button>
+                                        <div className="min-w-0">
+                                          <p className="text-xs font-bold text-slate-800 truncate">
+                                            {t.title}
+                                          </p>
+                                          <p className="text-[11px] text-slate-500">
+                                            ส่ง {formatShortThaiDate(t.dueDate)} • {isOverdue ? <span className="text-rose-600 font-semibold">เลยกำหนด</span> : days === 0 ? 'ส่งวันนี้' : `เหลือ ${days} วัน`}
+                                          </p>
+                                        </div>
+                                      </div>
+
+                                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 shrink-0">
+                                        {t.maxScore} คะแนน
+                                      </span>
+                                    </div>
+                                  );
+                                })}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Hidden Completed tasks in this subject */}
+                          {isCompletedExpanded && subjectCompletedTasks.length > 0 && (
+                            <div className="p-3.5 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-2">
+                              <div className="flex items-center justify-between text-[11px] text-emerald-800 font-bold px-1">
+                                <span>📁 รายการงานที่ส่ง/เสร็จแล้วในวิชา {subject.name}:</span>
+                                <span>คลิก ✓ เพื่อกู้คืน</span>
+                              </div>
+
+                              <div className="space-y-1.5">
+                                {subjectCompletedTasks.map((t) => (
+                                  <div
+                                    key={t.id}
+                                    className="p-2.5 bg-white rounded-xl border border-emerald-200/60 flex items-center justify-between gap-2 shadow-2xs"
+                                  >
+                                    <div className="flex items-center gap-2.5 min-w-0">
+                                      <button
+                                        type="button"
+                                        onClick={() => handleSubjectTaskToggle(t)}
+                                        className="w-5 h-5 rounded-md bg-emerald-500 hover:bg-rose-500 text-white flex items-center justify-center transition-all cursor-pointer shrink-0 group/restore"
+                                        title="คลิกเพื่อยกเลิกการส่ง และกู้คืนกลับเป็นงานค้างส่ง"
+                                      >
+                                        <Check className="w-3.5 h-3.5 group-restore:hidden" />
+                                        <RotateCcw className="w-3 h-3 hidden group-restore:block" />
+                                      </button>
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-slate-700 line-through truncate">
+                                          {t.title}
+                                        </p>
+                                        <p className="text-[10px] text-slate-400">
+                                          {PERIOD_CONFIG[t.periodKey]?.shortLabel} • ส่งแล้ว
+                                        </p>
+                                      </div>
+                                    </div>
+
+                                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-100 shrink-0">
+                                      {t.obtainedScore !== undefined ? `${t.obtainedScore} / ` : ''}{t.maxScore} คะแนน
+                                    </span>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      );
+                    })()}
                   </div>
                 )}
               </div>
