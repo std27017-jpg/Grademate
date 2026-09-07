@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { GradeProvider, useGrade } from './context/GradeContext';
+import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Navbar, NavTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
 import { SubjectsView } from './components/SubjectsView';
@@ -10,14 +11,17 @@ import { ComparisonView } from './components/ComparisonView';
 import { SubjectModal } from './components/SubjectModal';
 import { SettingsModal } from './components/SettingsModal';
 import { EditProfileModal } from './components/EditProfileModal';
+import { ThemeModal } from './components/ThemeModal';
 import { Subject } from './types';
 
 function MainApp() {
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
+  const [selectedSubjectForDetail, setSelectedSubjectForDetail] = useState<Subject | null>(null);
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
+  const { isThemeModalOpen, setIsThemeModalOpen, openThemeModal, closeThemeModal } = useTheme();
 
   const handleOpenAddSubject = () => {
     setEditingSubject(null);
@@ -34,9 +38,15 @@ function MainApp() {
       {/* Top and Mobile Navigation */}
       <Navbar
         activeTab={activeTab}
-        setActiveTab={setActiveTab}
+        setActiveTab={(tab) => {
+          setActiveTab(tab);
+          if (tab !== 'subjects') {
+            setSelectedSubjectForDetail(null);
+          }
+        }}
         onOpenSettings={() => setIsSettingsModalOpen(true)}
         onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
+        onOpenThemeModal={openThemeModal}
       />
 
       {/* Main Content Area */}
@@ -49,6 +59,10 @@ function MainApp() {
             onOpenAddExam={() => setActiveTab('exams')}
             onOpenAddSubject={handleOpenAddSubject}
             onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
+            onSelectSubjectDetail={(sub) => {
+              setSelectedSubjectForDetail(sub);
+              setActiveTab('subjects');
+            }}
           />
         )}
 
@@ -56,6 +70,8 @@ function MainApp() {
           <SubjectsView
             onOpenAddSubject={handleOpenAddSubject}
             onOpenEditSubject={handleOpenEditSubject}
+            selectedSubjectId={selectedSubjectForDetail?.id || null}
+            onSelectSubject={setSelectedSubjectForDetail}
           />
         )}
 
@@ -98,14 +114,22 @@ function MainApp() {
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
       />
+
+      {/* App Theme Color Wheel & Customizer Modal */}
+      <ThemeModal
+        isOpen={isThemeModalOpen}
+        onClose={closeThemeModal}
+      />
     </div>
   );
 }
 
 export default function App() {
   return (
-    <GradeProvider>
-      <MainApp />
-    </GradeProvider>
+    <ThemeProvider>
+      <GradeProvider>
+        <MainApp />
+      </GradeProvider>
+    </ThemeProvider>
   );
 }

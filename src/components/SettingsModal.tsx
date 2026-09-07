@@ -8,8 +8,12 @@ import {
   Calendar,
   Save,
   CheckCircle,
+  Palette,
+  Sparkles,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { useTheme } from '../context/ThemeContext';
+import { PRESET_THEME_COLORS } from '../utils/themeUtils';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -24,6 +28,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
     exportJSON,
     importJSON,
   } = useGrade();
+  const { themeColor, setThemeColor, openThemeModal } = useTheme();
 
   const [form, setForm] = useState({
     year: academicYear.year.toString(),
@@ -204,6 +209,76 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             <span>บันทึกข้อมูลส่วนตัว</span>
           </button>
         </form>
+
+        {/* Theme Customizer Section */}
+        <div className="space-y-3 pt-4 border-t border-slate-100">
+          <div className="flex items-center justify-between">
+            <h4 className="text-xs font-extrabold uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Palette className="w-3.5 h-3.5 text-indigo-500" />
+              <span>สีธีมของแอป (App Theme Color)</span>
+            </h4>
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                openThemeModal();
+              }}
+              className="text-xs font-bold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 cursor-pointer"
+            >
+              <span>เปิดวงล้อสี & ปรับแต่งขั้นสูง</span>
+              <span>→</span>
+            </button>
+          </div>
+
+          <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/80 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5">
+              <div
+                className="w-7 h-7 rounded-xl shadow-xs border border-slate-200"
+                style={{ backgroundColor: themeColor }}
+              />
+              <div>
+                <span className="text-xs font-bold text-slate-800 block">
+                  สีปัจจุบัน: <span className="font-mono uppercase">{themeColor}</span>
+                </span>
+                <span className="text-[11px] text-slate-500 block">
+                  คลิกวงกลมด้านล่างเพื่อเปลี่ยนสีทันที หรือเปิดวงล้อสี
+                </span>
+              </div>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                openThemeModal();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-white hover:bg-slate-100 border border-slate-200 text-xs font-bold text-slate-700 shadow-2xs transition-colors cursor-pointer shrink-0"
+            >
+              วงล้อสี / โค้ดสี
+            </button>
+          </div>
+
+          {/* Quick presets row */}
+          <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none">
+            {PRESET_THEME_COLORS.slice(0, 8).map((preset) => {
+              const isSelected = themeColor.toLowerCase() === preset.hex.toLowerCase();
+              return (
+                <button
+                  key={preset.id}
+                  type="button"
+                  onClick={() => setThemeColor(preset.hex)}
+                  title={`${preset.name} (${preset.hex})`}
+                  className={`w-7 h-7 rounded-xl transition-all cursor-pointer shrink-0 flex items-center justify-center ${
+                    isSelected ? 'ring-2 ring-offset-2 ring-slate-900 scale-110 shadow-sm' : 'hover:scale-105'
+                  }`}
+                  style={{ backgroundColor: preset.hex }}
+                >
+                  {isSelected && <span className="text-white text-[10px] font-bold drop-shadow">✓</span>}
+                </button>
+              );
+            })}
+          </div>
+        </div>
 
         {/* Backup & Restore */}
         <div className="space-y-3 pt-4 border-t border-slate-100">

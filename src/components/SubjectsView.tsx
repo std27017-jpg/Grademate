@@ -10,33 +10,49 @@ import {
   CheckCircle2,
   Calculator,
   Award,
-  Layers,
-  FolderCheck,
-  Check,
-  RotateCcw,
+  BookOpen,
+  ArrowLeft,
   Calendar,
+  CheckSquare,
+  Square,
+  Clock,
+  User,
+  Sliders,
+  AlertCircle,
   FileText,
+  Layers,
+  ArrowRight,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
 import { ScorePeriodKey, Subject, ScoreItem, Task } from '../types';
-import { calculateSubjectSummary, PERIOD_CONFIG, formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
+import {
+  calculateSubjectSummary,
+  PERIOD_CONFIG,
+  formatShortThaiDate,
+  getDaysRemaining,
+} from '../utils/gradeCalculations';
 import { SemesterToggle } from './SemesterToggle';
 import { EditSubjectScoresModal } from './EditSubjectScoresModal';
 
 interface SubjectsViewProps {
   onOpenAddSubject: () => void;
   onOpenEditSubject: (subject: Subject) => void;
+  selectedSubjectId?: string | null;
+  onSelectSubject?: (subject: Subject | null) => void;
 }
 
 export const SubjectsView: React.FC<SubjectsViewProps> = ({
   onOpenAddSubject,
   onOpenEditSubject,
+  selectedSubjectId: propSelectedSubjectId,
+  onSelectSubject: propOnSelectSubject,
 }) => {
   const {
     currentSemester,
     activeSemesterSummary,
     tasks,
+    exams,
     updateTask,
     addScoreItem,
     updateScoreItem,
@@ -44,47 +60,29 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     deleteSubject,
   } = useGrade();
 
-  // Quick subject score editing modal state
-  const [editingScoresSubject, setEditingScoresSubject] = useState<Subject | null>(null);
+  // Internal state for selected subject if not controlled externally
+  const [internalSelectedSubjectId, setInternalSelectedSubjectId] = useState<string | null>(null);
+  const activeSubjectId = propSelectedSubjectId !== undefined ? propSelectedSubjectId : internalSelectedSubjectId;
 
-  // Expanded subject accordion state (all open by default for rich visibility)
-  const [expandedSubjectIds, setExpandedSubjectIds] = useState<Record<string, boolean>>({});
-
-  // Expanded completed tasks state per subject
-  const [expandedSubjectCompletedTasks, setExpandedSubjectCompletedTasks] = useState<Record<string, boolean>>({});
-
-  const toggleSubjectCompletedTasks = (subjectId: string) => {
-    setExpandedSubjectCompletedTasks((prev) => ({
-      ...prev,
-      [subjectId]: !prev[subjectId],
-    }));
-  };
-
-  const handleSubjectTaskToggle = (task: Task) => {
-    const isDone = task.status === 'submitted' || task.status === 'graded';
-    if (!isDone) {
-      updateTask({
-        ...task,
-        status: 'submitted',
-      });
-      try {
-        confetti({
-          particleCount: 40,
-          spread: 50,
-          origin: { y: 0.8 },
-        });
-      } catch (e) {
-        // Fallback
-      }
+  const handleSelectSubject = (sub: Subject | null) => {
+    if (propOnSelectSubject) {
+      propOnSelectSubject(sub);
     } else {
-      updateTask({
-        ...task,
-        status: 'todo',
-      });
+      setInternalSelectedSubjectId(sub ? sub.id : null);
     }
   };
 
-  // Add/Edit Sub-score item modal/drawer state
+  // Quick score edit modal
+  const [editingScoresSubject, setEditingScoresSubject] = useState<Subject | null>(null);
+
+  // Active tab inside selected subject detail: 'overview' | 'scores' | 'tasks' | 'exams'
+  const [detailTab, setDetailTab] = useState<'overview' | 'scores' | 'tasks' | 'exams'>('overview');
+
+  // Accordion open/close state for Midterm (50) and Final (50) in scores tab
+  const [openMidtermAccordion, setOpenMidtermAccordion] = useState(false);
+  const [openFinalAccordion, setOpenFinalAccordion] = useState(false);
+
+  // Sub-score item add modal
   const [itemModal, setItemModal] = useState<{
     isOpen: boolean;
     subjectId: string;
@@ -99,50 +97,46 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   const [itemForm, setItemForm] = useState({
     title: '',
     score: '',
-    maxScore: '',
+    maxScore: '10',
     notes: '',
   });
 
-  const toggleExpand = (subjectId: string) => {
-    setExpandedSubjectIds((prev) => ({
-      ...prev,
-      [subjectId]: prev[subjectId] !== undefined ? !prev[subjectId] : false,
-    }));
+  // Find currently selected subject summary
+  const currentSubjectSummary = activeSemesterSummary.subjectSummaries.find(
+    (s) => s.subject.id === activeSubjectId
+  );
+  const currentSubject = currentSubjectSummary?.subject;
+
+  // Filter tasks & exams for this subject
+  const subjectTasks = tasks.filter(
+    (t) => t.semesterId === currentSemester && t.subjectId === activeSubjectId
+  );
+  const subjectExams = exams.filter(
+    (e) => e.semesterId === currentSemester && e.subjectId === activeSubjectId
+  );
+
+  const handleTaskToggle = (task: Task) => {
+    const isDone = task.status === 'submitted' || task.status === 'graded';
+    updateTask({
+      ...task,
+      status: isDone ? 'todo' : 'submitted',
+    });
+    if (!isDone) {
+      try {
+        confetti({
+          particleCount: 35,
+          spread: 50,
+          origin: { y: 0.8 },
+        });
+      } catch (e) {
+        // Fallback
+      }
+    }
   };
 
-  const openAddItem = (subjectId: string, periodKey: ScorePeriodKey) => {
-    setItemModal({
-      isOpen: true,
-      subjectId,
-      periodKey,
-      editingItem: undefined,
-    });
-    setItemForm({
-      title: '',
-      score: '',
-      maxScore: periodKey === 'midterm' || periodKey === 'final' ? '30' : '10',
-      notes: '',
-    });
-  };
-
-  const openEditItem = (subjectId: string, periodKey: ScorePeriodKey, item: ScoreItem) => {
-    setItemModal({
-      isOpen: true,
-      subjectId,
-      periodKey,
-      editingItem: item,
-    });
-    setItemForm({
-      title: item.title,
-      score: item.score.toString(),
-      maxScore: item.maxScore.toString(),
-      notes: item.notes || '',
-    });
-  };
-
-  const handleSaveItem = (e: React.FormEvent) => {
+  const handleSaveSubItem = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!itemForm.title.trim() || !itemForm.maxScore) return;
+    if (!itemForm.title.trim()) return;
 
     const scoreNum = parseFloat(itemForm.score) || 0;
     const maxScoreNum = parseFloat(itemForm.maxScore) || 10;
@@ -167,594 +161,878 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     setItemModal({ isOpen: false, subjectId: '', periodKey: 'preMidterm' });
   };
 
-  const isTerm1 = currentSemester === 'term1';
+  const handleDeleteSubjectClick = (sub: Subject) => {
+    if (window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบวิชา "${sub.name}" และข้อมูลคะแนนทั้งหมด?`)) {
+      deleteSubject(sub.id);
+      if (activeSubjectId === sub.id) {
+        handleSelectSubject(null);
+      }
+    }
+  };
 
-  return (
-    <div className="space-y-6 pb-12">
-      {/* Header with Title and Controls */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-6 rounded-3xl border border-slate-200 shadow-xs">
-        <div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-              โครงสร้างคะแนนและรายวิชา
-            </h2>
-            <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200">
-              {isTerm1 ? '📘 เทอม 1' : '📕 เทอม 2'}
-            </span>
+  // =========================================================================
+  // VIEW 1: COMPACT GRID OF ALL SUBJECTS (PROGRESSIVE DISCLOSURE LEVEL 1 & 2)
+  // =========================================================================
+  if (!currentSubject || !currentSubjectSummary) {
+    return (
+      <div className="space-y-6 pb-8">
+        {/* Header bar */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
+          <div>
+            <div className="flex items-center gap-2">
+              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+                วิชาของฉัน (My Subjects)
+              </h2>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                {activeSemesterSummary.subjectSummaries.length} วิชา
+              </span>
+            </div>
+            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+              คลิกที่การ์ดเพื่อดูรายละเอียดคะแนน งาน และการสอบแบบเจาะลึก
+            </p>
           </div>
-          <p className="text-sm text-slate-500 mt-1">
-            แบ่ง 4 ส่วน: คะแนนเก็บก่อนกลางภาค • คะแนนสอบกลางภาค • คะแนนเก็บหลังกลางภาค • คะแนนสอบปลายภาค
-          </p>
-        </div>
 
-        <div className="flex flex-wrap items-center gap-3">
-          <SemesterToggle size="md" />
-          <button
-            type="button"
-            onClick={onOpenAddSubject}
-            className="px-4 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-sm font-bold rounded-2xl shadow-md shadow-indigo-500/20 transition-all flex items-center gap-2 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>เพิ่มวิชาใหม่</span>
-          </button>
-        </div>
-      </div>
-
-      {/* Subject Cards List */}
-      {activeSemesterSummary.subjectSummaries.length === 0 ? (
-        <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200 p-8 space-y-4">
-          <div className="w-16 h-16 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center mx-auto text-2xl">
-            📚
+          <div className="flex items-center gap-2.5 flex-wrap">
+            <SemesterToggle size="sm" />
+            <button
+              type="button"
+              onClick={onOpenAddSubject}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            >
+              <Plus className="w-4 h-4" />
+              <span>เพิ่มวิชาใหม่</span>
+            </button>
           </div>
-          <h3 className="font-bold text-slate-800 text-lg">
-            ยังไม่มีรายวิชาใน{activeSemesterSummary.semesterName}
-          </h3>
-          <p className="text-sm text-slate-500 max-w-md mx-auto">
-            กดปุ่ม "เพิ่มวิชาใหม่" เพื่อเพิ่มรายวิชาและบันทึกคะแนนเก็บทั้ง 4 ช่วงในเทอมนี้
-          </p>
-          <button
-            type="button"
-            onClick={onOpenAddSubject}
-            className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl font-bold text-sm shadow-md hover:bg-indigo-700 transition-all"
-          >
-            + เพิ่มวิชาแรก
-          </button>
         </div>
-      ) : (
-        <div className="space-y-6">
-          {activeSemesterSummary.subjectSummaries.map((summary) => {
-            const { subject, periodBreakdowns, earnedScore, totalMaxScoreRecorded, currentPercentage, remainingPoints, maxPossibleTotal, estimatedGrade, estimatedGradeLetter, targetAchieved, canStillAchieveTarget, pointsNeededForTarget } = summary;
 
-            const isExpanded = expandedSubjectIds[subject.id] !== false; // default true
-            const periodKeys: ScorePeriodKey[] = ['preMidterm', 'midterm', 'postMidterm', 'final'];
+        {/* Compact Grid of Subject Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {activeSemesterSummary.subjectSummaries.map((subSummary) => {
+            const sub = subSummary.subject;
+            const progress = Math.min(100, subSummary.currentPercentage);
 
             return (
               <div
-                key={subject.id}
-                className="bg-white rounded-3xl border border-slate-200/90 shadow-sm hover:border-slate-300 transition-all overflow-hidden"
+                key={sub.id}
+                className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
               >
-                {/* Subject Top Banner */}
-                <div className="p-5 sm:p-6 bg-gradient-to-r from-slate-50/80 via-white to-indigo-50/20 border-b border-slate-100">
-                  <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    {/* Left Info */}
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="text-xs font-bold px-2.5 py-0.5 rounded-lg bg-slate-200 text-slate-700">
-                          {subject.code}
-                        </span>
-                        <span className="text-xs font-semibold px-2.5 py-0.5 rounded-lg bg-indigo-100 text-indigo-700">
-                          {subject.credits} หน่วยกิต
-                        </span>
-                        {subject.classroom && (
-                          <span className="text-xs text-slate-500">📍 {subject.classroom}</span>
-                        )}
-                        {subject.teacherName && (
-                          <span className="text-xs text-slate-500">👨‍🏫 {subject.teacherName}</span>
-                        )}
+                <div className="space-y-3">
+                  {/* Top Bar: Icon + Code + Options */}
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div
+                        className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0 font-black text-sm"
+                        style={{ backgroundColor: sub.color || '#6366f1' }}
+                      >
+                        {sub.name.charAt(0)}
                       </div>
-                      <h3 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                        {subject.name}
-                      </h3>
+                      <div className="min-w-0">
+                        <h4 className="font-extrabold text-slate-900 text-base leading-snug truncate group-hover:text-indigo-600 transition-colors">
+                          {sub.name}
+                        </h4>
+                        <span className="text-[11px] font-semibold text-slate-400 block truncate">
+                          {sub.code} • {sub.credits} หน่วยกิต
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Right Summary Chips */}
-                    <div className="flex flex-wrap items-center gap-2.5">
-                      {/* Current Score Badge (Clickable to edit scores) */}
+                    {/* Quick Edit/Delete buttons */}
+                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
                       <button
                         type="button"
-                        onClick={() => setEditingScoresSubject(subject)}
-                        className="px-4 py-2 rounded-2xl bg-slate-100 hover:bg-indigo-50 border border-slate-200 hover:border-indigo-300 text-right transition-all group/score cursor-pointer"
-                        title="คลิกเพื่อแก้ไขคะแนนวิชานี้"
-                      >
-                        <div className="text-[10px] font-bold text-slate-500 group-hover/score:text-indigo-600 uppercase flex items-center justify-end gap-1">
-                          <span>คะแนนรวม</span>
-                          <Edit2 className="w-2.5 h-2.5 text-slate-400 group-hover/score:text-indigo-500" />
-                        </div>
-                        <div className="text-base font-black text-slate-900 group-hover/score:text-indigo-700">
-                          {earnedScore} / {totalMaxScoreRecorded} <span className="text-xs font-semibold text-slate-600">({currentPercentage.toFixed(1)}%)</span>
-                        </div>
-                      </button>
-
-                      {/* Estimated Grade Badge */}
-                      <div className="px-4 py-2 rounded-2xl bg-indigo-600 text-white shadow-sm text-right">
-                        <div className="text-[10px] font-semibold text-indigo-100 uppercase">
-                          เกรดประมาณการ
-                        </div>
-                        <div className="text-base font-black">
-                          {estimatedGradeLetter} ({estimatedGrade})
-                        </div>
-                      </div>
-
-                      {/* Direct Edit Scores Button */}
-                      <button
-                        type="button"
-                        onClick={() => setEditingScoresSubject(subject)}
-                        className="px-3.5 py-2.5 rounded-2xl bg-indigo-50 hover:bg-indigo-600 text-indigo-700 hover:text-white border border-indigo-200 hover:border-transparent text-xs font-black flex items-center gap-1.5 shadow-xs transition-all cursor-pointer"
-                        title="แก้ไขคะแนนทั้ง 4 ช่วงของวิชานี้"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          onOpenEditSubject(sub);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="แก้ไขข้อมูลวิชา"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
-                        <span>แก้ไขคะแนน</span>
                       </button>
-
-                      {/* Actions */}
-                      <div className="flex items-center gap-1">
-                        <button
-                          type="button"
-                          onClick={() => onOpenEditSubject(subject)}
-                          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                          title="แก้ไขข้อมูลวิชา (ชื่อ, หน่วยกิต, ครู)"
-                        >
-                          <Edit2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (window.confirm(`คุณแน่ใจหรือไม่ว่าต้องการลบวิชา "${subject.name}"?`)) {
-                              deleteSubject(subject.id);
-                            }
-                          }}
-                          className="p-2 rounded-xl text-slate-400 hover:text-rose-600 hover:bg-rose-50 transition-colors cursor-pointer"
-                          title="ลบวิชา"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => toggleExpand(subject.id)}
-                          className="p-2 rounded-xl text-slate-400 hover:text-slate-700 hover:bg-slate-100 transition-colors cursor-pointer"
-                        >
-                          {isExpanded ? <ChevronUp className="w-5 h-5" /> : <ChevronDown className="w-5 h-5" />}
-                        </button>
-                      </div>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteSubjectClick(sub);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="ลบวิชา"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
                     </div>
                   </div>
 
-                  {/* Advance Grade Calculation Box (As explicitly specified in the prompt) */}
-                  <div className="mt-4 p-4 rounded-2xl bg-gradient-to-r from-indigo-50/70 via-sky-50/60 to-purple-50/50 border border-indigo-100 flex flex-col md:flex-row md:items-center justify-between gap-4">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-2">
-                        <Award className="w-4 h-4 text-indigo-600" />
-                        <span className="text-xs font-bold uppercase tracking-wider text-indigo-900">
-                          การคำนวณเกรดล่วงหน้า & เป้าหมาย (เกรด {subject.targetGrade >= 4 ? 'A / 4.0' : subject.targetGrade})
+                  {/* Level 1 & Level 2 Information: Score + Grade + Target */}
+                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนนปัจจุบัน</span>
+                        <span className="text-xl font-black text-slate-900">
+                          {subSummary.earnedScore}{' '}
+                          <span className="text-xs font-normal text-slate-400">/ 100</span>
                         </span>
                       </div>
-                      <p className="text-sm font-semibold text-slate-800">
-                        {targetAchieved ? (
-                          <span className="text-emerald-700 font-bold">
-                            🎉 ยอดเยี่ยม! คะแนนปัจจุบัน ({earnedScore} คะแนน) ถึงเป้าหมายเกรด {subject.targetGrade >= 4 ? 'A' : 'ที่ตั้งไว้'} เรียบร้อยแล้ว
-                          </span>
-                        ) : canStillAchieveTarget ? (
-                          <span>
-                            👉 ต้องทำคะแนนเพิ่มอย่างน้อย{' '}
-                            <span className="font-extrabold text-indigo-700 bg-white px-2 py-0.5 rounded-md border border-indigo-200">
-                              {pointsNeededForTarget} คะแนน
-                            </span>{' '}
-                            จาก {remainingPoints} คะแนนที่เหลือ เพื่อให้ถึงเกรด {subject.targetGrade >= 4 ? 'A' : 'เป้าหมาย'}
-                          </span>
-                        ) : (
-                          <span className="text-rose-700">
-                            ⚠️ คะแนนที่เหลือไม่เพียงพอสำหรับเกรด {subject.targetGrade} (ต้องการอีก {pointsNeededForTarget} คะแนน แต่เหลือเก็บได้ {remainingPoints} คะแนน)
-                          </span>
-                        )}
-                      </p>
+                      <div className="text-right">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">เกรดคาดการณ์</span>
+                        <span className="inline-block px-2.5 py-0.5 rounded-lg bg-white border border-slate-200 font-black text-sm text-slate-800 shadow-2xs">
+                          {subSummary.estimatedGradeLetter}
+                        </span>
+                      </div>
                     </div>
 
-                    {/* Stats pills */}
-                    <div className="flex flex-wrap items-center gap-2 shrink-0 text-xs">
-                      <div className="px-3 py-1.5 rounded-xl bg-white/90 border border-slate-200/80 font-medium text-slate-700 shadow-2xs">
-                        คะแนนปัจจุบัน: <span className="font-bold text-slate-900">{earnedScore}/{totalMaxScoreRecorded}</span>
+                    {/* Progress Bar */}
+                    <div className="space-y-1">
+                      <div className="flex justify-between text-[10px] text-slate-500 font-medium">
+                        <span>🎯 เป้าหมาย {sub.targetGrade} ({sub.targetScore} คะแนน)</span>
+                        <span>{progress.toFixed(0)}%</span>
                       </div>
-                      <div className="px-3 py-1.5 rounded-xl bg-white/90 border border-slate-200/80 font-medium text-slate-700 shadow-2xs">
-                        คะแนนที่เหลือ: <span className="font-bold text-indigo-600">{remainingPoints} คะแนน</span>
-                      </div>
-                      <div className="px-3 py-1.5 rounded-xl bg-white/90 border border-slate-200/80 font-medium text-slate-700 shadow-2xs">
-                        คะแนนสูงสุดที่เป็นไปได้ = <span className="font-bold text-emerald-600">{maxPossibleTotal}/100</span>
+                      <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                        <div
+                          className="h-full rounded-full transition-all duration-300"
+                          style={{
+                            width: `${progress}%`,
+                            backgroundColor: sub.color || '#6366f1',
+                          }}
+                        />
                       </div>
                     </div>
                   </div>
                 </div>
 
-                {/* 4 Score Periods Container */}
-                {isExpanded && (
-                  <div className="p-5 sm:p-6 space-y-6">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {periodKeys.map((key) => {
-                        const period = subject.periods[key] || {
-                          key,
-                          label: PERIOD_CONFIG[key].label,
-                          shortLabel: PERIOD_CONFIG[key].shortLabel,
-                          weight: PERIOD_CONFIG[key].defaultWeight,
-                          items: [],
-                        };
-                        const breakdown = periodBreakdowns.find((b) => b.key === key);
-                        const hasItems = period.items && period.items.length > 0;
-                        const pct = breakdown?.percentage;
-
-                        return (
-                          <div
-                            key={key}
-                            className="p-4 rounded-2xl border border-slate-200/80 bg-slate-50/50 hover:bg-white hover:border-indigo-200 transition-all flex flex-col justify-between space-y-3"
-                          >
-                            {/* Period Header */}
-                            <div>
-                              <div className="flex items-center justify-between">
-                                <div className="flex items-center gap-2">
-                                  <span className="w-2 h-2 rounded-full bg-indigo-500" />
-                                  <h4 className="font-bold text-slate-900 text-sm">
-                                    {period.label}
-                                  </h4>
-                                </div>
-                                <div className="flex items-center gap-1.5">
-                                  <button
-                                    type="button"
-                                    onClick={() => setEditingScoresSubject(subject)}
-                                    className="text-xs font-bold text-slate-700 hover:text-indigo-600 bg-white hover:bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 transition-all flex items-center gap-1 cursor-pointer"
-                                    title="แก้ไขคะแนนช่วงนี้"
-                                  >
-                                    <Edit2 className="w-3 h-3 text-indigo-500" />
-                                    <span>แก้คะแนน</span>
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={() => openAddItem(subject.id, key)}
-                                    className="text-xs font-bold text-indigo-600 hover:text-indigo-800 bg-white hover:bg-indigo-50 px-2.5 py-1 rounded-lg border border-indigo-100 transition-all flex items-center gap-1 cursor-pointer"
-                                  >
-                                    <Plus className="w-3 h-3" />
-                                    <span>เพิ่มคะแนนย่อย</span>
-                                  </button>
-                                </div>
-                              </div>
-
-                              {/* Progress bar and score status */}
-                              <div className="mt-2.5 space-y-1.5">
-                                <div className="flex items-center justify-between text-xs">
-                                  <span className="text-slate-500 font-medium">
-                                    {period.shortLabel}: {hasItems ? `${breakdown?.earned}/${breakdown?.max}` : 'ยังไม่มีข้อมูล'}
-                                  </span>
-                                  <span className="font-bold text-slate-800">
-                                    {pct !== null && pct !== undefined ? `${pct.toFixed(0)}%` : 'ยังไม่สอบ'}
-                                  </span>
-                                </div>
-
-                                <div className="h-2 w-full bg-slate-200 rounded-full overflow-hidden">
-                                  <div
-                                    className={`h-full rounded-full transition-all duration-300 ${
-                                      !hasItems
-                                        ? 'bg-slate-200'
-                                        : (pct ?? 0) >= 80
-                                        ? 'bg-emerald-500'
-                                        : (pct ?? 0) >= 65
-                                        ? 'bg-amber-500'
-                                        : 'bg-rose-500'
-                                    }`}
-                                    style={{
-                                      width: `${pct !== null && pct !== undefined ? Math.min(100, pct) : 0}%`,
-                                    }}
-                                  />
-                                </div>
-                              </div>
-                            </div>
-
-                            {/* Sub-items List (e.g. การบ้าน 8/10, แบบฝึกหัด 9/10, สอบย่อย 15/20) */}
-                            <div className="space-y-1.5 pt-1">
-                              {!hasItems ? (
-                                <div className="py-3 text-center text-xs text-slate-400 bg-white/60 rounded-xl border border-dashed border-slate-200 flex items-center justify-center gap-2">
-                                  <span>ยังไม่มีรายการย่อย</span>
-                                  <button
-                                    type="button"
-                                    onClick={() => openAddItem(subject.id, key)}
-                                    className="text-indigo-600 font-bold hover:underline"
-                                  >
-                                    + เพิ่มคะแนน
-                                  </button>
-                                </div>
-                              ) : (
-                                period.items.map((item) => {
-                                  const itemPct = item.maxScore > 0 ? (item.score / item.maxScore) * 100 : 0;
-                                  return (
-                                    <div
-                                      key={item.id}
-                                      className="p-2.5 rounded-xl bg-white border border-slate-100 hover:border-slate-300 transition-all flex items-center justify-between gap-2 text-xs group"
-                                    >
-                                      <div className="flex items-center gap-2 min-w-0">
-                                        <span className="text-slate-400">•</span>
-                                        <div className="min-w-0">
-                                          <span className="font-semibold text-slate-800 truncate block">
-                                            {item.title}
-                                          </span>
-                                          {item.notes && (
-                                            <span className="text-[10px] text-slate-400 truncate block">
-                                              {item.notes}
-                                            </span>
-                                          )}
-                                        </div>
-                                      </div>
-
-                                      <div className="flex items-center gap-2 shrink-0">
-                                        {/* Clickable Score Pill */}
-                                        <button
-                                          type="button"
-                                          onClick={() => openEditItem(subject.id, key, item)}
-                                          className="font-bold text-slate-900 bg-slate-50 hover:bg-indigo-50 hover:text-indigo-700 px-2 py-0.5 rounded-md border border-slate-200 hover:border-indigo-300 transition-colors flex items-center gap-1 cursor-pointer"
-                                          title="คลิกเพื่อแก้ไขคะแนนรายการนี้"
-                                        >
-                                          <span>{item.score}/{item.maxScore}</span>
-                                          <Edit2 className="w-2.5 h-2.5 text-slate-400" />
-                                        </button>
-
-                                        <div className="flex items-center gap-0.5">
-                                          <button
-                                            type="button"
-                                            onClick={() => openEditItem(subject.id, key, item)}
-                                            className="p-1 text-slate-400 hover:text-indigo-600 hover:bg-slate-100 rounded transition-colors cursor-pointer"
-                                            title="แก้ไข"
-                                          >
-                                            <Edit2 className="w-3 h-3" />
-                                          </button>
-                                          <button
-                                            type="button"
-                                            onClick={() => deleteScoreItem(subject.id, key, item.id)}
-                                            className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-                                            title="ลบ"
-                                          >
-                                            <Trash2 className="w-3 h-3" />
-                                          </button>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  );
-                                })
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
-                    </div>
-
-                    {/* Subject Tasks & Homework Section (Active & Hidden Completed) */}
-                    {(() => {
-                      const subjectTasks = tasks.filter((t) => t.semesterId === currentSemester && t.subjectId === subject.id);
-                      const subjectPendingTasks = subjectTasks.filter((t) => t.status !== 'submitted' && t.status !== 'graded');
-                      const subjectCompletedTasks = subjectTasks.filter((t) => t.status === 'submitted' || t.status === 'graded');
-                      const isCompletedExpanded = !!expandedSubjectCompletedTasks[subject.id];
-
-                      if (subjectTasks.length === 0) return null;
-
-                      return (
-                        <div className="pt-5 border-t border-slate-200/80 space-y-3">
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                            <div className="flex items-center gap-2">
-                              <FolderCheck className="w-4 h-4 text-indigo-600" />
-                              <h4 className="font-bold text-slate-900 text-sm">
-                                งานและการบ้านในวิชานี้ ({subjectTasks.length} รายการ)
-                              </h4>
-                              <span className="text-[11px] font-semibold px-2 py-0.5 rounded-md bg-slate-100 text-slate-700">
-                                ค้าง {subjectPendingTasks.length} • เสร็จแล้ว {subjectCompletedTasks.length}
-                              </span>
-                            </div>
-
-                            {subjectCompletedTasks.length > 0 && (
-                              <button
-                                type="button"
-                                onClick={() => toggleSubjectCompletedTasks(subject.id)}
-                                className="text-xs font-bold text-emerald-700 hover:text-emerald-800 bg-emerald-50 hover:bg-emerald-100 px-3 py-1.5 rounded-xl flex items-center gap-1.5 transition-colors cursor-pointer self-start sm:self-auto"
-                              >
-                                <span>{isCompletedExpanded ? 'ซ่อนงานที่เสร็จแล้ว' : `เปิดดูงานที่เสร็จแล้ว (${subjectCompletedTasks.length} งาน)`}</span>
-                                {isCompletedExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-                              </button>
-                            )}
-                          </div>
-
-                          {/* Active / Pending tasks in this subject */}
-                          {subjectPendingTasks.length > 0 && (
-                            <div className="space-y-2">
-                              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                                {subjectPendingTasks.map((t) => {
-                                  const days = getDaysRemaining(t.dueDate);
-                                  const isOverdue = days < 0;
-                                  return (
-                                    <div
-                                      key={t.id}
-                                      className="p-3 bg-slate-50 hover:bg-white rounded-xl border border-slate-200 hover:border-indigo-300 transition-all flex items-center justify-between gap-2 shadow-2xs group"
-                                    >
-                                      <div className="flex items-center gap-2.5 min-w-0">
-                                        <button
-                                          type="button"
-                                          onClick={() => handleSubjectTaskToggle(t)}
-                                          className="w-5 h-5 rounded-md border-2 border-slate-300 hover:border-emerald-500 hover:bg-emerald-50 text-emerald-600 flex items-center justify-center transition-all cursor-pointer shrink-0"
-                                          title="กดเช็คลิสต์เพื่องานนี้เสร็จแล้ว (จะนำไปซ่อนในวิชานี้)"
-                                        >
-                                          <Check className="w-3 h-3 opacity-0 group-hover:opacity-40" />
-                                        </button>
-                                        <div className="min-w-0">
-                                          <p className="text-xs font-bold text-slate-800 truncate">
-                                            {t.title}
-                                          </p>
-                                          <p className="text-[11px] text-slate-500">
-                                            ส่ง {formatShortThaiDate(t.dueDate)} • {isOverdue ? <span className="text-rose-600 font-semibold">เลยกำหนด</span> : days === 0 ? 'ส่งวันนี้' : `เหลือ ${days} วัน`}
-                                          </p>
-                                        </div>
-                                      </div>
-
-                                      <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-white border border-slate-200 text-slate-700 shrink-0">
-                                        {t.maxScore} คะแนน
-                                      </span>
-                                    </div>
-                                  );
-                                })}
-                              </div>
-                            </div>
-                          )}
-
-                          {/* Hidden Completed tasks in this subject */}
-                          {isCompletedExpanded && subjectCompletedTasks.length > 0 && (
-                            <div className="p-3.5 bg-emerald-50/50 rounded-2xl border border-emerald-200/80 space-y-2">
-                              <div className="flex items-center justify-between text-[11px] text-emerald-800 font-bold px-1">
-                                <span>📁 รายการงานที่ส่ง/เสร็จแล้วในวิชา {subject.name}:</span>
-                                <span>คลิก ✓ เพื่อกู้คืน</span>
-                              </div>
-
-                              <div className="space-y-1.5">
-                                {subjectCompletedTasks.map((t) => (
-                                  <div
-                                    key={t.id}
-                                    className="p-2.5 bg-white rounded-xl border border-emerald-200/60 flex items-center justify-between gap-2 shadow-2xs"
-                                  >
-                                    <div className="flex items-center gap-2.5 min-w-0">
-                                      <button
-                                        type="button"
-                                        onClick={() => handleSubjectTaskToggle(t)}
-                                        className="w-5 h-5 rounded-md bg-emerald-500 hover:bg-rose-500 text-white flex items-center justify-center transition-all cursor-pointer shrink-0 group/restore"
-                                        title="คลิกเพื่อยกเลิกการส่ง และกู้คืนกลับเป็นงานค้างส่ง"
-                                      >
-                                        <Check className="w-3.5 h-3.5 group-restore:hidden" />
-                                        <RotateCcw className="w-3 h-3 hidden group-restore:block" />
-                                      </button>
-                                      <div className="min-w-0">
-                                        <p className="text-xs font-semibold text-slate-700 line-through truncate">
-                                          {t.title}
-                                        </p>
-                                        <p className="text-[10px] text-slate-400">
-                                          {PERIOD_CONFIG[t.periodKey]?.shortLabel} • ส่งแล้ว
-                                        </p>
-                                      </div>
-                                    </div>
-
-                                    <span className="text-xs font-bold px-2 py-0.5 rounded-md bg-emerald-50 text-emerald-800 border border-emerald-100 shrink-0">
-                                      {t.obtainedScore !== undefined ? `${t.obtainedScore} / ` : ''}{t.maxScore} คะแนน
-                                    </span>
-                                  </div>
-                                ))}
-                              </div>
-                            </div>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </div>
-                )}
+                {/* Primary Action Button: [ ดูวิชา → ] */}
+                <button
+                  type="button"
+                  onClick={() => handleSelectSubject(sub)}
+                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer group-hover:scale-[1.01]"
+                >
+                  <span>ดูรายละเอียดวิชา</span>
+                  <ArrowRight className="w-3.5 h-3.5" />
+                </button>
               </div>
             );
           })}
+        </div>
+
+        {activeSemesterSummary.subjectSummaries.length === 0 && (
+          <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-4">
+            <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
+            <div className="space-y-1">
+              <h4 className="text-base font-bold text-slate-800">ยังไม่มีรายวิชาในภาคเรียนนี้</h4>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                เริ่มต้นเพิ่มรายวิชาเพื่อบันทึกคะแนนเก็บ คำนวณเกรด และติดตามงานได้ทันที
+              </p>
+            </div>
+            <button
+              type="button"
+              onClick={onOpenAddSubject}
+              className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+            >
+              + เพิ่มวิชาแรก
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
+
+  // =========================================================================
+  // VIEW 2: SUBJECT DETAIL VIEW WITH 4 TABS (ภาพรวม, คะแนน, งาน, สอบ)
+  // =========================================================================
+  const sub = currentSubject;
+  const subSummary = currentSubjectSummary;
+
+  // Midterm 50 (PreMidterm 30 + Midterm 20)
+  const preMidSummary = subSummary.periodBreakdowns.find((p) => p.key === 'preMidterm');
+  const midSummary = subSummary.periodBreakdowns.find((p) => p.key === 'midterm');
+  const midtermTotalEarned = (preMidSummary?.earned || 0) + (midSummary?.earned || 0);
+  const midtermTotalMax = (preMidSummary?.max || 30) + (midSummary?.max || 20);
+  const midtermPct = Math.min(100, Math.round((midtermTotalEarned / (midtermTotalMax || 50)) * 100));
+
+  // Final 50 (PostMidterm 30 + Final 20)
+  const postMidSummary = subSummary.periodBreakdowns.find((p) => p.key === 'postMidterm');
+  const finalSummary = subSummary.periodBreakdowns.find((p) => p.key === 'final');
+  const finalTotalEarned = (postMidSummary?.earned || 0) + (finalSummary?.earned || 0);
+  const finalTotalMax = (postMidSummary?.max || 30) + (finalSummary?.max || 20);
+  const finalPct = Math.min(100, Math.round((finalTotalEarned / (finalTotalMax || 50)) * 100));
+
+  return (
+    <div className="space-y-6 pb-8">
+      {/* Back button & Subject Top Bar */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between gap-3">
+          <button
+            type="button"
+            onClick={() => handleSelectSubject(null)}
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+          >
+            <ArrowLeft className="w-4 h-4" />
+            <span>กลับไปหน้ารวมวิชา</span>
+          </button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => setEditingScoresSubject(sub)}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Calculator className="w-3.5 h-3.5 text-indigo-600" />
+              <span className="hidden sm:inline">แก้ไขคะแนนด่วน</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => onOpenEditSubject(sub)}
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              title="แก้ไขข้อมูลวิชา"
+            >
+              <Edit2 className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+
+        {/* Title & Badge */}
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
+          <div className="flex items-center gap-3">
+            <div
+              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0 font-black text-lg"
+              style={{ backgroundColor: sub.color || '#6366f1' }}
+            >
+              {sub.name.charAt(0)}
+            </div>
+            <div>
+              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                {sub.name}
+              </h2>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+                รหัสวิชา: {sub.code} • {sub.credits} หน่วยกิต {sub.teacher && `• ครูผู้สอน: ${sub.teacher}`}
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-3 self-start sm:self-center">
+            <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200 text-right">
+              <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนนสะสม</span>
+              <span className="text-xl font-black text-slate-900">
+                {subSummary.earnedScore} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+              </span>
+            </div>
+            <div className="bg-slate-900 text-white px-4 py-2 rounded-2xl text-center shadow-xs">
+              <span className="text-[10px] text-slate-300 font-bold uppercase block">เกรดคาดการณ์</span>
+              <span className="text-xl font-black text-white">
+                {subSummary.estimatedGradeLetter}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* 4 Tabs: [ ภาพรวม ] [ คะแนน ] [ งาน ] [ สอบ ] */}
+        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 overflow-x-auto scrollbar-none">
+          {[
+            { id: 'overview' as const, label: 'ภาพรวม' },
+            { id: 'scores' as const, label: 'คะแนน (100 แต้ม)' },
+            { id: 'tasks' as const, label: `งาน (${subjectTasks.length})` },
+            { id: 'exams' as const, label: `สอบ (${subjectExams.length})` },
+          ].map((tab) => {
+            const isActive = detailTab === tab.id;
+            return (
+              <button
+                key={tab.id}
+                type="button"
+                onClick={() => setDetailTab(tab.id)}
+                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
+                  isActive
+                    ? 'bg-slate-900 text-white shadow-xs'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                }`}
+              >
+                {tab.label}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* TAB 1: ภาพรวม (OVERVIEW) */}
+      {detailTab === 'overview' && (
+        <div className="space-y-5 animate-in fade-in duration-200">
+          {/* 4 Key Metrics */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
+              <span className="text-xs font-semibold text-slate-500 block">คะแนนปัจจุบัน</span>
+              <span className="text-2xl font-black text-slate-900">{subSummary.earnedScore}</span>
+              <span className="text-[11px] text-slate-400 block">จากทั้งหมด 100 คะแนน</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
+              <span className="text-xs font-semibold text-slate-500 block">เกรดคาดการณ์</span>
+              <span className="text-2xl font-black text-indigo-600">{subSummary.estimatedGradeLetter}</span>
+              <span className="text-[11px] text-slate-400 block">คิดเป็น {subSummary.estimatedGrade.toFixed(1)} แต้ม</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
+              <span className="text-xs font-semibold text-slate-500 block">เป้าหมาย</span>
+              <span className="text-2xl font-black text-amber-600">{sub.targetGrade}</span>
+              <span className="text-[11px] text-slate-400 block">เกณฑ์ {sub.targetScore} คะแนนขึ้นไป</span>
+            </div>
+
+            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
+              <span className="text-xs font-semibold text-slate-500 block">คะแนนที่ต้องทำเพิ่ม</span>
+              <span className="text-2xl font-black text-slate-900">
+                {subSummary.targetAchieved ? '✓ บรรลุแล้ว' : `+${subSummary.pointsNeededForTarget}`}
+              </span>
+              <span className="text-[11px] text-slate-500 block">
+                {subSummary.targetAchieved
+                  ? 'คะแนนถึงเกณฑ์แล้ว รักษามาตรฐานไว้!'
+                  : `เหลือให้เก็บอีก ${subSummary.remainingPoints} คะแนน`}
+              </span>
+            </div>
+          </div>
+
+          {/* Quick Progress Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* Midterm Half */}
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase">สัดส่วนครึ่งแรก (กลางภาค)</span>
+                <span className="text-xs font-black text-slate-900">{midtermTotalEarned} / 50 คะแนน</span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-blue-500 transition-all duration-300"
+                  style={{ width: `${midtermPct}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-500">
+                คะแนนเก็บก่อนกลางภาค ({preMidSummary?.earned || 0}/30) • สอบกลางภาค ({midSummary?.earned || 0}/20)
+              </p>
+            </div>
+
+            {/* Final Half */}
+            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-slate-500 uppercase">สัดส่วนครึ่งหลัง (ปลายภาค)</span>
+                <span className="text-xs font-black text-slate-900">{finalTotalEarned} / 50 คะแนน</span>
+              </div>
+              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+                <div
+                  className="h-full rounded-full bg-indigo-500 transition-all duration-300"
+                  style={{ width: `${finalPct}%` }}
+                />
+              </div>
+              <p className="text-[11px] text-slate-500">
+                คะแนนเก็บหลังกลางภาค ({postMidSummary?.earned || 0}/30) • สอบปลายภาค ({finalSummary?.earned || 0}/20)
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 2: คะแนน (SCORES ACCORDIONS) */}
+      {detailTab === 'scores' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between bg-slate-50 p-4 rounded-2xl border border-slate-200/60">
+            <span className="text-xs text-slate-600 font-medium">
+              โครงสร้าง 100 คะแนน: กลางภาค 50 (เก็บ 30 + สอบ 20) และ ปลายภาค 50 (เก็บ 30 + สอบ 20)
+            </span>
+            <button
+              type="button"
+              onClick={() => setEditingScoresSubject(sub)}
+              className="px-3 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 transition-colors cursor-pointer shadow-2xs shrink-0"
+            >
+              แก้ไขคะแนนรวม
+            </button>
+          </div>
+
+          {/* ACCORDION 1: กลางภาค 50 คะแนน */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setOpenMidtermAccordion((prev) => !prev)}
+              className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors cursor-pointer"
+            >
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black text-slate-900">
+                    📚 กลางภาค (Midterm)
+                  </span>
+                  <span className="text-xs font-black px-2 py-0.5 rounded-md bg-blue-50 text-blue-700 border border-blue-200">
+                    50 คะแนน
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  ได้ {midtermTotalEarned} / 50 คะแนน ({midtermPct}%)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="w-24 sm:w-32 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                  <div
+                    className="h-full rounded-full bg-blue-500"
+                    style={{ width: `${midtermPct}%` }}
+                  />
+                </div>
+                <div className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  <span>{openMidtermAccordion ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}</span>
+                  {openMidtermAccordion ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </div>
+            </button>
+
+            {/* Expanded Midterm Contents */}
+            {openMidtermAccordion && (
+              <div className="p-5 pt-0 border-t border-slate-100 space-y-4 bg-slate-50/50">
+                {/* 1.1 คะแนนเก็บก่อนกลางภาค (น้ำหนัก 30) */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">
+                        1. คะแนนเก็บก่อนกลางภาค (น้ำหนัก 30 คะแนน)
+                      </h5>
+                      <span className="text-[11px] text-slate-500">
+                        คะแนนที่ได้: {preMidSummary?.earned || 0} / 30 คะแนน
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItemForm({ title: '', score: '', maxScore: '10', notes: '' });
+                        setItemModal({
+                          isOpen: true,
+                          subjectId: sub.id,
+                          periodKey: 'preMidterm',
+                        });
+                      }}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      + เพิ่มรายการย่อย
+                    </button>
+                  </div>
+
+                  {/* Sub-items list */}
+                  <div className="space-y-1.5">
+                    {sub.periods.preMidterm.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-xs"
+                      >
+                        <span className="font-semibold text-slate-800">{item.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-700">
+                            {item.score} / {item.maxScore}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => deleteScoreItem(sub.id, 'preMidterm', item.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {sub.periods.preMidterm.items.length === 0 && (
+                      <p className="text-[11px] text-slate-400 italic py-1">
+                        ไม่มีรายการย่อย (ใช้คะแนนรวม {preMidSummary?.earned || 0} / 30)
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 1.2 สอบกลางภาค (น้ำหนัก 20) */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">
+                        2. คะแนนสอบกลางภาค (น้ำหนัก 20 คะแนน)
+                      </h5>
+                      <span className="text-[11px] text-slate-500">
+                        คะแนนที่ได้: {midSummary?.earned || 0} / 20 คะแนน
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItemForm({ title: 'ข้อสอบกลางภาค', score: '', maxScore: '20', notes: '' });
+                        setItemModal({
+                          isOpen: true,
+                          subjectId: sub.id,
+                          periodKey: 'midterm',
+                        });
+                      }}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      + เพิ่มรายการย่อย
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {sub.periods.midterm.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-xs"
+                      >
+                        <span className="font-semibold text-slate-800">{item.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-700">
+                            {item.score} / {item.maxScore}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => deleteScoreItem(sub.id, 'midterm', item.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {sub.periods.midterm.items.length === 0 && (
+                      <p className="text-[11px] text-slate-400 italic py-1">
+                        ไม่มีรายการย่อย (ใช้คะแนนสอบรวม {midSummary?.earned || 0} / 20)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* ACCORDION 2: ปลายภาค 50 คะแนน */}
+          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+            <button
+              type="button"
+              onClick={() => setOpenFinalAccordion((prev) => !prev)}
+              className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors cursor-pointer"
+            >
+              <div className="space-y-1 min-w-0">
+                <div className="flex items-center gap-2">
+                  <span className="text-base font-black text-slate-900">
+                    📚 ปลายภาค (Final)
+                  </span>
+                  <span className="text-xs font-black px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200">
+                    50 คะแนน
+                  </span>
+                </div>
+                <p className="text-xs text-slate-500">
+                  ได้ {finalTotalEarned} / 50 คะแนน ({finalPct}%)
+                </p>
+              </div>
+
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="w-24 sm:w-32 h-2 bg-slate-100 rounded-full overflow-hidden hidden sm:block">
+                  <div
+                    className="h-full rounded-full bg-indigo-500"
+                    style={{ width: `${finalPct}%` }}
+                  />
+                </div>
+                <div className="text-xs font-bold text-indigo-600 flex items-center gap-1">
+                  <span>{openFinalAccordion ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด'}</span>
+                  {openFinalAccordion ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                </div>
+              </div>
+            </button>
+
+            {/* Expanded Final Contents */}
+            {openFinalAccordion && (
+              <div className="p-5 pt-0 border-t border-slate-100 space-y-4 bg-slate-50/50">
+                {/* 2.1 คะแนนเก็บหลังกลางภาค (น้ำหนัก 30) */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">
+                        3. คะแนนเก็บหลังกลางภาค (น้ำหนัก 30 คะแนน)
+                      </h5>
+                      <span className="text-[11px] text-slate-500">
+                        คะแนนที่ได้: {postMidSummary?.earned || 0} / 30 คะแนน
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItemForm({ title: '', score: '', maxScore: '10', notes: '' });
+                        setItemModal({
+                          isOpen: true,
+                          subjectId: sub.id,
+                          periodKey: 'postMidterm',
+                        });
+                      }}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      + เพิ่มรายการย่อย
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {sub.periods.postMidterm.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-xs"
+                      >
+                        <span className="font-semibold text-slate-800">{item.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-700">
+                            {item.score} / {item.maxScore}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => deleteScoreItem(sub.id, 'postMidterm', item.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {sub.periods.postMidterm.items.length === 0 && (
+                      <p className="text-[11px] text-slate-400 italic py-1">
+                        ไม่มีรายการย่อย (ใช้คะแนนรวม {postMidSummary?.earned || 0} / 30)
+                      </p>
+                    )}
+                  </div>
+                </div>
+
+                {/* 2.2 สอบปลายภาค (น้ำหนัก 20) */}
+                <div className="bg-white p-4 rounded-2xl border border-slate-200/80 space-y-3">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <h5 className="text-xs font-bold text-slate-900">
+                        4. คะแนนสอบปลายภาค (น้ำหนัก 20 คะแนน)
+                      </h5>
+                      <span className="text-[11px] text-slate-500">
+                        คะแนนที่ได้: {finalSummary?.earned || 0} / 20 คะแนน
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setItemForm({ title: 'ข้อสอบปลายภาค', score: '', maxScore: '20', notes: '' });
+                        setItemModal({
+                          isOpen: true,
+                          subjectId: sub.id,
+                          periodKey: 'final',
+                        });
+                      }}
+                      className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors cursor-pointer"
+                    >
+                      + เพิ่มรายการย่อย
+                    </button>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    {sub.periods.final.items.map((item) => (
+                      <div
+                        key={item.id}
+                        className="flex items-center justify-between p-2 rounded-xl bg-slate-50 border border-slate-200/60 text-xs"
+                      >
+                        <span className="font-semibold text-slate-800">{item.title}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-mono font-bold text-slate-700">
+                            {item.score} / {item.maxScore}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={() => deleteScoreItem(sub.id, 'final', item.id)}
+                            className="p-1 text-slate-400 hover:text-rose-600 rounded cursor-pointer"
+                          >
+                            <Trash2 className="w-3 h-3" />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                    {sub.periods.final.items.length === 0 && (
+                      <p className="text-[11px] text-slate-400 italic py-1">
+                        ไม่มีรายการย่อย (ใช้คะแนนสอบรวม {finalSummary?.earned || 0} / 20)
+                      </p>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: งาน (TASKS) */}
+      {detailTab === 'tasks' && (
+        <div className="space-y-3 animate-in fade-in duration-200">
+          <div className="flex items-center justify-between">
+            <span className="text-xs font-bold text-slate-700">
+              งานและการบ้านประจำวิชา ({subjectTasks.length} รายการ)
+            </span>
+          </div>
+
+          <div className="space-y-2">
+            {subjectTasks.map((task) => {
+              const isDone = task.status === 'submitted' || task.status === 'graded';
+              const days = getDaysRemaining(task.dueDate);
+
+              return (
+                <div
+                  key={task.id}
+                  className={`p-3.5 rounded-2xl border transition-all flex items-center gap-3 ${
+                    isDone
+                      ? 'bg-slate-50/70 border-slate-200/60 opacity-70'
+                      : 'bg-white border-slate-200 shadow-2xs'
+                  }`}
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleTaskToggle(task)}
+                    className={`cursor-pointer ${isDone ? 'text-emerald-600' : 'text-slate-400 hover:text-emerald-600'}`}
+                  >
+                    {isDone ? <CheckSquare className="w-5 h-5" /> : <Square className="w-5 h-5" />}
+                  </button>
+
+                  <div className="min-w-0 flex-1">
+                    <p className={`text-xs font-bold ${isDone ? 'line-through text-slate-400' : 'text-slate-800'}`}>
+                      {task.title}
+                    </p>
+                    <p className="text-[11px] text-slate-500">
+                      กำหนดส่ง {formatShortThaiDate(task.dueDate)} • น้ำหนัก {task.maxScore} คะแนน
+                    </p>
+                  </div>
+
+                  {!isDone && (
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                      {days === 0 ? 'ส่งวันนี้' : `อีก ${days} วัน`}
+                    </span>
+                  )}
+                </div>
+              );
+            })}
+
+            {subjectTasks.length === 0 && (
+              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-xs">
+                ยังไม่มีงานหรือการบ้านในวิชานี้
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: สอบ (EXAMS & TOPICS) */}
+      {detailTab === 'exams' && (
+        <div className="space-y-4 animate-in fade-in duration-200">
+          <div className="space-y-3">
+            {subjectExams.map((exam) => {
+              const days = getDaysRemaining(exam.examDate);
+
+              return (
+                <div key={exam.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+                  <div className="flex items-center justify-between">
+                    <span className="text-sm font-black text-slate-900">
+                      {exam.examType === 'midterm' ? '📅 การสอบกลางภาค' : '📅 การสอบปลายภาค'}
+                    </span>
+                    <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200">
+                      {days === 0 ? 'สอบวันนี้' : `อีก ${days} วัน`}
+                    </span>
+                  </div>
+
+                  <div className="text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl">
+                    <span>วันที่: {formatShortThaiDate(exam.examDate)}</span>
+                    <span>เวลา: {exam.startTime} - {exam.endTime} น.</span>
+                    <span>ห้องสอบ: {exam.room || 'ไม่ระบุ'}</span>
+                    <span>คะแนนเต็ม: {exam.maxScore} คะแนน</span>
+                  </div>
+
+                  {/* Section 9: Collapsible topics checklist */}
+                  {exam.topics && exam.topics.length > 0 && (
+                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                      <span className="text-xs font-bold text-slate-700">หัวข้อที่ออกสอบ (Checklist):</span>
+                      <div className="space-y-1">
+                        {exam.topics.map((topic, i) => (
+                          <div key={i} className="flex items-center gap-2 text-xs text-slate-700 py-1">
+                            <span className="text-indigo-500 font-bold">▸</span>
+                            <span>{topic}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {exam.tips && (
+                    <div className="p-3 bg-amber-50/60 rounded-2xl border border-amber-200/70 text-xs text-amber-900">
+                      <span className="font-bold">💡 แนวข้อสอบ / คำแนะนำ: </span>
+                      {exam.tips}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+
+            {subjectExams.length === 0 && (
+              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-xs">
+                ยังไม่มีการสอบสำหรับวิชานี้
+              </div>
+            )}
+          </div>
         </div>
       )}
 
       {/* Add / Edit Sub-Score Item Modal */}
       {itemModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4">
-            <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-              <div>
-                <h3 className="font-bold text-slate-900 text-lg">
-                  {itemModal.editingItem ? 'แก้ไขรายการคะแนนย่อย' : 'เพิ่มรายการคะแนนย่อย'}
-                </h3>
-                <p className="text-xs text-slate-500">
-                  {PERIOD_CONFIG[itemModal.periodKey].label}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => setItemModal({ isOpen: false, subjectId: '', periodKey: 'preMidterm' })}
-                className="text-slate-400 hover:text-slate-600 text-lg font-bold"
-              >
-                ✕
-              </button>
-            </div>
-
-            <form onSubmit={handleSaveItem} className="space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-3xl shadow-xl p-6 space-y-4">
+            <h3 className="text-lg font-black text-slate-900">
+              {itemModal.editingItem ? 'แก้ไขรายการคะแนนย่อย' : 'เพิ่มรายการคะแนนย่อย'}
+            </h3>
+            <form onSubmit={handleSaveSubItem} className="space-y-3">
               <div>
                 <label className="block text-xs font-bold text-slate-700 mb-1">
-                  ชื่อรายการคะแนน (เช่น การบ้าน, แบบฝึกหัด, สอบย่อย, โครงงาน) *
+                  ชื่อรายการคะแนน
                 </label>
                 <input
                   type="text"
                   required
-                  placeholder="เช่น การบ้านบทที่ 1, สอบย่อยตรีโกณมิติ"
+                  placeholder="เช่น ใบงานที่ 1, สอบเก็บคะแนนย่อย"
                   value={itemForm.title}
                   onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
                 />
               </div>
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    คะแนนที่ได้ *
+                    คะแนนที่ได้
                   </label>
                   <input
                     type="number"
                     step="0.5"
-                    min="0"
                     required
-                    placeholder="เช่น 8"
                     value={itemForm.score}
                     onChange={(e) => setItemForm({ ...itemForm, score: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
                   />
                 </div>
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    คะแนนเต็ม *
+                    คะแนนเต็ม
                   </label>
                   <input
                     type="number"
                     step="0.5"
-                    min="0.5"
                     required
-                    placeholder="เช่น 10"
                     value={itemForm.maxScore}
                     onChange={(e) => setItemForm({ ...itemForm, maxScore: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
                   />
                 </div>
               </div>
 
-              <div>
-                <label className="block text-xs font-bold text-slate-700 mb-1">
-                  บันทึกเพิ่มเติม (ไม่บังคับ)
-                </label>
-                <input
-                  type="text"
-                  placeholder="เช่น ข้อ 1-10 หน้า 45"
-                  value={itemForm.notes}
-                  onChange={(e) => setItemForm({ ...itemForm, notes: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm"
-                />
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-100">
+              <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   type="button"
                   onClick={() => setItemModal({ isOpen: false, subjectId: '', periodKey: 'preMidterm' })}
-                  className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-100 text-sm font-semibold transition-colors"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-sm font-bold shadow-md shadow-indigo-500/20 transition-all cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs cursor-pointer"
                 >
-                  {itemModal.editingItem ? 'บันทึกการแก้ไข' : 'เพิ่มคะแนน'}
+                  บันทึกรายการ
                 </button>
               </div>
             </form>
@@ -762,9 +1040,9 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         </div>
       )}
 
-      {/* Edit Subject Scores Modal (4 Periods & Detailed Sub-items) */}
+      {/* Quick Score Modal */}
       <EditSubjectScoresModal
-        isOpen={!!editingScoresSubject}
+        isOpen={Boolean(editingScoresSubject)}
         onClose={() => setEditingScoresSubject(null)}
         subject={editingScoresSubject}
       />

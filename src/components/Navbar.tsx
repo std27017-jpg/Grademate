@@ -10,9 +10,11 @@ import {
   Sparkles,
   User,
   Edit3,
+  Palette,
 } from 'lucide-react';
 import { SemesterToggle } from './SemesterToggle';
 import { useGrade } from '../context/GradeContext';
+import { useTheme } from '../context/ThemeContext';
 
 export type NavTab = 'dashboard' | 'subjects' | 'tasks' | 'exams' | 'analytics' | 'comparison';
 
@@ -21,6 +23,7 @@ interface NavbarProps {
   setActiveTab: (tab: NavTab) => void;
   onOpenSettings?: () => void;
   onOpenEditProfile?: () => void;
+  onOpenThemeModal?: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
@@ -28,16 +31,17 @@ export const Navbar: React.FC<NavbarProps> = ({
   setActiveTab,
   onOpenSettings,
   onOpenEditProfile,
+  onOpenThemeModal,
 }) => {
   const { academicYear, currentSemester } = useGrade();
+  const { themeColor, openThemeModal } = useTheme();
 
   const navItems = [
     { id: 'dashboard' as NavTab, label: 'หน้าหลัก', icon: Home },
     { id: 'subjects' as NavTab, label: 'วิชา', icon: BookOpen },
     { id: 'tasks' as NavTab, label: 'งาน', icon: CheckSquare },
-    { id: 'exams' as NavTab, label: 'ตารางสอบ', icon: Calendar },
+    { id: 'exams' as NavTab, label: 'สอบ', icon: Calendar },
     { id: 'analytics' as NavTab, label: 'วิเคราะห์', icon: BarChart3 },
-    { id: 'comparison' as NavTab, label: 'เปรียบเทียบเทอม / ภาพรวม', icon: TrendingUp },
   ];
 
   return (
@@ -109,12 +113,28 @@ export const Navbar: React.FC<NavbarProps> = ({
               })}
             </nav>
 
-            {/* Right side Profile & Settings buttons */}
-            <div className="flex items-center gap-2">
+            {/* Right side Profile, Theme & Settings buttons */}
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              {/* Theme Color Switcher Button */}
+              <button
+                type="button"
+                id="theme-color-button"
+                onClick={onOpenThemeModal || openThemeModal}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-xl transition-all cursor-pointer shadow-2xs group"
+                title="เปลี่ยนสีธีมของแอป (วงล้อสีหรือใส่โค้ดสี HEX)"
+              >
+                <div
+                  className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-2xs group-hover:scale-115 transition-transform"
+                  style={{ backgroundColor: themeColor }}
+                />
+                <Palette className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-800" />
+                <span className="hidden md:inline">สีธีม</span>
+              </button>
+
               <button
                 type="button"
                 onClick={onOpenEditProfile || onOpenSettings}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-semibold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200/80 rounded-xl transition-all cursor-pointer shadow-2xs"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-semibold text-indigo-700 hover:text-indigo-800 bg-indigo-50 hover:bg-indigo-100/80 border border-indigo-200/80 rounded-xl transition-all cursor-pointer shadow-2xs"
                 title="คลิกเพื่อแก้ไขชื่อนักเรียน"
               >
                 <User className="w-3.5 h-3.5 text-indigo-600 shrink-0" />
@@ -127,11 +147,11 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 onClick={onOpenSettings}
-                className="flex items-center gap-1.5 px-3 py-2 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all cursor-pointer"
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-2 text-xs font-medium text-slate-600 hover:text-indigo-600 bg-slate-100 hover:bg-slate-200/80 rounded-xl transition-all cursor-pointer"
                 title="ตั้งค่าปีการศึกษาและข้อมูล"
               >
                 <Sparkles className="w-3.5 h-3.5 text-indigo-500" />
-                <span className="hidden xl:inline">ตั้งค่า / สำรองข้อมูล</span>
+                <span className="hidden xl:inline">ตั้งค่า / สำรอง</span>
               </button>
             </div>
           </div>
@@ -163,7 +183,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Mobile Bottom Navigation Bar */}
       <nav className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-lg border-t border-slate-200 px-2 py-1 shadow-lg">
-        <div className="grid grid-cols-6 gap-1">
+        <div className="grid grid-cols-5 gap-1">
           {navItems.map((item) => {
             const Icon = item.icon;
             const isActive = activeTab === item.id;
@@ -172,7 +192,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={item.id}
                 type="button"
                 onClick={() => setActiveTab(item.id)}
-                className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all ${
+                className={`flex flex-col items-center justify-center py-1.5 px-1 rounded-xl transition-all cursor-pointer ${
                   isActive
                     ? currentSemester === 'term1'
                       ? 'text-blue-600 font-semibold'
@@ -181,8 +201,8 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }`}
               >
                 <Icon className={`w-4 h-4 mb-0.5 ${isActive ? 'scale-110' : ''}`} />
-                <span className="text-[10px] leading-tight text-center line-clamp-1">
-                  {item.id === 'comparison' ? 'เปรียบเทียบ' : item.label}
+                <span className="text-[11px] leading-tight text-center truncate w-full">
+                  {item.label}
                 </span>
               </button>
             );
