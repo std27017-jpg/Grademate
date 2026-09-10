@@ -557,10 +557,10 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                     className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-xs"
                     style={{ backgroundColor: activeColor }}
                   >
-                    GM
+                    MG
                   </div>
                   <span className="font-extrabold text-sm" style={{ color: activeColor }}>
-                    GradeMate
+                    🎓 MyGrade
                   </span>
                 </div>
 

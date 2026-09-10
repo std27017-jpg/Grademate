@@ -2,6 +2,106 @@ export type SemesterId = 'term1' | 'term2';
 
 export type ScorePeriodKey = 'preMidterm' | 'midterm' | 'postMidterm' | 'final';
 
+export type NumericGrade = 4 | 3.5 | 3 | 2.5 | 2 | 1.5 | 1 | 0;
+
+export type GradeLevel = 'ม.4' | 'ม.5' | 'ม.6';
+
+export interface DreamUniversity {
+  id: string;
+  universityName: string;
+  faculty: string;
+  major?: string;
+  priority?: number;
+  notes?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  email: string;
+  password?: string;
+  fullName: string;
+  nickname?: string;
+  studentClass: string; // e.g. 'ม.5/1'
+  gradeLevel: GradeLevel;
+  room: string;
+  studentNumber: string;
+  schoolName: string;
+  academicYear: number;
+  avatar: string; // Avatar emoji or image url
+  targetGpa: NumericGrade; // 4, 3.5, 3, 2.5, 2, 1.5, 1, 0
+  dreamCareer: string;
+  dreamUniversities: DreamUniversity[];
+  registeredAt?: string;
+}
+
+export type FutureChecklistCategory =
+  | 'academic'
+  | 'exam'
+  | 'activity'
+  | 'portfolio'
+  | 'application'
+  | 'general';
+
+export interface FutureChecklistItem {
+  id: string;
+  title: string;
+  category: FutureChecklistCategory;
+  isCompleted: boolean;
+  completedAt?: string;
+  recommendedReason?: string;
+}
+
+export type PortfolioCategory =
+  | 'certificate' // 📜 เกียรติบัตร
+  | 'award'       // 🏆 รางวัล
+  | 'project'     // 🔬 โครงงาน
+  | 'activity'    // 🤝 กิจกรรม
+  | 'volunteer'   // ❤️ จิตอาสา
+  | 'academic'    // 📚 ผลงานด้านวิชาการ
+  | 'other';      // 🎨 ผลงานอื่น ๆ
+
+export interface PortfolioItem {
+  id: string;
+  title: string;
+  description: string;
+  category: PortfolioCategory;
+  date: string; // YYYY-MM-DD
+  imageUrl?: string;
+  fileName?: string;
+  inPortfolio: boolean; // ใช้ใน Portfolio
+  createdAt: string;
+}
+
+export interface FutureTodoItem {
+  id: string;
+  title: string;
+  dueDate?: string;
+  priority: 'low' | 'medium' | 'high';
+  isCompleted: boolean;
+  notes?: string;
+  createdAt: string;
+}
+
+export type NotificationType =
+  | 'task_due'
+  | 'exam_near'
+  | 'score_missing'
+  | 'grade_target'
+  | 'portfolio_pending'
+  | 'future_checklist';
+
+export interface AppNotification {
+  id: string;
+  type: NotificationType;
+  title: string;
+  message: string;
+  date: string;
+  read: boolean;
+  actionTab?: string;
+}
+
+export type CustomGradeScale = Record<NumericGrade, number>;
+
 export interface ScoreItem {
   id: string;
   title: string; // e.g. 'การบ้าน', 'แบบฝึกหัด', 'สอบย่อย'
@@ -28,8 +128,8 @@ export interface Subject {
   credits: number; // e.g. 1.5
   color: string; // e.g. 'indigo', 'rose', 'emerald', 'amber', 'sky', 'violet'
   icon: string; // Lucide icon name
-  targetGrade: number; // e.g. 4.0, 3.5, 3.0, 2.5, 2.0
-  targetScore: number; // e.g. 80 (Grade 4 / A)
+  targetGrade: NumericGrade; // 4, 3.5, 3, 2.5, 2, 1.5, 1, 0
+  targetScore: number; // e.g. 80 (Grade 4)
   teacherName?: string;
   classroom?: string;
   periods: Record<ScorePeriodKey, ScorePeriod>;
@@ -82,8 +182,8 @@ export interface SubjectScoreSummary {
   currentPercentage: number;
   remainingPoints: number;
   maxPossibleTotal: number;
-  estimatedGrade: number;
-  estimatedGradeLetter: string;
+  estimatedGrade: NumericGrade; // 4, 3.5, 3, 2.5, 2, 1.5, 1, 0
+  estimatedGradeLetter: string; // '4', '3.5', '3', '2.5', '2', '1.5', '1', '0' (Numeric string representation)
   targetAchieved: boolean;
   canStillAchieveTarget: boolean;
   pointsNeededForTarget: number;

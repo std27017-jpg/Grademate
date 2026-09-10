@@ -1,6 +1,6 @@
 {
-  "name": "GradeMate",
-  "description": "ระบบจัดการคะแนน คำนวณเกรดล่วงหน้า ตารางสอบ และงาน รองรับ 2 ภาคเรียน (เทอม 1 & เทอม 2) สำหรับนักเรียน",
+  "name": "MyGrade",
+  "description": "🌸 MyGrade — แอปช่วยวางแผนการเรียนและอนาคตของนักเรียน คำนวณเกรดตามจริง 100 คะแนน เป้าหมาย มหาวิทยาลัย อาชีพ แฟ้มสะสมผลงาน Portfolio งานและตารางสอบ",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

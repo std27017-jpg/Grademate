@@ -275,7 +275,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
                         {s.currentPercentage.toFixed(0)}%
                       </span>
                       <span className="px-2 py-0.5 rounded bg-blue-100 text-blue-700 font-extrabold">
-                        เกรด {s.estimatedGradeLetter}
+                        เกรด {s.estimatedGrade}
                       </span>
                     </div>
                   </div>
@@ -375,7 +375,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
                         {s.currentPercentage.toFixed(0)}%
                       </span>
                       <span className="px-2 py-0.5 rounded bg-rose-100 text-rose-700 font-extrabold">
-                        เกรด {s.estimatedGradeLetter}
+                        เกรด {s.estimatedGrade}
                       </span>
                     </div>
                   </div>

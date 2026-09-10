@@ -22,7 +22,8 @@ export const PRESET_THEME_COLORS: ThemeColorPreset[] = [
 ];
 
 export const DEFAULT_THEME_COLOR = '#6366f1';
-const STORAGE_KEY = 'grademate_custom_theme_color';
+const STORAGE_KEY = 'mygrade_custom_theme_color';
+const LEGACY_STORAGE_KEY = 'grademate_custom_theme_color';
 
 // Utility to parse hex to RGB
 export function hexToRgb(hex: string): { r: number; g: number; b: number } | null {
@@ -164,12 +165,17 @@ export function applyThemeColorToDOM(hexColor: string) {
   const hoverRgb = hslToRgb(rgbToHsl(rgb.r, rgb.g, rgb.b).h, rgbToHsl(rgb.r, rgb.g, rgb.b).s, Math.max(15, rgbToHsl(rgb.r, rgb.g, rgb.b).l - 8));
   const hover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
 
-  const styleId = 'grademate-dynamic-theme-style';
+  const styleId = 'mygrade-dynamic-theme-style';
   let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
   if (!styleEl) {
-    styleEl = document.createElement('style');
-    styleEl.id = styleId;
-    document.head.appendChild(styleEl);
+    styleEl = document.getElementById('grademate-dynamic-theme-style') as HTMLStyleElement | null;
+    if (styleEl) {
+      styleEl.id = styleId;
+    } else {
+      styleEl = document.createElement('style');
+      styleEl.id = styleId;
+      document.head.appendChild(styleEl);
+    }
   }
 
   styleEl.textContent = `
@@ -258,7 +264,7 @@ export function applyThemeColorToDOM(hexColor: string) {
 // Get saved theme from localStorage or default
 export function getSavedThemeColor(): string {
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
+    const saved = localStorage.getItem(STORAGE_KEY) || localStorage.getItem(LEGACY_STORAGE_KEY);
     if (saved && hexToRgb(saved)) {
       return saved;
     }

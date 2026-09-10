@@ -20,6 +20,7 @@ import { useGrade } from '../context/GradeContext';
 import { Exam, StudyStatus } from '../types';
 import { SemesterToggle } from './SemesterToggle';
 import { formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
+import { getSubjectColor } from '../utils/colorUtils';
 
 export const ExamsView: React.FC = () => {
   const {
@@ -36,6 +37,29 @@ export const ExamsView: React.FC = () => {
 
   // Track expanded topics checklist per exam (Section 9 requirement)
   const [expandedExamTopics, setExpandedExamTopics] = useState<Record<string, boolean>>({});
+
+  // Checklist of topics that the user marked as read (persisted in localStorage)
+  const [checkedTopics, setCheckedTopics] = useState<Record<string, boolean>>(() => {
+    try {
+      const saved = localStorage.getItem('mygrade_read_topics');
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
+
+  const toggleTopicCheck = (examId: string, topicIndex: number) => {
+    const key = `${examId}_${topicIndex}`;
+    setCheckedTopics((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      try {
+        localStorage.setItem('mygrade_read_topics', JSON.stringify(updated));
+      } catch (e) {
+        // Fallback
+      }
+      return updated;
+    });
+  };
 
   // Filter exam type: 'all' | 'midterm' | 'final'
   const [examTypeFilter, setExamTypeFilter] = useState<'all' | 'midterm' | 'final'>('all');
@@ -263,164 +287,218 @@ export const ExamsView: React.FC = () => {
         </div>
       )}
 
-      {/* SECTION 8: [ ดูตารางสอบทั้งหมด ] Toggle */}
-      <div className="flex items-center justify-between pt-2">
-        <button
-          type="button"
-          onClick={() => setShowAllExams((prev) => !prev)}
-          className="px-5 py-2.5 rounded-2xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 text-xs font-bold transition-all shadow-2xs inline-flex items-center gap-2 cursor-pointer"
-        >
-          <span>{showAllExams ? 'ย่อตารางสอบ' : `ดูตารางสอบทั้งหมด (${filteredExams.length} รายการ)`}</span>
-          <ChevronDown className={`w-4 h-4 transition-transform ${showAllExams ? 'rotate-180' : ''}`} />
-        </button>
-
-        {/* Filter midterm vs final */}
-        <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-xl">
+      {/* Filter and Section Header */}
+      <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-2 sm:p-2.5 rounded-full border border-slate-200/80 shadow-2xs">
+        <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none w-full sm:w-auto">
           {[
-            { id: 'all' as const, label: 'ทั้งหมด' },
-            { id: 'midterm' as const, label: 'กลางภาค' },
-            { id: 'final' as const, label: 'ปลายภาค' },
+            { id: 'all' as const, label: 'ทั้งหมด', count: semesterExams.length },
+            { id: 'midterm' as const, label: 'กลางภาค', count: semesterExams.filter(e => e.examType === 'midterm').length },
+            { id: 'final' as const, label: 'ปลายภาค', count: semesterExams.filter(e => e.examType === 'final').length },
           ].map((tab) => (
             <button
               key={tab.id}
               type="button"
               onClick={() => setExamTypeFilter(tab.id)}
-              className={`px-2.5 py-1 rounded-lg text-xs font-bold transition-colors cursor-pointer ${
+              className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 active:scale-95 ${
                 examTypeFilter === tab.id
-                  ? 'bg-white text-slate-900 shadow-2xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
               }`}
             >
-              {tab.label}
+              <span>{tab.label}</span>
+              <span
+                className={`text-[10px] px-1.5 py-0.2 rounded-full ${
+                  examTypeFilter === tab.id ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                }`}
+              >
+                {tab.count}
+              </span>
             </button>
           ))}
         </div>
+
+        <span className="text-xs font-semibold text-slate-400 px-3 hidden sm:inline">
+          เรียงตามวันสอบที่ใกล้ที่สุด
+        </span>
       </div>
 
-      {/* ALL EXAMS LIST & TOPICS CHECKLIST (Shown when expanded or if there are multiple) */}
-      {showAllExams && (
-        <div className="space-y-4 animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {filteredExams.map((exam) => {
-              const sub = activeSemesterSummary.subjectSummaries.find(
-                (s) => s.subject.id === exam.subjectId
-              )?.subject;
-              const days = getDaysRemaining(exam.examDate);
-              const isTopicsOpen = Boolean(expandedExamTopics[exam.id]);
+      {/* TIMELINE / LIST CARDS OF EXAMS */}
+      <div className="space-y-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredExams.map((exam) => {
+            const sub = activeSemesterSummary.subjectSummaries.find(
+              (s) => s.subject.id === exam.subjectId
+            )?.subject;
+            const days = getDaysRemaining(exam.examDate);
+            const isDetailsOpen = Boolean(expandedExamTopics[exam.id]);
+            const topics = exam.topics || [];
+            const readCount = topics.filter((_, idx) => checkedTopics[`${exam.id}_${idx}`]).length;
 
-              return (
-                <div
-                  key={exam.id}
-                  className="bg-white rounded-3xl p-5 border border-slate-200/80 shadow-2xs flex flex-col justify-between space-y-4"
-                >
-                  <div className="space-y-3">
-                    {/* Top title & edit/delete */}
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="min-w-0">
-                        <div className="flex items-center gap-2">
-                          <h4 className="font-extrabold text-slate-900 text-base truncate">
-                            {sub?.name || 'การสอบ'}
-                          </h4>
-                          <span className="text-[10px] font-black px-2 py-0.5 rounded bg-slate-100 text-slate-700">
-                            {exam.examType === 'midterm' ? 'กลางภาค' : 'ปลายภาค'}
-                          </span>
-                        </div>
-                        <span className="text-xs text-slate-400 font-medium">
-                          รหัส {sub?.code} • ห้อง {exam.room || 'ไม่ระบุ'}
-                        </span>
+            return (
+              <div
+                key={exam.id}
+                className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-xs transition-all flex flex-col justify-between space-y-4 group"
+              >
+                <div className="space-y-3.5">
+                  {/* Top: 📅 Date & Countdown */}
+                  <div className="flex items-center justify-between gap-2">
+                    <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
+                      <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
+                        <Calendar className="w-4 h-4" />
                       </div>
-
-                      <div className="flex items-center gap-1 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => openEditModal(exam)}
-                          className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
-                        >
-                          <Edit2 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteExam(exam.id)}
-                          className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
+                      <div>
+                        <span className="text-slate-900 font-extrabold">{formatShortThaiDate(exam.examDate)}</span>
+                        <span className="text-slate-400 font-normal ml-1.5 text-[11px]">{exam.startTime} - {exam.endTime} น.</span>
                       </div>
                     </div>
 
-                    {/* Time & Date */}
-                    <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60 grid grid-cols-2 gap-2 text-xs">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold block">วันสอบ</span>
-                        <span className="font-bold text-slate-800">{formatShortThaiDate(exam.examDate)}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold block">เวลาสอบ</span>
-                        <span className="font-bold text-slate-800">{exam.startTime} - {exam.endTime} น.</span>
-                      </div>
-                    </div>
+                    <div className="flex items-center gap-1.5">
+                      <span
+                        className={`font-black text-[11px] px-3 py-1 rounded-full shadow-2xs ${
+                          days === 0
+                            ? 'bg-rose-100 text-rose-800 border border-rose-200 animate-pulse'
+                            : days > 0
+                            ? 'bg-sky-100 text-sky-800 border border-sky-200/80'
+                            : 'bg-slate-100 text-slate-600'
+                        }`}
+                      >
+                        {days === 0 ? 'สอบวันนี้!' : days > 0 ? `เหลืออีก ${days} วัน` : `สอบผ่านไปแล้ว`}
+                      </span>
 
-                    {/* SECTION 9: แนวข้อสอบ Checklist แบบพับได้ */}
-                    <div className="border border-slate-200 rounded-2xl overflow-hidden">
+                      {/* Quick Edit/Delete */}
                       <button
                         type="button"
-                        onClick={() => toggleExamTopics(exam.id)}
-                        className="w-full p-3 bg-slate-50/80 hover:bg-slate-100 text-left flex items-center justify-between text-xs font-bold text-slate-700 transition-colors cursor-pointer"
+                        onClick={() => openEditModal(exam)}
+                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                        title="แก้ไขการสอบ"
                       >
-                        <span className="flex items-center gap-1.5">
-                          <Lightbulb className="w-3.5 h-3.5 text-amber-500" />
-                          <span>แนวข้อสอบ & หัวข้อที่ออกสอบ ({exam.topics?.length || 0})</span>
-                        </span>
-                        {isTopicsOpen ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                        <Edit2 className="w-3.5 h-3.5" />
                       </button>
+                      <button
+                        type="button"
+                        onClick={() => deleteExam(exam.id)}
+                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
+                        title="ลบการสอบ"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
 
-                      {isTopicsOpen && (
-                        <div className="p-3.5 bg-white space-y-2 border-t border-slate-200 text-xs">
-                          {exam.topics && exam.topics.length > 0 ? (
-                            <div className="space-y-1.5">
-                              {exam.topics.map((topic, i) => (
-                                <div key={i} className="flex items-start gap-2 text-slate-800">
-                                  <span className="text-indigo-600 font-bold text-sm leading-none mt-0.5">▸</span>
-                                  <span className="font-medium">{topic}</span>
-                                </div>
-                              ))}
-                            </div>
-                          ) : (
-                            <p className="text-slate-400 italic">ยังไม่ได้ระบุหัวข้อแนวข้อสอบ</p>
-                          )}
+                  {/* ◯ ไอคอนวิชา + ชื่อวิชา & ประเภทสอบ */}
+                  <div className="flex items-center gap-3 p-3 bg-slate-50/80 rounded-2xl border border-slate-200/60">
+                    <div
+                      className="w-11 h-11 rounded-full flex items-center justify-center font-black text-sm shrink-0 shadow-2xs"
+                      style={{
+                        backgroundColor: getSubjectColor(sub?.color),
+                        color: '#ffffff',
+                      }}
+                    >
+                      {sub?.name.charAt(0) || 'ส'}
+                    </div>
 
-                          {exam.tips && (
-                            <div className="pt-2 border-t border-slate-100 text-amber-800 font-medium">
-                              <span className="font-bold">💡 เกร็ดข้อสอบ: </span>
-                              {exam.tips}
-                            </div>
-                          )}
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="font-extrabold text-slate-900 text-base leading-tight truncate">
+                          {sub?.name || 'การสอบ'}
+                        </h4>
+                        <span className="text-[10px] font-bold px-2.5 py-0.5 rounded-full bg-white text-indigo-700 border border-indigo-200/80 shadow-2xs">
+                          {exam.examType === 'midterm' ? 'สอบกลางภาค' : 'สอบปลายภาค'}
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-slate-400 mt-0.5">
+                        <span>รหัส {sub?.code}</span>
+                        <span>•</span>
+                        <span>ห้อง {exam.room || 'ไม่ระบุ'}</span>
+                        <span>•</span>
+                        <span>{exam.maxScore} คะแนน</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Checklist Summary (Read Progress) */}
+                  {topics.length > 0 && (
+                    <div className="flex items-center justify-between px-1 text-xs">
+                      <span className="text-slate-500 font-medium">
+                        เนื้อหาที่ต้องอ่าน ({readCount}/{topics.length} หัวข้อ)
+                      </span>
+                      <span className={`font-bold ${readCount === topics.length ? 'text-emerald-600' : 'text-indigo-600'}`}>
+                        {readCount === topics.length ? 'อ่านครบแล้ว! 🎉' : `${Math.round((readCount / topics.length) * 100)}%`}
+                      </span>
+                    </div>
+                  )}
+
+                  {/* Expandable Details & Checklist */}
+                  {isDetailsOpen && (
+                    <div className="space-y-3 pt-2 border-t border-slate-100 animate-in fade-in duration-200 text-xs">
+                      <div>
+                        <span className="font-bold text-slate-700 block mb-2">
+                          Checklist เนื้อหาที่ต้องอ่าน (ติ๊กเมื่ออ่านแล้ว):
+                        </span>
+                        {topics.length > 0 ? (
+                          <div className="space-y-2">
+                            {topics.map((topic, i) => {
+                              const isRead = Boolean(checkedTopics[`${exam.id}_${i}`]);
+                              return (
+                                <button
+                                  key={i}
+                                  type="button"
+                                  onClick={() => toggleTopicCheck(exam.id, i)}
+                                  className={`w-full flex items-start gap-2.5 p-2.5 rounded-xl border text-left transition-all cursor-pointer ${
+                                    isRead
+                                      ? 'bg-emerald-50/70 border-emerald-200/80 text-emerald-900'
+                                      : 'bg-slate-50 border-slate-200/80 text-slate-700 hover:bg-slate-100'
+                                  }`}
+                                >
+                                  <div className="mt-0.5 shrink-0">
+                                    {isRead ? (
+                                      <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                                    ) : (
+                                      <div className="w-4 h-4 rounded-md border-2 border-slate-300" />
+                                    )}
+                                  </div>
+                                  <span className={`leading-snug ${isRead ? 'line-through text-slate-400' : 'font-medium'}`}>
+                                    {topic}
+                                  </span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        ) : (
+                          <p className="text-slate-400 italic">ยังไม่ได้ระบุหัวข้อแนวข้อสอบ</p>
+                        )}
+                      </div>
+
+                      {exam.tips && (
+                        <div className="p-3 bg-amber-50 rounded-2xl border border-amber-200/70 text-amber-800">
+                          <span className="font-bold">💡 เกร็ดข้อสอบ: </span>
+                          <span>{exam.tips}</span>
                         </div>
                       )}
                     </div>
-                  </div>
-
-                  {/* Countdown pill */}
-                  <div className="flex items-center justify-between text-xs pt-1 border-t border-slate-100">
-                    <span className="text-slate-500">คะแนนเต็ม {exam.maxScore} คะแนน</span>
-                    <span
-                      className={`font-black px-2.5 py-0.5 rounded-full ${
-                        days === 0
-                          ? 'bg-rose-100 text-rose-800'
-                          : days > 0
-                          ? 'bg-sky-100 text-sky-800'
-                          : 'bg-slate-100 text-slate-600'
-                      }`}
-                    >
-                      {days === 0 ? 'สอบวันนี้' : days > 0 ? `เหลืออีก ${days} วัน` : `สอบผ่านไปแล้ว`}
-                    </span>
-                  </div>
+                  )}
                 </div>
-              );
-            })}
-          </div>
+
+                {/* Primary Action Button: [ ดูรายละเอียด ] */}
+                <button
+                  type="button"
+                  onClick={() => toggleExamTopics(exam.id)}
+                  className="w-full py-2.5 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
+                >
+                  <span>{isDetailsOpen ? 'ซ่อนรายละเอียด' : 'ดูรายละเอียด & Checklist'}</span>
+                  <ChevronDown className={`w-3.5 h-3.5 transition-transform ${isDetailsOpen ? 'rotate-180' : ''}`} />
+                </button>
+              </div>
+            );
+          })}
         </div>
-      )}
+
+        {filteredExams.length === 0 && (
+          <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 text-slate-500 text-xs">
+            ไม่มีรายการสอบในหมวดนี้
+          </div>
+        )}
+      </div>
 
       {/* Exam Modal */}
       {isModalOpen && (

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React from 'react';
 import {
   BarChart,
   Bar,
@@ -6,383 +6,351 @@ import {
   YAxis,
   Tooltip,
   ResponsiveContainer,
-  RadarChart,
-  PolarGrid,
-  PolarAngleAxis,
-  PolarRadiusAxis,
-  Radar,
-  Legend,
+  ReferenceLine,
   Cell,
-  LineChart,
-  Line,
-  CartesianGrid,
 } from 'recharts';
 import {
-  Sparkles,
-  AlertCircle,
-  TrendingUp,
-  Target,
-  Sliders,
-  Award,
-  CheckCircle2,
-  HelpCircle,
-  TrendingDown,
-  Minus,
-  Trophy,
-  ArrowRight,
+  GraduationCap,
   BookOpen,
+  Layers,
+  Target,
+  Sparkles,
+  Heart,
+  TrendingUp,
+  Flame,
+  ArrowRight,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { SemesterToggle } from './SemesterToggle';
-import { scoreToGrade } from '../utils/gradeCalculations';
+import { getSubjectColor } from '../utils/colorUtils';
 
 export const AnalyticsView: React.FC = () => {
-  const { currentSemester, activeSemesterSummary, academicYear, term1Summary, term2Summary } = useGrade();
+  const { currentSemester, activeSemesterSummary, userProfile } = useGrade();
 
-  // Section 13 Tabs: [ คะแนน ] [ จุดแข็ง-จุดอ่อน ] [ เป้าหมาย & เปรียบเทียบ ]
-  const [activeTab, setActiveTab] = useState<'scores' | 'strengths' | 'goals_comparison'>('scores');
+  const subjects = activeSemesterSummary.subjectSummaries;
 
-  // Grade Simulation state for a selected subject in the goals tab
-  const [simulatedSubjectId, setSimulatedSubjectId] = useState<string>(() => {
-    return activeSemesterSummary.subjectSummaries[0]?.subject.id || '';
-  });
+  // Metric values for Card 1
+  const gpa = activeSemesterSummary.gpa;
+  const totalCredits = activeSemesterSummary.totalCredits;
+  const subjectCount = subjects.length;
+  // Calculate average target grade or fallback to 3.80 / 4.00
+  const targetGradeAvg = subjects.length > 0
+    ? (subjects.reduce((sum, s) => sum + (s.subject.targetGrade || 4.0), 0) / subjects.length).toFixed(2)
+    : '4.00';
 
-  const activeSubjectSummary = activeSemesterSummary.subjectSummaries.find(
-    (s) => s.subject.id === simulatedSubjectId
-  ) || activeSemesterSummary.subjectSummaries[0];
-
-  const [simulatedRemainingScore, setSimulatedRemainingScore] = useState<number>(0);
-
-  React.useEffect(() => {
-    if (activeSubjectSummary) {
-      setSimulatedRemainingScore(Math.round(activeSubjectSummary.remainingPoints * 0.8));
-    }
-  }, [simulatedSubjectId, activeSubjectSummary?.remainingPoints]);
-
-  const simulatedTotal = (activeSubjectSummary?.earnedScore || 0) + simulatedRemainingScore;
-  const simulatedGrade = scoreToGrade(simulatedTotal);
-
-  // Prepare chart data
-  const barChartData = activeSemesterSummary.subjectSummaries.map((s) => ({
-    name: s.subject.name.length > 12 ? s.subject.name.substring(0, 10) + '...' : s.subject.name,
+  // Bar Chart Data for Card 2
+  const barChartData = subjects.map((s) => ({
+    name: s.subject.name.length > 8 ? s.subject.name.substring(0, 8) + '..' : s.subject.name,
     fullName: s.subject.name,
     earned: s.earnedScore,
     percentage: Number(s.currentPercentage.toFixed(1)),
-    target: s.subject.targetScore || 80,
+    targetScore: s.subject.targetScore || 80,
+    color: getSubjectColor(s.subject.color),
   }));
 
-  const radarChartData = activeSemesterSummary.subjectSummaries.map((s) => ({
-    subject: s.subject.name.split(' ')[0] || s.subject.name,
-    score: Number(s.currentPercentage.toFixed(1)),
-    target: s.subject.targetScore || 80,
-  }));
+  // Average target score for reference line
+  const avgTargetScore = subjects.length > 0
+    ? Math.round(subjects.reduce((acc, s) => acc + (s.subject.targetScore || 80), 0) / subjects.length)
+    : 80;
 
-  // Strengths & Weaknesses calculation
-  const sortedByScore = [...activeSemesterSummary.subjectSummaries].sort(
-    (a, b) => b.currentPercentage - a.currentPercentage
-  );
-  const strengths = sortedByScore.filter((s) => s.currentPercentage >= 75).slice(0, 3);
-  const weaknesses = [...sortedByScore].reverse().filter((s) => s.currentPercentage < 80).slice(0, 3);
+  // Card 3: Focus List (2-3 subjects with lowest scores)
+  const focusSubjects = [...subjects]
+    .sort((a, b) => a.earnedScore - b.earnedScore)
+    .slice(0, 3);
 
-  // Year comparison data
-  const totalYearCredits = term1Summary.totalCredits + term2Summary.totalCredits;
-  const totalYearPoints =
-    term1Summary.gpa * term1Summary.totalCredits +
-    term2Summary.gpa * term2Summary.totalCredits;
-  const gpax = totalYearCredits > 0 ? totalYearPoints / totalYearCredits : 0;
-
-  const gpaDiff = term2Summary.gpa - term1Summary.gpa;
-
-  const comparisonChartData = [
-    {
-      name: 'เกรดเฉลี่ย (GPA)',
-      term1: Number(term1Summary.gpa.toFixed(2)),
-      term2: Number(term2Summary.gpa.toFixed(2)),
-    },
-    {
-      name: 'คะแนนเฉลี่ย (%)',
-      term1: Number(term1Summary.overallPercentage.toFixed(1)),
-      term2: Number(term2Summary.overallPercentage.toFixed(1)),
-    },
+  // Sweet encouragement messages
+  const cuteMessages = [
+    'วิชานี้อีกนิดเดียว สู้ ๆ นะ! 🌷',
+    'เก็บคะแนนอีกนิดเดียวก็แตะเกรด 4 แล้ว เก่งมาก! ✨',
+    'ทบทวนบทนี้บ่อย ๆ เธอทำได้แน่นอน มี๊เอาใจช่วย! 💖',
   ];
 
   return (
     <div className="space-y-6 pb-8">
-      {/* SECTION 13: Top Header "📊 ภาพรวมของฉัน" */}
-      <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div>
-            <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                📊 ภาพรวมของฉัน
-              </h2>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
-                ปีการศึกษา {academicYear.year}
-              </span>
+      {/* Top Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
+        <div>
+          <div className="flex items-center gap-2">
+            <div className="w-9 h-9 rounded-full bg-violet-50 text-violet-600 flex items-center justify-center shadow-2xs">
+              <Sparkles className="w-4.5 h-4.5" />
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
-              วิเคราะห์คะแนน จุดแข็ง-จุดอ่อน และจำลองเป้าหมายเกรด
-            </p>
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+              สถิติ & วิเคราะห์ผลการเรียน
+            </h2>
           </div>
-
-          <SemesterToggle size="sm" />
+          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            ภาพรวมผลการเรียน คะแนนรายวิชา และคำแนะนำเพื่อเกรดที่ตั้งเป้าไว้
+          </p>
         </div>
 
-        {/* 4 Quick Overview metrics */}
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 pt-1">
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">เกรดเฉลี่ย GPA</span>
-            <span className="text-xl font-black text-slate-900">{activeSemesterSummary.gpa.toFixed(2)}</span>
+        <SemesterToggle size="sm" />
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━ CARD 1: สรุปผลการเรียน ━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-pink-50 text-pink-600 flex items-center justify-center shadow-2xs">
+              <GraduationCap className="w-4 h-4" />
+            </div>
+            <h3 className="font-extrabold text-slate-900 text-lg tracking-tight">
+              สรุปผลการเรียน
+            </h3>
           </div>
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนนเฉลี่ย</span>
-            <span className="text-xl font-black text-slate-900">{activeSemesterSummary.overallPercentage.toFixed(1)}%</span>
-          </div>
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">วิชาถึงเป้าหมาย</span>
-            <span className="text-xl font-black text-slate-900">
-              {activeSemesterSummary.subjectSummaries.filter((s) => s.targetAchieved).length} / {activeSemesterSummary.subjectSummaries.length}
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600">
+            ภาคเรียนที่ {currentSemester === 'term1' ? '1' : '2'}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 pt-1">
+          {/* เกรดเฉลี่ย */}
+          <div className="p-4 rounded-3xl bg-pink-50/60 border border-pink-200/70 space-y-2">
+            <div className="flex items-center gap-2 text-pink-700">
+              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                <GraduationCap className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold">เกรดเฉลี่ย (GPA)</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {gpa.toFixed(2)}
+            </div>
+            <span className="text-[11px] text-pink-700 font-semibold block">
+              ผลการเรียนคาดการณ์
             </span>
           </div>
-          <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/60">
-            <span className="text-[10px] text-slate-400 font-bold uppercase block">เกรดเฉลี่ยสะสม GPAX</span>
-            <span className="text-xl font-black text-indigo-600">{gpax.toFixed(2)}</span>
-          </div>
-        </div>
 
-        {/* SECTION 13 TABS: [ คะแนน ] [ จุดแข็ง-จุดอ่อน ] [ เป้าหมาย & เปรียบเทียบ ] */}
-        <div className="flex items-center gap-2 pt-2 border-t border-slate-100 overflow-x-auto scrollbar-none">
-          {[
-            { id: 'scores' as const, label: '📈 คะแนน' },
-            { id: 'strengths' as const, label: '🎯 จุดแข็ง-จุดอ่อน' },
-            { id: 'goals_comparison' as const, label: '🔄 เป้าหมาย & เปรียบเทียบ' },
-          ].map((tab) => {
-            const isActive = activeTab === tab.id;
-            return (
-              <button
-                key={tab.id}
-                type="button"
-                onClick={() => setActiveTab(tab.id)}
-                className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
-                  isActive
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
-                }`}
-              >
-                {tab.label}
-              </button>
-            );
-          })}
+          {/* หน่วยกิตรวม */}
+          <div className="p-4 rounded-3xl bg-sky-50/60 border border-sky-200/70 space-y-2">
+            <div className="flex items-center gap-2 text-sky-700">
+              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                <Layers className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold">หน่วยกิตรวม</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {totalCredits}{' '}
+              <span className="text-xs font-normal text-slate-500">นก.</span>
+            </div>
+            <span className="text-[11px] text-sky-700 font-semibold block">
+              ลงทะเบียนครบถ้วน
+            </span>
+          </div>
+
+          {/* จำนวนวิชา */}
+          <div className="p-4 rounded-3xl bg-purple-50/60 border border-purple-200/70 space-y-2">
+            <div className="flex items-center gap-2 text-purple-700">
+              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                <BookOpen className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold">จำนวนวิชา</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {subjectCount}{' '}
+              <span className="text-xs font-normal text-slate-500">วิชา</span>
+            </div>
+            <span className="text-[11px] text-purple-700 font-semibold block">
+              รายวิชาทั้งหมดในเทอม
+            </span>
+          </div>
+
+          {/* เป้าหมายเกรด */}
+          <div className="p-4 rounded-3xl bg-amber-50/60 border border-amber-200/70 space-y-2">
+            <div className="flex items-center gap-2 text-amber-700">
+              <div className="w-7 h-7 rounded-full bg-white flex items-center justify-center shadow-2xs">
+                <Target className="w-3.5 h-3.5" />
+              </div>
+              <span className="text-xs font-bold">เป้าหมายเกรด</span>
+            </div>
+            <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+              {targetGradeAvg}
+            </div>
+            <span className="text-[11px] text-amber-700 font-semibold block">
+              เป้าหมายเฉลี่ยรายวิชา
+            </span>
+          </div>
         </div>
       </div>
 
-      {/* TAB 1: [ คะแนน ] */}
-      {activeTab === 'scores' && (
-        <div className="space-y-5 animate-in fade-in duration-200">
-          <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+      {/* ━━━━━━━━━━━━━━━━━━━━ CARD 2: กราฟแท่งคะแนนแต่ละวิชา ━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+          <div>
+            <h3 className="font-extrabold text-slate-900 text-lg tracking-tight">
+              กราฟคะแนนแต่ละวิชา
+            </h3>
+            <p className="text-xs text-slate-500 mt-0.5">
+              แกน Y: คะแนน (0-100) • แกน X: ชื่อวิชา • เส้นประสีแดงแสดงเป้าหมาย ({avgTargetScore} คะแนน)
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3 text-xs font-medium text-slate-600">
+            <div className="flex items-center gap-1.5">
+              <span className="w-3 h-3 rounded-full bg-indigo-500 inline-block shadow-2xs" />
+              <span>คะแนนปัจจุบัน</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="w-4 h-0.5 border-t-2 border-dashed border-rose-500 inline-block" />
+              <span className="text-rose-600 font-bold">เป้าหมาย</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="h-64 sm:h-72 w-full pt-2">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart
+              data={barChartData}
+              margin={{ top: 20, right: 15, left: -20, bottom: 20 }}
+            >
+              <XAxis
+                dataKey="name"
+                tick={{ fontSize: 11, fill: '#64748b' }}
+                axisLine={{ stroke: '#e2e8f0' }}
+                tickLine={false}
+              />
+              <YAxis
+                domain={[0, 100]}
+                tick={{ fontSize: 11, fill: '#64748b' }}
+                axisLine={{ stroke: '#e2e8f0' }}
+                tickLine={false}
+              />
+              <Tooltip
+                content={({ active, payload }) => {
+                  if (active && payload && payload.length) {
+                    const data = payload[0].payload;
+                    return (
+                      <div className="bg-slate-900 text-white px-3.5 py-2.5 rounded-2xl shadow-lg text-xs space-y-1">
+                        <p className="font-extrabold">{data.fullName}</p>
+                        <p className="text-slate-300">
+                          คะแนนปัจจุบัน: <span className="font-bold text-white">{data.earned}</span> / 100
+                        </p>
+                        <p className="text-rose-300">
+                          เป้าหมาย: <span className="font-bold text-white">{data.targetScore}</span> คะแนน
+                        </p>
+                      </div>
+                    );
+                  }
+                  return null;
+                }}
+              />
+              {/* เส้นประสีแดง แสดงเป้าหมาย */}
+              <ReferenceLine
+                y={avgTargetScore}
+                stroke="#ef4444"
+                strokeDasharray="4 4"
+                strokeWidth={1.5}
+                label={{
+                  value: `เป้าหมาย (${avgTargetScore})`,
+                  fill: '#ef4444',
+                  fontSize: 10,
+                  position: 'insideTopRight',
+                  fontWeight: 'bold',
+                }}
+              />
+              <Bar
+                dataKey="earned"
+                fill="#6366f1"
+                radius={[8, 8, 0, 0]}
+              >
+                {barChartData.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={entry.color || '#6366f1'} />
+                ))}
+              </Bar>
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </div>
+
+      {/* ━━━━━━━━━━━━━━━━━━━━ CARD 3: แนะนำวิชาที่ควรโฟกัส (Focus List) ━━━━━━━━━━━━━━━━━━━━ */}
+      <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-full bg-rose-50 text-rose-500 flex items-center justify-center shadow-2xs">
+              <Flame className="w-4 h-4" />
+            </div>
             <div>
-              <h3 className="text-base font-black text-slate-900">
-                กราฟเปรียบเทียบคะแนนสะสมรายวิชา (เต็ม 100 คะแนน)
+              <h3 className="font-extrabold text-slate-900 text-lg tracking-tight">
+                แนะนำวิชาที่ควรโฟกัส (Focus List)
               </h3>
               <p className="text-xs text-slate-500">
-                แท่งสีทึบคือคะแนนที่ได้แล้ว เส้นปะสีส้มคือเป้าหมายคะแนน
+                2-3 วิชาที่คะแนนยังสามารถพัฒนาได้ เพื่อแตะเป้าหมายเกรดในฝัน
               </p>
             </div>
-
-            <div className="h-64 sm:h-72 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={barChartData} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis domain={[0, 100]} tick={{ fontSize: 11 }} />
-                  <Tooltip
-                    formatter={(value: any, name: any) => [
-                      `${value} คะแนน`,
-                      name === 'earned' ? 'คะแนนที่ได้' : 'เป้าหมาย',
-                    ]}
-                  />
-                  <Bar dataKey="earned" fill="#6366f1" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="target" fill="#f59e0b" opacity={0.3} radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
           </div>
+          <span className="text-xs font-bold px-3 py-1 rounded-full bg-rose-50 text-rose-700 border border-rose-200/80">
+            แนะนำเร่งด่วน
+          </span>
         </div>
-      )}
 
-      {/* TAB 2: [ จุดแข็ง-จุดอ่อน ] (Section 13 format: 🟢 ทำได้ดี vs 🔴 ควรโฟกัส) */}
-      {activeTab === 'strengths' && (
-        <div className="space-y-5 animate-in fade-in duration-200">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* 🟢 ทำได้ดี */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🟢</span>
-                <h4 className="font-black text-slate-900 text-base">ทำได้ดี (Strengths)</h4>
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 pt-1">
+          {focusSubjects.map((s, index) => {
+            const cuteMsg = cuteMessages[index] || cuteMessages[0];
+            const neededScore = Math.max(0, (s.subject.targetScore || 80) - s.earnedScore);
 
-              <div className="space-y-2">
-                {strengths.map((s) => (
-                  <div
-                    key={s.subject.id}
-                    className="p-3 rounded-2xl bg-emerald-50/60 border border-emerald-200/70 flex items-center justify-between"
-                  >
-                    <div>
-                      <span className="font-black text-xs text-slate-900 block">{s.subject.name}</span>
-                      <span className="text-[11px] text-emerald-700">
-                        เกรด {s.estimatedGradeLetter} • สะสม {s.earnedScore}/100
+            return (
+              <div
+                key={s.subject.id}
+                className="p-4.5 rounded-3xl bg-slate-50/80 border border-slate-200/80 hover:border-slate-300 transition-all flex flex-col justify-between space-y-3.5 shadow-2xs"
+              >
+                <div className="space-y-2.5">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-full flex items-center justify-center font-black text-sm text-white shrink-0 shadow-2xs"
+                      style={{ backgroundColor: getSubjectColor(s.subject.color) }}
+                    >
+                      {s.subject.name.charAt(0)}
+                    </div>
+                    <div className="min-w-0">
+                      <h4 className="font-extrabold text-slate-900 text-sm truncate">
+                        {s.subject.name}
+                      </h4>
+                      <span className="text-xs font-semibold text-slate-400 block truncate">
+                        รหัส {s.subject.code} • {s.subject.credits} หน่วยกิต
                       </span>
                     </div>
-                    <span className="text-sm font-black text-emerald-800">
-                      {s.currentPercentage.toFixed(0)}%
-                    </span>
                   </div>
-                ))}
-                {strengths.length === 0 && (
-                  <p className="text-xs text-slate-400 italic py-2">ยังไม่มีวิชาที่มีคะแนนมากกว่า 75%</p>
-                )}
-              </div>
-            </div>
 
-            {/* 🔴 ควรโฟกัส */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <div className="flex items-center gap-2">
-                <span className="text-lg">🔴</span>
-                <h4 className="font-black text-slate-900 text-base">ควรโฟกัส (Areas to Focus)</h4>
-              </div>
-
-              <div className="space-y-2">
-                {weaknesses.map((s) => (
-                  <div
-                    key={s.subject.id}
-                    className="p-3 rounded-2xl bg-rose-50/60 border border-rose-200/70 flex items-center justify-between"
-                  >
+                  <div className="flex items-center justify-between p-3 bg-white rounded-2xl border border-slate-200/70 text-xs">
                     <div>
-                      <span className="font-black text-xs text-slate-900 block">{s.subject.name}</span>
-                      <span className="text-[11px] text-rose-700">
-                        เหลือให้เก็บอีก {s.remainingPoints} แต้ม • เป้าหมาย {s.subject.targetGrade}
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">คะแนนสะสม</span>
+                      <span className="font-black text-slate-900 text-base">
+                        {s.earnedScore}{' '}
+                        <span className="text-[11px] font-normal text-slate-400">/ 100</span>
                       </span>
                     </div>
-                    <span className="text-sm font-black text-rose-800">
-                      {s.currentPercentage.toFixed(0)}%
-                    </span>
+                    <div className="text-right">
+                      <span className="text-[10px] font-bold text-slate-400 block uppercase">เกรดคาดการณ์</span>
+                      <span className="inline-block px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 font-black text-xs">
+                        เกรด {s.estimatedGrade}
+                      </span>
+                    </div>
                   </div>
-                ))}
-                {weaknesses.length === 0 && (
-                  <p className="text-xs text-slate-400 italic py-2">ยอดเยี่ยม! ทุกวิชาทำคะแนนได้มากกว่า 80%</p>
-                )}
-              </div>
-            </div>
-          </div>
 
-          {/* Radar Chart for balance */}
-          {radarChartData.length >= 3 && (
-            <div className="bg-white p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
-              <h4 className="font-black text-slate-900 text-sm">สมดุลคะแนนรอบด้าน (Skill Balance)</h4>
-              <div className="h-64 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart data={radarChartData}>
-                    <PolarGrid />
-                    <PolarAngleAxis dataKey="subject" tick={{ fontSize: 11 }} />
-                    <PolarRadiusAxis angle={30} domain={[0, 100]} tick={{ fontSize: 10 }} />
-                    <Radar name="คะแนนที่ได้" dataKey="score" stroke="#6366f1" fill="#6366f1" fillOpacity={0.4} />
-                    <Radar name="เป้าหมาย" dataKey="target" stroke="#f59e0b" fill="#f59e0b" fillOpacity={0.1} />
-                    <Legend />
-                  </RadarChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* TAB 3: [ เป้าหมาย & เปรียบเทียบ ] */}
-      {activeTab === 'goals_comparison' && (
-        <div className="space-y-5 animate-in fade-in duration-200">
-          {/* Simulator */}
-          {activeSubjectSummary && (
-            <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
-                <div>
-                  <h4 className="font-black text-slate-900 text-base">เครื่องจำลองผลเกรดล่วงหน้า</h4>
-                  <p className="text-xs text-slate-500">
-                    ทดลองเลื่อนคะแนนที่เหลือเพื่อดูเกรดที่คาดว่าจะได้รับ
-                  </p>
+                  {/* Encouraging message */}
+                  <div className="p-3 bg-pink-50/70 rounded-2xl border border-pink-200/70 text-xs text-pink-800 font-medium leading-relaxed flex items-start gap-2">
+                    <Heart className="w-3.5 h-3.5 text-pink-500 shrink-0 mt-0.5" />
+                    <span>{cuteMsg}</span>
+                  </div>
                 </div>
-                <select
-                  value={simulatedSubjectId}
-                  onChange={(e) => setSimulatedSubjectId(e.target.value)}
-                  className="text-xs font-bold px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200"
-                >
-                  {activeSemesterSummary.subjectSummaries.map((s) => (
-                    <option key={s.subject.id} value={s.subject.id}>
-                      {s.subject.name}
-                    </option>
-                  ))}
-                </select>
-              </div>
 
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-3">
-                <div className="flex justify-between text-xs">
-                  <span className="text-slate-600 font-medium">คะแนนที่ได้แล้ว: {activeSubjectSummary.earnedScore}</span>
-                  <span className="font-black text-indigo-600">
-                    จำลองเก็บเพิ่ม: +{simulatedRemainingScore} / {activeSubjectSummary.remainingPoints}
+                <div className="pt-2 border-t border-slate-200/60 flex items-center justify-between text-xs">
+                  <span className="text-slate-500 text-[11px]">
+                    ขาดอีก <span className="font-extrabold text-slate-900">{neededScore} คะแนน</span> ถึงเป้าหมาย
                   </span>
-                </div>
-
-                <input
-                  type="range"
-                  min="0"
-                  max={activeSubjectSummary.remainingPoints}
-                  value={simulatedRemainingScore}
-                  onChange={(e) => setSimulatedRemainingScore(Number(e.target.value))}
-                  className="w-full accent-indigo-600 cursor-pointer"
-                />
-
-                <div className="flex items-center justify-between pt-2 border-t border-slate-200">
-                  <span className="text-xs text-slate-600 font-medium">คะแนนรวมจำลอง: {simulatedTotal} คะแนน</span>
-                  <span className="text-sm font-black px-3 py-1 rounded-lg bg-indigo-600 text-white shadow-2xs">
-                    เกรดที่คาดว่าจะได้: {simulatedGrade}
+                  <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200/80">
+                    🎯 เป้า {s.subject.targetGrade}
                   </span>
                 </div>
               </div>
-            </div>
-          )}
-
-          {/* Year Comparison: Term 1 vs Term 2 */}
-          <div className="bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h4 className="font-black text-slate-900 text-base">เปรียบเทียบภาคเรียนที่ 1 vs ภาคเรียนที่ 2</h4>
-                <p className="text-xs text-slate-500">ภาพรวมการพัฒนาผลการเรียนตลอดทั้งปีการศึกษา</p>
-              </div>
-
-              <div className="text-right">
-                <span className="text-[10px] text-slate-400 font-bold uppercase block">การเปลี่ยนแปลง GPA</span>
-                <span
-                  className={`text-sm font-black ${
-                    gpaDiff > 0 ? 'text-emerald-600' : gpaDiff < 0 ? 'text-rose-600' : 'text-slate-700'
-                  }`}
-                >
-                  {gpaDiff > 0 ? `+${gpaDiff.toFixed(2)}` : gpaDiff.toFixed(2)}
-                </span>
-              </div>
-            </div>
-
-            <div className="h-56 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={comparisonChartData} margin={{ top: 10, right: 10, left: -10, bottom: 10 }}>
-                  <XAxis dataKey="name" tick={{ fontSize: 11 }} />
-                  <YAxis tick={{ fontSize: 11 }} />
-                  <Tooltip />
-                  <Legend />
-                  <Bar dataKey="term1" name="เทอม 1" fill="#3b82f6" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="term2" name="เทอม 2" fill="#ec4899" radius={[6, 6, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </div>
+            );
+          })}
         </div>
-      )}
+
+        {focusSubjects.length === 0 && (
+          <div className="p-8 text-center text-slate-400 text-xs italic">
+            ยังไม่มีรายวิชาในภาคเรียนนี้
+          </div>
+        )}
+      </div>
     </div>
   );
 };

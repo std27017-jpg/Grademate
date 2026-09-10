@@ -4,17 +4,40 @@ import {
   SemesterSummary,
   ScorePeriodKey,
   SemesterId,
+  NumericGrade,
+  CustomGradeScale,
 } from '../types';
 
-export const GRADE_SCALE = [
-  { min: 80, grade: 4.0, letter: 'A', label: 'เกรด 4 (A)', color: 'text-emerald-600 bg-emerald-50 border-emerald-200' },
-  { min: 75, grade: 3.5, letter: 'B+', label: 'เกรด 3.5 (B+)', color: 'text-teal-600 bg-teal-50 border-teal-200' },
-  { min: 70, grade: 3.0, letter: 'B', label: 'เกรด 3 (B)', color: 'text-blue-600 bg-blue-50 border-blue-200' },
-  { min: 65, grade: 2.5, letter: 'C+', label: 'เกรด 2.5 (C+)', color: 'text-sky-600 bg-sky-50 border-sky-200' },
-  { min: 60, grade: 2.0, letter: 'C', label: 'เกรด 2 (C)', color: 'text-amber-600 bg-amber-50 border-amber-200' },
-  { min: 55, grade: 1.5, letter: 'D+', label: 'เกรด 1.5 (D+)', color: 'text-orange-600 bg-orange-50 border-orange-200' },
-  { min: 50, grade: 1.0, letter: 'D', label: 'เกรด 1 (D)', color: 'text-rose-500 bg-rose-50 border-rose-200' },
-  { min: 0, grade: 0.0, letter: 'F', label: 'เกรด 0 (F)', color: 'text-rose-700 bg-rose-100 border-rose-300' },
+export const NUMERIC_GRADES: NumericGrade[] = [4, 3.5, 3, 2.5, 2, 1.5, 1, 0];
+
+export const DEFAULT_GRADE_THRESHOLDS: CustomGradeScale = {
+  4: 80,
+  3.5: 75,
+  3: 70,
+  2.5: 65,
+  2: 60,
+  1.5: 55,
+  1: 50,
+  0: 0,
+};
+
+export interface GradeMetaInfo {
+  grade: NumericGrade;
+  defaultMin: number;
+  label: string;
+  badgeClass: string;
+  textColor: string;
+}
+
+export const GRADE_META_LIST: GradeMetaInfo[] = [
+  { grade: 4, defaultMin: 80, label: 'เกรด 4', badgeClass: 'bg-emerald-50 text-emerald-700 border-emerald-200', textColor: 'text-emerald-600' },
+  { grade: 3.5, defaultMin: 75, label: 'เกรด 3.5', badgeClass: 'bg-teal-50 text-teal-700 border-teal-200', textColor: 'text-teal-600' },
+  { grade: 3, defaultMin: 70, label: 'เกรด 3', badgeClass: 'bg-blue-50 text-blue-700 border-blue-200', textColor: 'text-blue-600' },
+  { grade: 2.5, defaultMin: 65, label: 'เกรด 2.5', badgeClass: 'bg-sky-50 text-sky-700 border-sky-200', textColor: 'text-sky-600' },
+  { grade: 2, defaultMin: 60, label: 'เกรด 2', badgeClass: 'bg-amber-50 text-amber-700 border-amber-200', textColor: 'text-amber-600' },
+  { grade: 1.5, defaultMin: 55, label: 'เกรด 1.5', badgeClass: 'bg-orange-50 text-orange-700 border-orange-200', textColor: 'text-orange-600' },
+  { grade: 1, defaultMin: 50, label: 'เกรด 1', badgeClass: 'bg-rose-50 text-rose-700 border-rose-200', textColor: 'text-rose-600' },
+  { grade: 0, defaultMin: 0, label: 'เกรด 0', badgeClass: 'bg-rose-100 text-rose-800 border-rose-300', textColor: 'text-rose-700' },
 ];
 
 export const PERIOD_CONFIG: Record<
@@ -43,21 +66,40 @@ export const PERIOD_CONFIG: Record<
   },
 };
 
-export function scoreToGrade(score: number): { grade: number; letter: string } {
-  for (const item of GRADE_SCALE) {
-    if (score >= item.min) {
-      return { grade: item.grade, letter: item.letter };
+export function scoreToGrade(
+  score: number,
+  thresholds: CustomGradeScale = DEFAULT_GRADE_THRESHOLDS
+): { grade: NumericGrade; letter: string; label: string } {
+  // Sort descending by min score
+  for (const grade of NUMERIC_GRADES) {
+    const min = thresholds[grade] ?? 0;
+    if (score >= min) {
+      return {
+        grade,
+        letter: grade.toString(),
+        label: `เกรด ${grade}`,
+      };
     }
   }
-  return { grade: 0.0, letter: 'F' };
+
+  return {
+    grade: 0,
+    letter: '0',
+    label: 'เกรด 0',
+  };
 }
 
-export function gradeToMinScore(grade: number): number {
-  const match = GRADE_SCALE.find((item) => item.grade === grade);
-  return match ? match.min : 80;
+export function gradeToMinScore(
+  grade: NumericGrade,
+  thresholds: CustomGradeScale = DEFAULT_GRADE_THRESHOLDS
+): number {
+  return thresholds[grade] ?? 0;
 }
 
-export function calculateSubjectSummary(subject: Subject): SubjectScoreSummary {
+export function calculateSubjectSummary(
+  subject: Subject,
+  thresholds: CustomGradeScale = DEFAULT_GRADE_THRESHOLDS
+): SubjectScoreSummary {
   const periodKeys: ScorePeriodKey[] = ['preMidterm', 'midterm', 'postMidterm', 'final'];
   
   let totalEarned = 0;
@@ -102,19 +144,18 @@ export function calculateSubjectSummary(subject: Subject): SubjectScoreSummary {
     };
   });
 
-  // Calculate remaining score based on standard 100 points scale (or sum of period weights)
-  // Standard course scale is 100 points. If totalMaxRecorded < 100, remaining = 100 - totalMaxRecorded.
+  // Calculate remaining score based on standard 100 points scale
   const baselineTotal = totalWeight > 0 ? totalWeight : 100;
   const remainingPoints = Math.max(0, baselineTotal - totalMaxRecorded);
   const maxPossibleTotal = totalEarned + remainingPoints;
 
   const currentPercentage = totalMaxRecorded > 0 ? (totalEarned / totalMaxRecorded) * 100 : 0;
   
-  // Estimated final grade based on projected current score + average performance, or raw normalized
+  // Estimated final score normalized to baseline
   const projectedFinalScore = totalMaxRecorded > 0 ? (totalEarned / totalMaxRecorded) * baselineTotal : 0;
-  const { grade: estimatedGrade, letter: estimatedGradeLetter } = scoreToGrade(projectedFinalScore);
+  const { grade: estimatedGrade, letter: estimatedGradeLetter } = scoreToGrade(projectedFinalScore, thresholds);
 
-  const targetScore = subject.targetScore || gradeToMinScore(subject.targetGrade || 4.0);
+  const targetScore = subject.targetScore || gradeToMinScore(subject.targetGrade, thresholds);
   const targetAchieved = totalEarned >= targetScore;
   const canStillAchieveTarget = maxPossibleTotal >= targetScore;
   const pointsNeededForTarget = Math.max(0, targetScore - totalEarned);
@@ -138,7 +179,8 @@ export function calculateSubjectSummary(subject: Subject): SubjectScoreSummary {
 
 export function calculateSemesterSummary(
   semesterId: SemesterId,
-  subjects: Subject[]
+  subjects: Subject[],
+  thresholds: CustomGradeScale = DEFAULT_GRADE_THRESHOLDS
 ): SemesterSummary {
   const semesterSubjects = subjects.filter((s) => s.semesterId === semesterId);
   const semesterName = semesterId === 'term1' ? 'เทอม 1' : 'เทอม 2';
@@ -159,7 +201,7 @@ export function calculateSemesterSummary(
     };
   }
 
-  const subjectSummaries = semesterSubjects.map(calculateSubjectSummary);
+  const subjectSummaries = semesterSubjects.map((s) => calculateSubjectSummary(s, thresholds));
 
   let totalCreditPoints = 0;
   let totalCredits = 0;
@@ -190,26 +232,25 @@ export function calculateSemesterSummary(
   const needsImprovementSubject = sortedByNeed[0]?.subject || null;
 
   // Focus advice algorithm
-  // Priority rule: Subjects furthest from target score where target is still possible have highest priority
   const focusAdvice = subjectSummaries
     .map((sum) => {
-      const targetScore = sum.subject.targetScore || 80;
+      const targetScore = sum.subject.targetScore || gradeToMinScore(sum.subject.targetGrade, thresholds);
       const gap = Math.max(0, targetScore - sum.earnedScore);
-      const targetLetter = sum.subject.targetGrade >= 4 ? 'A' : sum.subject.targetGrade >= 3.5 ? 'B+' : 'B';
+      const targetGradeStr = `เกรด ${sum.subject.targetGrade}`;
       
       let priority = 1;
       let message = '';
 
       if (sum.targetAchieved) {
         priority = 4;
-        message = `คะแนนทะลุเป้าหมายเกรด ${targetLetter} เรียบร้อยแล้ว ยอดเยี่ยมมาก!`;
+        message = `คะแนนทะลุเป้าหมาย${targetGradeStr} เรียบร้อยแล้ว ยอดเยี่ยมมาก!`;
       } else if (!sum.canStillAchieveTarget) {
         priority = 3;
-        message = `คะแนนสูงสุดที่เป็นไปได้คือ ${sum.maxPossibleTotal} คะแนน ไม่ถึงเป้า ${targetScore} (${targetLetter}) แนะนำปรับเป้าหมายรองรับเกรดสูงสุดที่เป็นไปได้`;
+        message = `คะแนนสูงสุดที่เป็นไปได้คือ ${sum.maxPossibleTotal} คะแนน ไม่ถึงเป้า${targetGradeStr} (${targetScore} คะแนน) แนะนำปรับเป้าหมายรองรับเกรดสูงสุดที่เป็นไปได้`;
       } else {
         // Still can achieve
         priority = sum.currentPercentage < 70 ? 1 : 2;
-        message = `ควรโฟกัสเป็นอันดับ ${priority === 1 ? '1' : 'สำคัญ'} เพราะคะแนนปัจจุบัน (${sum.earnedScore}/${sum.totalMaxScoreRecorded}) ยังห่างจากเป้าหมาย ${targetLetter} อยู่ ${gap} คะแนน และยังมีคะแนนส่วนที่เหลือให้เก็บอีก ${sum.remainingPoints} คะแนน`;
+        message = `ควรโฟกัสเป็นอันดับ ${priority === 1 ? '1' : 'สำคัญ'} เพราะคะแนนปัจจุบัน (${sum.earnedScore}/${sum.totalMaxScoreRecorded}) ยังห่างจากเป้าหมาย${targetGradeStr} อยู่ ${gap} คะแนน และยังมีคะแนนส่วนที่เหลือให้เก็บอีก ${sum.remainingPoints} คะแนน`;
       }
 
       return {

@@ -22,6 +22,7 @@ import {
   FileText,
   Layers,
   ArrowRight,
+  Palette,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
@@ -34,6 +35,8 @@ import {
 } from '../utils/gradeCalculations';
 import { SemesterToggle } from './SemesterToggle';
 import { EditSubjectScoresModal } from './EditSubjectScoresModal';
+import { QuickColorModal } from './QuickColorModal';
+import { getSubjectColor, getContrastTextColor } from '../utils/colorUtils';
 
 interface SubjectsViewProps {
   onOpenAddSubject: () => void;
@@ -74,6 +77,9 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
 
   // Quick score edit modal
   const [editingScoresSubject, setEditingScoresSubject] = useState<Subject | null>(null);
+
+  // Quick subject color modal (pastel & wheel)
+  const [colorModalSubject, setColorModalSubject] = useState<Subject | null>(null);
 
   // Active tab inside selected subject detail: 'overview' | 'scores' | 'tasks' | 'exams'
   const [detailTab, setDetailTab] = useState<'overview' | 'scores' | 'tasks' | 'exams'>('overview');
@@ -180,14 +186,17 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
           <div>
             <div className="flex items-center gap-2">
-              <h2 className="text-2xl font-black text-slate-900 tracking-tight">
-                วิชาของฉัน (My Subjects)
+              <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
+                <BookOpen className="w-4.5 h-4.5" />
+              </div>
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                วิชาของฉัน
               </h2>
-              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-slate-100 text-slate-700">
+              <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">
                 {activeSemesterSummary.subjectSummaries.length} วิชา
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-0.5">
+            <p className="text-xs sm:text-sm text-slate-500 mt-1">
               คลิกที่การ์ดเพื่อดูรายละเอียดคะแนน งาน และการสอบแบบเจาะลึก
             </p>
           </div>
@@ -197,7 +206,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <button
               type="button"
               onClick={onOpenAddSubject}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มวิชาใหม่</span>
@@ -206,7 +215,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         </div>
 
         {/* Compact Grid of Subject Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
           {activeSemesterSummary.subjectSummaries.map((subSummary) => {
             const sub = subSummary.subject;
             const progress = Math.min(100, subSummary.currentPercentage);
@@ -216,35 +225,59 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                 key={sub.id}
                 className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
               >
-                <div className="space-y-3">
+                <div className="space-y-3.5">
                   {/* Top Bar: Icon + Code + Options */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-2.5 min-w-0">
-                      <div
-                        className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-xs shrink-0 font-black text-sm"
-                        style={{ backgroundColor: sub.color || '#6366f1' }}
+                    <div className="flex items-center gap-3 min-w-0">
+                      {/* Clickable color circle avatar with palette hover badge */}
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setColorModalSubject(sub);
+                        }}
+                        className="w-11 h-11 rounded-full flex items-center justify-center shadow-2xs shrink-0 font-black text-sm hover:scale-105 active:scale-95 transition-all cursor-pointer relative group/color"
+                        style={{
+                          backgroundColor: getSubjectColor(sub.color),
+                          color: getContrastTextColor(getSubjectColor(sub.color)),
+                        }}
+                        title="คลิกเพื่อปรับเปลี่ยนสีวิชานี้ (สีพาสเทล / วงล้อสี)"
                       >
                         {sub.name.charAt(0)}
-                      </div>
+                        <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-2xs opacity-0 group-hover/color:opacity-100 transition-opacity border border-slate-200">
+                          <Palette className="w-2.5 h-2.5 text-indigo-600" />
+                        </span>
+                      </button>
                       <div className="min-w-0">
                         <h4 className="font-extrabold text-slate-900 text-base leading-snug truncate group-hover:text-indigo-600 transition-colors">
                           {sub.name}
                         </h4>
-                        <span className="text-[11px] font-semibold text-slate-400 block truncate">
+                        <span className="text-xs font-semibold text-slate-400 block truncate">
                           {sub.code} • {sub.credits} หน่วยกิต
                         </span>
                       </div>
                     </div>
 
-                    {/* Quick Edit/Delete buttons */}
-                    <div className="flex items-center gap-1 opacity-80 group-hover:opacity-100 transition-opacity">
+                    {/* Quick Edit/Palette/Delete buttons */}
+                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setColorModalSubject(sub);
+                        }}
+                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-pink-600 rounded-full hover:bg-pink-50 transition-colors cursor-pointer"
+                        title="ปรับสีวิชา (พาสเทล/วงล้อสี)"
+                      >
+                        <Palette className="w-3.5 h-3.5" />
+                      </button>
                       <button
                         type="button"
                         onClick={(e) => {
                           e.stopPropagation();
                           onOpenEditSubject(sub);
                         }}
-                        className="p-1.5 text-slate-400 hover:text-indigo-600 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
                         title="แก้ไขข้อมูลวิชา"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -255,7 +288,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                           e.stopPropagation();
                           handleDeleteSubjectClick(sub);
                         }}
-                        className="p-1.5 text-slate-400 hover:text-rose-600 rounded-lg hover:bg-rose-50 transition-colors cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
                         title="ลบวิชา"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
@@ -264,35 +297,37 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   </div>
 
                   {/* Level 1 & Level 2 Information: Score + Grade + Target */}
-                  <div className="p-3 bg-slate-50 rounded-2xl border border-slate-200/60 space-y-2">
+                  <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-2.5">
                     <div className="flex items-center justify-between">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนนปัจจุบัน</span>
-                        <span className="text-xl font-black text-slate-900">
+                        <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนน</span>
+                        <span className="text-2xl font-black text-slate-900 tracking-tight">
                           {subSummary.earnedScore}{' '}
                           <span className="text-xs font-normal text-slate-400">/ 100</span>
                         </span>
                       </div>
-                      <div className="text-right">
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">เกรดคาดการณ์</span>
-                        <span className="inline-block px-2.5 py-0.5 rounded-lg bg-white border border-slate-200 font-black text-sm text-slate-800 shadow-2xs">
-                          {subSummary.estimatedGradeLetter}
+                      <div className="text-right flex items-center gap-1.5">
+                        <span className="inline-block px-3 py-1 rounded-full bg-white border border-slate-200 font-extrabold text-xs text-slate-800 shadow-2xs">
+                          เกรด {subSummary.estimatedGrade}
+                        </span>
+                        <span className="inline-block px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 font-bold text-xs">
+                          🎯 เป้าหมาย {sub.targetGrade}
                         </span>
                       </div>
                     </div>
 
-                    {/* Progress Bar */}
+                    {/* Rounded Progress Bar */}
                     <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-slate-500 font-medium">
-                        <span>🎯 เป้าหมาย {sub.targetGrade} ({sub.targetScore} คะแนน)</span>
+                      <div className="flex justify-between text-[10px] text-slate-500 font-semibold">
+                        <span>ความคืบหน้า</span>
                         <span>{progress.toFixed(0)}%</span>
                       </div>
-                      <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
                         <div
-                          className="h-full rounded-full transition-all duration-300"
+                          className="h-full rounded-full transition-all duration-500 ease-out"
                           style={{
                             width: `${progress}%`,
-                            backgroundColor: sub.color || '#6366f1',
+                            backgroundColor: getSubjectColor(sub.color),
                           }}
                         />
                       </div>
@@ -300,13 +335,13 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   </div>
                 </div>
 
-                {/* Primary Action Button: [ ดูวิชา → ] */}
+                {/* Primary Action Button: [ ดูรายละเอียด → ] */}
                 <button
                   type="button"
                   onClick={() => handleSelectSubject(sub)}
-                  className="w-full py-2.5 px-4 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-2 cursor-pointer group-hover:scale-[1.01]"
+                  className="w-full py-2.5 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
                 >
-                  <span>ดูรายละเอียดวิชา</span>
+                  <span>ดูรายละเอียด</span>
                   <ArrowRight className="w-3.5 h-3.5" />
                 </button>
               </div>
@@ -373,6 +408,15 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           <div className="flex items-center gap-2">
             <button
               type="button"
+              onClick={() => setColorModalSubject(sub)}
+              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-pink-700 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border border-transparent hover:border-pink-200"
+              title="ปรับสีวิชา (พาสเทล / วงล้อสี)"
+            >
+              <Palette className="w-3.5 h-3.5 text-pink-500" />
+              <span className="hidden sm:inline">ปรับสีวิชา</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setEditingScoresSubject(sub)}
               className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
             >
@@ -393,12 +437,21 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         {/* Title & Badge */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pt-1">
           <div className="flex items-center gap-3">
-            <div
-              className="w-12 h-12 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0 font-black text-lg"
-              style={{ backgroundColor: sub.color || '#6366f1' }}
+            <button
+              type="button"
+              onClick={() => setColorModalSubject(sub)}
+              className="w-12 h-12 rounded-2xl flex items-center justify-center shadow-md shrink-0 font-black text-lg hover:scale-105 active:scale-95 transition-all cursor-pointer relative group/detailcolor"
+              style={{
+                backgroundColor: getSubjectColor(sub.color),
+                color: getContrastTextColor(getSubjectColor(sub.color)),
+              }}
+              title="คลิกเพื่อเปลี่ยนสีวิชา (พาสเทล / วงล้อสี)"
             >
               {sub.name.charAt(0)}
-            </div>
+              <span className="absolute -bottom-1 -right-1 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-2xs opacity-0 group-hover/detailcolor:opacity-100 transition-opacity border border-slate-200">
+                <Palette className="w-2.5 h-2.5 text-indigo-600" />
+              </span>
+            </button>
             <div>
               <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                 {sub.name}
@@ -419,7 +472,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <div className="bg-slate-900 text-white px-4 py-2 rounded-2xl text-center shadow-xs">
               <span className="text-[10px] text-slate-300 font-bold uppercase block">เกรดคาดการณ์</span>
               <span className="text-xl font-black text-white">
-                {subSummary.estimatedGradeLetter}
+                เกรด {subSummary.estimatedGrade}
               </span>
             </div>
           </div>
@@ -465,8 +518,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
               <span className="text-xs font-semibold text-slate-500 block">เกรดคาดการณ์</span>
-              <span className="text-2xl font-black text-indigo-600">{subSummary.estimatedGradeLetter}</span>
-              <span className="text-[11px] text-slate-400 block">คิดเป็น {subSummary.estimatedGrade.toFixed(1)} แต้ม</span>
+              <span className="text-2xl font-black text-indigo-600">เกรด {subSummary.estimatedGrade}</span>
+              <span className="text-[11px] text-slate-400 block">เป้าหมายเกรด {sub.targetGrade}</span>
             </div>
 
             <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
@@ -1045,6 +1098,13 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         isOpen={Boolean(editingScoresSubject)}
         onClose={() => setEditingScoresSubject(null)}
         subject={editingScoresSubject}
+      />
+
+      {/* Quick Color Modal (Pastel & Color Wheel) */}
+      <QuickColorModal
+        isOpen={Boolean(colorModalSubject)}
+        onClose={() => setColorModalSubject(null)}
+        subject={colorModalSubject}
       />
     </div>
   );

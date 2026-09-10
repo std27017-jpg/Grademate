@@ -6,22 +6,35 @@ import { DashboardView } from './components/DashboardView';
 import { SubjectsView } from './components/SubjectsView';
 import { TasksView } from './components/TasksView';
 import { ExamsView } from './components/ExamsView';
+import { FuturePlannerView } from './components/FuturePlannerView';
 import { AnalyticsView } from './components/AnalyticsView';
+import { ProfileView } from './components/ProfileView';
 import { ComparisonView } from './components/ComparisonView';
 import { SubjectModal } from './components/SubjectModal';
 import { SettingsModal } from './components/SettingsModal';
 import { EditProfileModal } from './components/EditProfileModal';
 import { ThemeModal } from './components/ThemeModal';
+import { WelcomeView } from './components/WelcomeView';
+import { RegisterModal } from './components/RegisterModal';
+import { LoginModal } from './components/LoginModal';
+import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { Subject } from './types';
 
-function MainApp() {
+function MainAppContent() {
+  const { isLoggedIn } = useGrade();
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [selectedSubjectForDetail, setSelectedSubjectForDetail] = useState<Subject | null>(null);
+
+  // Modals
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
   const [editingSubject, setEditingSubject] = useState<Subject | null>(null);
   const [isSettingsModalOpen, setIsSettingsModalOpen] = useState(false);
   const [isEditProfileModalOpen, setIsEditProfileModalOpen] = useState(false);
-  const { isThemeModalOpen, setIsThemeModalOpen, openThemeModal, closeThemeModal } = useTheme();
+  const [isNotificationsOpen, setIsNotificationsOpen] = useState(false);
+  const [isRegisterModalOpen, setIsRegisterModalOpen] = useState(false);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
+
+  const { isThemeModalOpen, openThemeModal, closeThemeModal } = useTheme();
 
   const handleOpenAddSubject = () => {
     setEditingSubject(null);
@@ -33,8 +46,38 @@ function MainApp() {
     setIsSubjectModalOpen(true);
   };
 
+  // If user is not logged in, show cute WelcomeView
+  if (!isLoggedIn) {
+    return (
+      <>
+        <WelcomeView
+          onOpenRegister={() => setIsRegisterModalOpen(true)}
+          onOpenLogin={() => setIsLoginModalOpen(true)}
+        />
+
+        <RegisterModal
+          isOpen={isRegisterModalOpen}
+          onClose={() => setIsRegisterModalOpen(false)}
+          onSwitchToLogin={() => {
+            setIsRegisterModalOpen(false);
+            setIsLoginModalOpen(true);
+          }}
+        />
+
+        <LoginModal
+          isOpen={isLoginModalOpen}
+          onClose={() => setIsLoginModalOpen(false)}
+          onSwitchToRegister={() => {
+            setIsLoginModalOpen(false);
+            setIsRegisterModalOpen(true);
+          }}
+        />
+      </>
+    );
+  }
+
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-indigo-500 selection:text-white">
+    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-pink-500 selection:text-white">
       {/* Top and Mobile Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -47,10 +90,11 @@ function MainApp() {
         onOpenSettings={() => setIsSettingsModalOpen(true)}
         onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
         onOpenThemeModal={openThemeModal}
+        onOpenNotifications={() => setIsNotificationsOpen(true)}
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-20 sm:pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:pb-12">
         {activeTab === 'dashboard' && (
           <DashboardView
             onNavigate={(tab) => setActiveTab(tab)}
@@ -79,7 +123,11 @@ function MainApp() {
 
         {activeTab === 'exams' && <ExamsView />}
 
+        {activeTab === 'future' && <FuturePlannerView />}
+
         {activeTab === 'analytics' && <AnalyticsView />}
+
+        {activeTab === 'profile' && <ProfileView />}
 
         {activeTab === 'comparison' && (
           <ComparisonView
@@ -89,36 +137,57 @@ function MainApp() {
       </main>
 
       {/* Subtle Footer */}
-      <footer className="border-t border-slate-200 bg-white/60 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200/80 bg-white/70 py-6 text-center text-xs text-slate-500">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>GradeMate • ระบบจัดการคะแนนและคำนวณเกรด 2 ภาคเรียน (เทอม 1 & เทอม 2)</span>
-          <span>เก็บคะแนน 4 ช่วง • ติดตามงาน • ตารางสอบ & นับถอยหลัง</span>
+          <span>🌸 MyGrade • ผู้ช่วยวางแผนคะแนนและอนาคตของนักเรียนมัธยม</span>
+          <span>คำนวณตามจริง 100 คะแนน • บันทึก Portfolio • ติดตามงาน & ตารางสอบ</span>
         </div>
       </footer>
 
-      {/* Subject Modal */}
+      {/* Modals */}
       <SubjectModal
         isOpen={isSubjectModalOpen}
         onClose={() => setIsSubjectModalOpen(false)}
         editingSubject={editingSubject}
       />
 
-      {/* Edit Profile & Student Name Modal */}
       <EditProfileModal
         isOpen={isEditProfileModalOpen}
         onClose={() => setIsEditProfileModalOpen(false)}
       />
 
-      {/* Settings & Backup Modal */}
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
       />
 
-      {/* App Theme Color Wheel & Customizer Modal */}
       <ThemeModal
         isOpen={isThemeModalOpen}
         onClose={closeThemeModal}
+      />
+
+      <NotificationCenterModal
+        isOpen={isNotificationsOpen}
+        onClose={() => setIsNotificationsOpen(false)}
+        onNavigateTab={(tab) => setActiveTab(tab)}
+      />
+
+      <RegisterModal
+        isOpen={isRegisterModalOpen}
+        onClose={() => setIsRegisterModalOpen(false)}
+        onSwitchToLogin={() => {
+          setIsRegisterModalOpen(false);
+          setIsLoginModalOpen(true);
+        }}
+      />
+
+      <LoginModal
+        isOpen={isLoginModalOpen}
+        onClose={() => setIsLoginModalOpen(false)}
+        onSwitchToRegister={() => {
+          setIsLoginModalOpen(false);
+          setIsRegisterModalOpen(true);
+        }}
       />
     </div>
   );
@@ -128,7 +197,7 @@ export default function App() {
   return (
     <ThemeProvider>
       <GradeProvider>
-        <MainApp />
+        <MainAppContent />
       </GradeProvider>
     </ThemeProvider>
   );

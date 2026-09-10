@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { Subject, SemesterId, ScorePeriodKey, ScoreItem } from '../types';
+import { Subject, SemesterId, ScorePeriodKey, ScoreItem, NumericGrade } from '../types';
 import { useGrade } from '../context/GradeContext';
-import { PERIOD_CONFIG, scoreToGrade } from '../utils/gradeCalculations';
-import { Calculator, Award } from 'lucide-react';
+import { PERIOD_CONFIG, scoreToGrade, NUMERIC_GRADES } from '../utils/gradeCalculations';
+import { Calculator, Award, Palette } from 'lucide-react';
+import { SubjectColorPicker } from './SubjectColorPicker';
+import { getSubjectColor, getContrastTextColor } from '../utils/colorUtils';
 
 interface SubjectModalProps {
   isOpen: boolean;
@@ -15,17 +17,18 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
   onClose,
   editingSubject,
 }) => {
-  const { currentSemester, addSubject, updateSubject } = useGrade();
+  const { currentSemester, addSubject, updateSubject, gradeThresholds } = useGrade();
 
   const [form, setForm] = useState({
     semesterId: currentSemester,
     name: '',
     code: '',
     credits: '1.5',
-    targetGrade: '4.0',
+    targetGrade: '4',
     targetScore: '80',
     teacherName: '',
     classroom: '',
+    color: '#fb7185',
   });
 
   const [periodScores, setPeriodScores] = useState<
@@ -48,6 +51,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         targetScore: (editingSubject.targetScore || 80).toString(),
         teacherName: editingSubject.teacherName || '',
         classroom: editingSubject.classroom || '',
+        color: getSubjectColor(editingSubject.color),
       });
 
       const keys: ScorePeriodKey[] = ['preMidterm', 'midterm', 'postMidterm', 'final'];
@@ -86,6 +90,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         targetScore: '80',
         teacherName: '',
         classroom: '',
+        color: '#fb7185',
       });
       setPeriodScores({
         preMidterm: { score: '0', maxScore: '30' },
@@ -111,15 +116,15 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
     (parseFloat(periodScores.postMidterm.maxScore) || 30) +
     (parseFloat(periodScores.final.maxScore) || 20);
 
-  const { grade: liveGrade, letter: liveLetter } = scoreToGrade(totalEarned);
+  const { grade: liveGrade } = scoreToGrade(totalEarned, gradeThresholds);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name.trim() || !form.code.trim()) return;
 
     const creditsNum = parseFloat(form.credits) || 1.0;
-    const targetGradeNum = parseFloat(form.targetGrade) || 4.0;
-    const targetScoreNum = parseFloat(form.targetScore) || 80;
+    const targetGradeNum = (parseFloat(form.targetGrade) || 4.0) as NumericGrade;
+    const targetScoreNum = parseFloat(form.targetScore) || gradeThresholds[targetGradeNum] || 80;
 
     const buildPeriod = (
       key: ScorePeriodKey,
@@ -171,6 +176,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         name: form.name.trim(),
         code: form.code.trim(),
         credits: creditsNum,
+        color: form.color,
         targetGrade: targetGradeNum,
         targetScore: targetScoreNum,
         teacherName: form.teacherName.trim() || undefined,
@@ -188,7 +194,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         name: form.name.trim(),
         code: form.code.trim(),
         credits: creditsNum,
-        color: 'indigo',
+        color: form.color || '#fb7185',
         icon: 'BookOpen',
         targetGrade: targetGradeNum,
         targetScore: targetScoreNum,
@@ -305,32 +311,26 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
             </div>
             <div>
               <label className="block text-xs font-bold text-slate-700 mb-1">
-                เป้าหมายเกรด
+                เป้าหมายเกรด (0–4)
               </label>
               <select
                 value={form.targetGrade}
                 onChange={(e) => {
-                  const val = e.target.value;
-                  const scoreMap: Record<string, string> = {
-                    '4.0': '80',
-                    '3.5': '75',
-                    '3.0': '70',
-                    '2.5': '65',
-                    '2.0': '60',
-                  };
+                  const val = parseFloat(e.target.value) as NumericGrade;
+                  const targetMinScore = gradeThresholds[val] ?? 80;
                   setForm({
                     ...form,
-                    targetGrade: val,
-                    targetScore: scoreMap[val] || '80',
+                    targetGrade: val.toString(),
+                    targetScore: targetMinScore.toString(),
                   });
                 }}
                 className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-bold"
               >
-                <option value="4.0">เกรด 4 (A)</option>
-                <option value="3.5">เกรด 3.5 (B+)</option>
-                <option value="3.0">เกรด 3 (B)</option>
-                <option value="2.5">เกรด 2.5 (C+)</option>
-                <option value="2.0">เกรด 2 (C)</option>
+                {([4, 3.5, 3, 2.5, 2, 1.5, 1, 0] as NumericGrade[]).map((g) => (
+                  <option key={g} value={g}>
+                    เกรด {g} (ขั้นต่ำ {gradeThresholds[g]} คะแนน)
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -376,6 +376,43 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
             </div>
           </div>
 
+          {/* Subject Color Section (Pastel or Color Wheel) */}
+          <div className="p-4 rounded-2xl bg-slate-50/80 border border-slate-200/80 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div
+                  className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-xs shadow-xs font-black transition-colors"
+                  style={{ backgroundColor: form.color }}
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                </div>
+                <div>
+                  <label className="text-xs font-bold text-slate-800 block leading-tight">
+                    สีประจำวิชา (สีพาสเทลน่ารัก หรือ หมุนวงล้อสี)
+                  </label>
+                  <span className="text-[11px] text-slate-400 font-medium">
+                    ใช้เป็นสีสัญลักษณ์ ป้ายเกรด และแถบคะแนน
+                  </span>
+                </div>
+              </div>
+              <span
+                className="text-xs font-mono font-bold px-2.5 py-1 rounded-lg shadow-2xs"
+                style={{
+                  backgroundColor: form.color,
+                  color: getContrastTextColor(form.color),
+                }}
+              >
+                {form.color.toUpperCase()}
+              </span>
+            </div>
+
+            <SubjectColorPicker
+              selectedColor={form.color}
+              onChange={(newColor) => setForm({ ...form, color: newColor })}
+              subjectName={form.name}
+            />
+          </div>
+
           {/* 4-Period Score Inputs Section */}
           <div className="p-4 rounded-2xl bg-indigo-50/40 border border-indigo-100 space-y-3">
             <div className="flex items-center justify-between flex-wrap gap-2">
@@ -390,7 +427,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                   รวม: {totalEarned} / {totalMax} คะแนน
                 </span>
                 <span className="text-xs font-black text-indigo-700 bg-indigo-100 px-2.5 py-1 rounded-lg">
-                  เกรด {liveLetter} ({liveGrade})
+                  เกรด {liveGrade}
                 </span>
               </div>
             </div>
