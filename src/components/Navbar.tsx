@@ -16,6 +16,7 @@ import {
 import { SemesterToggle } from './SemesterToggle';
 import { useGrade } from '../context/GradeContext';
 import { useTheme } from '../context/ThemeContext';
+import { AvatarDisplay } from './AvatarDisplay';
 
 export type NavTab =
   | 'dashboard'
@@ -87,7 +88,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                 </div>
                 <button
                   type="button"
-                  onClick={() => setActiveTab('profile')}
+                  id="navbar-student-badge-btn"
+                  onClick={() => {
+                    if (onOpenEditProfile) {
+                      onOpenEditProfile();
+                    } else {
+                      setActiveTab('profile');
+                    }
+                  }}
                   className="flex items-center gap-1.5 text-xs text-slate-500 hover:text-pink-600 transition-colors text-left group cursor-pointer"
                   title="คลิกเพื่อดูและแก้ไขโปรไฟล์นักเรียน"
                 >
@@ -178,11 +186,20 @@ export const Navbar: React.FC<NavbarProps> = ({
               {/* Profile Avatar Button */}
               <button
                 type="button"
-                onClick={() => setActiveTab('profile')}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-slate-800 hover:text-pink-600 bg-pink-50/70 hover:bg-pink-100/70 border border-pink-200 rounded-full transition-all cursor-pointer shadow-2xs active:scale-95"
-                title="ไปที่โปรไฟล์"
+                id="navbar-profile-btn"
+                onClick={() => {
+                  if (onOpenEditProfile) {
+                    onOpenEditProfile();
+                  } else {
+                    setActiveTab('profile');
+                  }
+                }}
+                className="flex items-center gap-1.5 px-2 sm:px-2.5 py-1 text-xs font-bold text-slate-800 hover:text-pink-600 bg-pink-50/70 hover:bg-pink-100/70 border border-pink-200 rounded-full transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
+                title="จัดการและสลับโปรไฟล์นักเรียน"
               >
-                <span className="text-base">{userProfile.avatar || '🌸'}</span>
+                <div className="w-5 h-5 rounded-full overflow-hidden flex items-center justify-center shrink-0">
+                  <AvatarDisplay avatar={userProfile.avatar || '🌸'} size="sm" />
+                </div>
                 <span className="hidden sm:inline truncate max-w-[100px]">
                   {userProfile.nickname || userProfile.fullName.split(' ')[0] || 'โปรไฟล์'}
                 </span>

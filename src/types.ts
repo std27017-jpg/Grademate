@@ -4,7 +4,17 @@ export type ScorePeriodKey = 'preMidterm' | 'midterm' | 'postMidterm' | 'final';
 
 export type NumericGrade = 4 | 3.5 | 3 | 2.5 | 2 | 1.5 | 1 | 0;
 
-export type GradeLevel = 'ม.4' | 'ม.5' | 'ม.6';
+export type GradeLevel =
+  | 'ม.1'
+  | 'ม.2'
+  | 'ม.3'
+  | 'ม.4'
+  | 'ม.5'
+  | 'ม.6'
+  | 'ปวช.'
+  | 'ปวส.'
+  | 'มหาวิทยาลัย'
+  | string;
 
 export interface DreamUniversity {
   id: string;

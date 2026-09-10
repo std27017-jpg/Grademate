@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   User,
   School,
@@ -20,12 +20,19 @@ import {
   Palette,
   Check,
   Sliders,
+  Camera,
+  Plus,
+  Users,
+  Trash2,
+  Compass,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useTheme } from '../context/ThemeContext';
 import { PRESET_THEME_COLORS } from '../utils/themeUtils';
 import { CUTE_AVATARS } from '../data/defaultData';
-import { GradeLevel, NumericGrade } from '../types';
+import { GradeLevel, NumericGrade, UserProfile } from '../types';
+import { AvatarDisplay } from './AvatarDisplay';
+import { EditProfileModal } from './EditProfileModal';
 
 export const ProfileView: React.FC = () => {
   const {
@@ -33,6 +40,9 @@ export const ProfileView: React.FC = () => {
     updateUserProfile,
     academicYear,
     setAcademicYear,
+    savedProfiles,
+    switchProfile,
+    deleteProfile,
     logout,
     resetToDefault,
     exportJSON,
@@ -45,6 +55,9 @@ export const ProfileView: React.FC = () => {
   const { themeColor, setThemeColor, openThemeModal } = useTheme();
 
   const [isEditing, setIsEditing] = useState(false);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [modalTab, setModalTab] = useState<'edit' | 'switch'>('edit');
+
   const [fullName, setFullName] = useState(userProfile.fullName);
   const [nickname, setNickname] = useState(userProfile.nickname || '');
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>(userProfile.gradeLevel || 'ม.5');
@@ -52,27 +65,81 @@ export const ProfileView: React.FC = () => {
   const [studentNumber, setStudentNumber] = useState(userProfile.studentNumber || '17');
   const [schoolName, setSchoolName] = useState(userProfile.schoolName || 'โรงเรียนพิชัย');
   const [avatar, setAvatar] = useState(userProfile.avatar || '🌸');
-  const [selectedYear, setSelectedYear] = useState<number>(academicYear || 2568);
+  const [selectedYear, setSelectedYear] = useState<number>(academicYear?.year || userProfile.academicYear || 2568);
+  const [targetGpa, setTargetGpa] = useState<NumericGrade>(userProfile.targetGpa || 3.5);
+  const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || 'สัตวแพทย์');
   const [showThresholds, setShowThresholds] = useState(false);
 
-  // File import ref
-  const fileInputRef = React.useRef<HTMLInputElement>(null);
+  // Sync state whenever userProfile or academicYear changes
+  useEffect(() => {
+    setFullName(userProfile.fullName);
+    setNickname(userProfile.nickname || '');
+    setGradeLevel(userProfile.gradeLevel || 'ม.5');
+    setRoom(userProfile.room || '1');
+    setStudentNumber(userProfile.studentNumber || '17');
+    setSchoolName(userProfile.schoolName || 'โรงเรียนพิชัย');
+    setAvatar(userProfile.avatar || '🌸');
+    setSelectedYear(academicYear?.year || userProfile.academicYear || 2568);
+    setTargetGpa(userProfile.targetGpa || 3.5);
+    setDreamCareer(userProfile.dreamCareer || 'สัตวแพทย์');
+  }, [userProfile, academicYear]);
+
+  // File refs
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const avatarUploadRef = useRef<HTMLInputElement>(null);
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
+    const trimmedName = fullName.trim() || 'นักเรียน';
+    const trimmedClass = `${gradeLevel}/${room.trim() || '1'}`;
+    const parsedYear = Number(selectedYear) || 2568;
+
     updateUserProfile({
-      fullName: fullName.trim(),
+      fullName: trimmedName,
       nickname: nickname.trim(),
       gradeLevel,
       room: room.trim(),
       studentNumber: studentNumber.trim(),
-      studentClass: `${gradeLevel}/${room || '1'}`,
+      studentClass: trimmedClass,
       schoolName: schoolName.trim(),
-      academicYear: Number(selectedYear) || 2568,
+      academicYear: parsedYear,
       avatar,
+      targetGpa,
+      dreamCareer: dreamCareer.trim(),
     });
-    setAcademicYear(Number(selectedYear) || 2568);
+
+    setAcademicYear({
+      year: parsedYear,
+      studentName: trimmedName,
+      studentClass: trimmedClass,
+      schoolName: schoolName.trim(),
+    });
+
     setIsEditing(false);
+  };
+
+  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้นค่ะ');
+      return;
+    }
+
+    if (file.size > 4 * 1024 * 1024) {
+      alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 4MB ค่ะ');
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const dataUrl = event.target?.result as string;
+      if (dataUrl) {
+        setAvatar(dataUrl);
+      }
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -89,25 +156,40 @@ export const ProfileView: React.FC = () => {
     reader.readAsText(file);
   };
 
+  const currentYearNum = academicYear?.year || userProfile.academicYear || 2568;
+
   return (
     <div className="space-y-6 pb-12 text-left max-w-4xl mx-auto">
       {/* Profile Header Card */}
-      <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 rounded-3xl p-6 border border-pink-200/80 shadow-xs relative overflow-hidden">
+      <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 rounded-3xl p-5 sm:p-6 border border-pink-200/80 shadow-xs relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           {/* Avatar */}
-          <div className="relative">
-            <div className="w-20 h-20 rounded-full bg-white shadow-md border-3 border-pink-300 flex items-center justify-center text-4xl select-none">
-              {userProfile.avatar || '🌸'}
+          <div className="relative group">
+            <div className="w-20 h-20 rounded-full bg-white shadow-md border-3 border-pink-300 flex items-center justify-center overflow-hidden">
+              <AvatarDisplay
+                avatar={userProfile.avatar || '🌸'}
+                size="2xl"
+                editable
+                onEdit={() => setIsEditing(true)}
+              />
             </div>
-            <span className="absolute bottom-0 right-0 w-6 h-6 rounded-full bg-emerald-500 border-2 border-white flex items-center justify-center text-[10px] text-white font-bold" title="สถานะใช้งาน">
-              ✓
-            </span>
+            <button
+              type="button"
+              onClick={() => {
+                setModalTab('edit');
+                setIsModalOpen(true);
+              }}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-pink-600 text-white flex items-center justify-center shadow-xs hover:bg-pink-700 transition-transform active:scale-95 cursor-pointer border-2 border-white"
+              title="เปลี่ยนรูปโปรไฟล์"
+            >
+              <Camera className="w-3.5 h-3.5" />
+            </button>
           </div>
 
           {/* Details */}
-          <div className="space-y-1.5 flex-1">
+          <div className="space-y-1.5 flex-1 min-w-0">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
-              <h2 className="text-xl sm:text-2xl font-black text-slate-900">
+              <h2 className="text-xl sm:text-2xl font-black text-slate-900 truncate">
                 {userProfile.fullName}
               </h2>
               {userProfile.nickname && (
@@ -116,7 +198,7 @@ export const ProfileView: React.FC = () => {
                 </span>
               )}
               <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
-                ม.ปลาย
+                {userProfile.gradeLevel || 'ม.ปลาย'}
               </span>
             </div>
 
@@ -130,7 +212,7 @@ export const ProfileView: React.FC = () => {
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>ปีการศึกษา {academicYear}</span>
+                <span>ปีการศึกษา {currentYearNum}</span>
               </span>
             </div>
 
@@ -140,15 +222,30 @@ export const ProfileView: React.FC = () => {
             </div>
           </div>
 
-          {/* Edit Profile button */}
-          <button
-            type="button"
-            onClick={() => setIsEditing(!isEditing)}
-            className="px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/90 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer"
-          >
-            <Edit3 className="w-3.5 h-3.5 text-pink-500" />
-            <span>{isEditing ? 'ปิดฟอร์มแก้ไข' : 'แก้ไขโปรไฟล์'}</span>
-          </button>
+          {/* Actions */}
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              type="button"
+              onClick={() => {
+                setModalTab('switch');
+                setIsModalOpen(true);
+              }}
+              className="px-3.5 py-2 rounded-full bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-xs font-bold border border-indigo-200 transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95"
+              title="สลับหรือเพิ่มโปรไฟล์นักเรียน"
+            >
+              <Users className="w-3.5 h-3.5" />
+              <span>สลับโปรไฟล์ ({savedProfiles.length})</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => setIsEditing(!isEditing)}
+              className="px-4 py-2 rounded-full bg-white hover:bg-slate-50 text-slate-700 text-xs font-bold border border-slate-200/90 shadow-2xs transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            >
+              <Edit3 className="w-3.5 h-3.5 text-pink-500" />
+              <span>{isEditing ? 'ปิดฟอร์มแก้ไข' : 'แก้ไขโปรไฟล์'}</span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -156,36 +253,62 @@ export const ProfileView: React.FC = () => {
       {isEditing && (
         <form
           onSubmit={handleSaveProfile}
-          className="bg-white rounded-3xl p-5 sm:p-6 border border-pink-200 shadow-xs space-y-4"
+          className="bg-white rounded-3xl p-5 sm:p-6 border border-pink-200 shadow-xs space-y-4 animate-fade-in"
         >
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
             <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
               <Edit3 className="w-4 h-4 text-pink-500" />
-              <span>แก้ไขข้อมูลนักเรียน</span>
+              <span>แก้ไขข้อมูลและรูปโปรไฟล์นักเรียน</span>
             </h3>
             <span className="text-[11px] text-slate-400">บันทึกข้อมูลในเครื่องทันที</span>
           </div>
 
-          {/* Avatar selector */}
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1.5">
-              เปลี่ยนตัวการ์ตูนโปรไฟล์
-            </label>
-            <div className="flex flex-wrap gap-2 p-2 bg-pink-50/50 rounded-2xl border border-pink-100">
-              {CUTE_AVATARS.map((av) => (
-                <button
-                  key={av}
-                  type="button"
-                  onClick={() => setAvatar(av)}
-                  className={`w-9 h-9 text-lg rounded-xl flex items-center justify-center transition-all cursor-pointer ${
-                    avatar === av
-                      ? 'bg-white shadow-sm ring-2 ring-pink-500 scale-110 font-bold'
-                      : 'hover:bg-white/60 text-slate-700'
-                  }`}
-                >
-                  {av}
-                </button>
-              ))}
+          {/* Avatar selector & Upload */}
+          <div className="p-3.5 bg-pink-50/50 rounded-2xl border border-pink-100 space-y-3">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-bold text-slate-700">
+                เปลี่ยนรูปโปรไฟล์ / ตัวการ์ตูน
+              </label>
+              <button
+                type="button"
+                onClick={() => avatarUploadRef.current?.click()}
+                className="px-3 py-1 bg-white hover:bg-pink-100 text-pink-700 text-xs font-bold rounded-full border border-pink-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>อัปโหลดรูปของตัวเอง</span>
+              </button>
+              <input
+                type="file"
+                ref={avatarUploadRef}
+                onChange={handleAvatarUpload}
+                accept="image/*"
+                className="hidden"
+              />
+            </div>
+
+            <div className="flex items-center gap-3">
+              <div className="w-14 h-14 rounded-2xl bg-white shadow-2xs border-2 border-pink-300 flex items-center justify-center overflow-hidden shrink-0">
+                <AvatarDisplay avatar={avatar} size="xl" />
+              </div>
+
+              <div className="flex-1">
+                <div className="flex flex-wrap gap-1.5 p-1.5 bg-white/90 rounded-xl border border-pink-100">
+                  {CUTE_AVATARS.map((av) => (
+                    <button
+                      key={av}
+                      type="button"
+                      onClick={() => setAvatar(av)}
+                      className={`w-8 h-8 rounded-xl text-base flex items-center justify-center transition-all cursor-pointer ${
+                        avatar === av
+                          ? 'bg-pink-500 text-white scale-110 shadow-xs ring-2 ring-pink-300'
+                          : 'hover:bg-pink-50 text-slate-700'
+                      }`}
+                    >
+                      {av}
+                    </button>
+                  ))}
+                </div>
+              </div>
             </div>
           </div>
 
@@ -194,9 +317,10 @@ export const ProfileView: React.FC = () => {
               <label className="block text-xs font-bold text-slate-700 mb-1">ชื่อ-นามสกุล</label>
               <input
                 type="text"
+                required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
             <div>
@@ -205,7 +329,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
           </div>
@@ -216,11 +340,13 @@ export const ProfileView: React.FC = () => {
               <select
                 value={gradeLevel}
                 onChange={(e) => setGradeLevel(e.target.value as GradeLevel)}
-                className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
               >
-                <option value="ม.4">ม.4</option>
-                <option value="ม.5">ม.5</option>
-                <option value="ม.6">ม.6</option>
+                {['ม.1', 'ม.2', 'ม.3', 'ม.4', 'ม.5', 'ม.6', 'ปวช.', 'มหาวิทยาลัย'].map((lvl) => (
+                  <option key={lvl} value={lvl}>
+                    {lvl}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -229,7 +355,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 text-center"
               />
             </div>
             <div>
@@ -238,7 +364,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={studentNumber}
                 onChange={(e) => setStudentNumber(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 text-center"
               />
             </div>
           </div>
@@ -250,16 +376,45 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={schoolName}
                 onChange={(e) => setSchoolName(e.target.value)}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">ปีการศึกษา</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">ปีการศึกษา (พ.ศ.)</label>
               <input
                 type="number"
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(Number(e.target.value))}
-                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+              />
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">
+                เป้าหมายเกรดเฉลี่ย (Target GPA)
+              </label>
+              <select
+                value={targetGpa}
+                onChange={(e) => setTargetGpa(Number(e.target.value) as NumericGrade)}
+                className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-pink-400"
+              >
+                <option value={4.0}>เกรด 4.00 (ยอดเยี่ยม 🌟)</option>
+                <option value={3.5}>เกรด 3.50 (เกียรตินิยม 💖)</option>
+                <option value={3.0}>เกรด 3.00 (ดีมาก ✨)</option>
+                <option value={2.5}>เกรด 2.50 (ผ่านเกณฑ์ดี)</option>
+                <option value={2.0}>เกรด 2.00 (มาตรฐาน)</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-bold text-slate-700 mb-1">อาชีพในฝัน</label>
+              <input
+                type="text"
+                value={dreamCareer}
+                onChange={(e) => setDreamCareer(e.target.value)}
+                placeholder="เช่น สัตวแพทย์, วิศวะคอมพิวเตอร์"
+                className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
           </div>
@@ -268,13 +423,13 @@ export const ProfileView: React.FC = () => {
             <button
               type="button"
               onClick={() => setIsEditing(false)}
-              className="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-xs font-bold"
+              className="px-4 py-2 rounded-full bg-slate-100 text-slate-600 text-xs font-bold cursor-pointer"
             >
               ยกเลิก
             </button>
             <button
               type="submit"
-              className="px-5 py-2 rounded-full bg-pink-600 text-white text-xs font-bold shadow-xs hover:bg-pink-700 flex items-center gap-1.5"
+              className="px-5 py-2.5 rounded-full bg-pink-600 text-white text-xs font-bold shadow-xs hover:bg-pink-700 flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Save className="w-3.5 h-3.5" />
               <span>บันทึกข้อมูล</span>
@@ -282,6 +437,115 @@ export const ProfileView: React.FC = () => {
           </div>
         </form>
       )}
+
+      {/* Switch Profile Section Card */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-xs">
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <span>สลับโปรไฟล์นักเรียน (Switch Student Profile)</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700">
+                  {savedProfiles.length} โปรไฟล์
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">
+                แตะเพื่อสลับไปใช้บัญชีนักเรียนอื่น หรือเพิ่มโปรไฟล์ใหม่สำหรับพี่น้อง/เพื่อน
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => {
+              setModalTab('switch');
+              setIsModalOpen(true);
+            }}
+            className="px-3.5 py-1.5 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs active:scale-95 shrink-0"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            <span>จัดการโปรไฟล์</span>
+          </button>
+        </div>
+
+        {/* Profiles Grid */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5 pt-1">
+          {savedProfiles.map((p) => {
+            const isActive = p.id === userProfile.id;
+            return (
+              <div
+                key={p.id}
+                onClick={() => switchProfile(p.id)}
+                className={`p-3.5 rounded-2xl border transition-all cursor-pointer flex items-center justify-between gap-3 ${
+                  isActive
+                    ? 'bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 border-pink-400 ring-2 ring-pink-200 shadow-xs'
+                    : 'bg-slate-50/70 hover:bg-white border-slate-200/80 hover:border-slate-300'
+                }`}
+              >
+                <div className="flex items-center gap-3 min-w-0">
+                  <div className="w-10 h-10 rounded-xl bg-white shadow-2xs border border-pink-200 flex items-center justify-center overflow-hidden shrink-0">
+                    <AvatarDisplay avatar={p.avatar} size="md" />
+                  </div>
+                  <div className="min-w-0">
+                    <div className="flex items-center gap-1.5">
+                      <span className="text-xs font-bold text-slate-900 truncate">
+                        {p.fullName}
+                      </span>
+                      {p.nickname && (
+                        <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-100 text-pink-700 shrink-0">
+                          {p.nickname}
+                        </span>
+                      )}
+                    </div>
+                    <div className="text-[11px] text-slate-500 truncate">
+                      ชั้น {p.studentClass || `${p.gradeLevel}/${p.room || '1'}`} • {p.schoolName || 'โรงเรียน'}
+                    </div>
+                  </div>
+                </div>
+
+                <div className="shrink-0 flex items-center gap-1.5">
+                  {isActive ? (
+                    <span className="text-[10px] font-bold text-emerald-700 bg-emerald-100 px-2 py-0.5 rounded-full flex items-center gap-0.5">
+                      <Check className="w-3 h-3" />
+                      <span>ใช้งานอยู่</span>
+                    </span>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        switchProfile(p.id);
+                      }}
+                      className="px-2.5 py-1 rounded-full bg-slate-900 hover:bg-pink-600 text-white text-[11px] font-bold transition-colors shadow-2xs cursor-pointer"
+                    >
+                      สลับใช้
+                    </button>
+                  )}
+
+                  {!isActive && savedProfiles.length > 1 && (
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        if (confirm(`ลบโปรไฟล์ "${p.fullName}"?`)) {
+                          deleteProfile(p.id);
+                        }
+                      }}
+                      className="p-1 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
+                      title="ลบโปรไฟล์"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
       {/* Target & Future Summary Card */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
@@ -294,7 +558,7 @@ export const ProfileView: React.FC = () => {
           <div className="p-3.5 rounded-2xl bg-pink-50/70 border border-pink-100">
             <div className="text-[10px] font-bold text-slate-500">เกรดเฉลี่ยเป้าหมาย (Target GPA)</div>
             <div className="text-xl font-black text-pink-600 mt-0.5">
-              {userProfile.targetGpa.toFixed(2)}
+              {(userProfile.targetGpa || 3.5).toFixed(2)}
             </div>
           </div>
 
@@ -380,7 +644,7 @@ export const ProfileView: React.FC = () => {
         </div>
       </div>
 
-      {/* Grade Thresholds Settings (Preserved from original) */}
+      {/* Grade Thresholds Settings */}
       <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
@@ -414,7 +678,7 @@ export const ProfileView: React.FC = () => {
             <button
               type="button"
               onClick={resetGradeThresholds}
-              className="text-xs text-slate-500 hover:text-slate-800 font-bold underline"
+              className="text-xs text-slate-500 hover:text-slate-800 font-bold underline cursor-pointer"
             >
               คืนค่าเกณฑ์มาตรฐาน
             </button>
@@ -484,6 +748,13 @@ export const ProfileView: React.FC = () => {
           <span>ออกจากระบบ / สลับบัญชีผู้ใช้</span>
         </button>
       </div>
+
+      {/* Edit / Switch Profile Modal */}
+      <EditProfileModal
+        isOpen={isModalOpen}
+        onClose={() => setIsModalOpen(false)}
+        initialTab={modalTab}
+      />
     </div>
   );
 };

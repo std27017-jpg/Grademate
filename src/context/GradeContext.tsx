@@ -44,6 +44,12 @@ interface GradeContextType {
   updateUserProfile: (profile: Partial<UserProfile>) => void;
   updateTargetGpa: (target: NumericGrade) => void;
 
+  // Profile Management
+  savedProfiles: UserProfile[];
+  switchProfile: (profileId: string) => void;
+  createProfile: (profileData: Partial<UserProfile>) => UserProfile;
+  deleteProfile: (profileId: string) => void;
+
   currentSemester: SemesterId;
   setCurrentSemester: (semester: SemesterId) => void;
   academicYear: AcademicYearConfig;
@@ -144,6 +150,7 @@ const STORAGE_KEYS = {
   PORTFOLIO: 'mygrade_portfolio_items',
   FUTURE_TODOS: 'mygrade_future_todos',
   READ_NOTIFS: 'mygrade_read_notification_ids',
+  SAVED_PROFILES: 'mygrade_saved_profiles',
   // Legacy fallback keys to ensure no data loss
   LEGACY_SEMESTER: 'grademate_active_semester',
   LEGACY_YEAR: 'grademate_academic_year',
@@ -167,6 +174,23 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       return saved ? { ...DEFAULT_USER_PROFILE, ...JSON.parse(saved) } : DEFAULT_USER_PROFILE;
     } catch {
       return DEFAULT_USER_PROFILE;
+    }
+  });
+
+  const [savedProfiles, setSavedProfiles] = useState<UserProfile[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SAVED_PROFILES);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed;
+        }
+      }
+      const initialSaved = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+      const active = initialSaved ? JSON.parse(initialSaved) : DEFAULT_USER_PROFILE;
+      return [active];
+    } catch {
+      return [DEFAULT_USER_PROFILE];
     }
   });
 
@@ -272,6 +296,10 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   }, [userProfile]);
 
   useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SAVED_PROFILES, JSON.stringify(savedProfiles));
+  }, [savedProfiles]);
+
+  useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.SEMESTER, currentSemester);
   }, [currentSemester]);
 
@@ -355,6 +383,17 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const updateUserProfile = (partial: Partial<UserProfile>) => {
     setUserProfileState((prev) => {
       const updated = { ...prev, ...partial };
+      // Sync into savedProfiles
+      setSavedProfiles((list) => {
+        const idx = list.findIndex((p) => p.id === updated.id);
+        if (idx >= 0) {
+          const next = [...list];
+          next[idx] = updated;
+          return next;
+        }
+        return [...list, updated];
+      });
+
       if (partial.fullName || partial.studentClass || partial.schoolName || partial.academicYear) {
         setAcademicYearState((ay) => ({
           ...ay,
@@ -365,6 +404,56 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }));
       }
       return updated;
+    });
+  };
+
+  const switchProfile = (profileId: string) => {
+    const target = savedProfiles.find((p) => p.id === profileId);
+    if (!target) return;
+    setUserProfileState(target);
+    setAcademicYearState({
+      year: target.academicYear || 2568,
+      studentName: target.fullName || 'นักเรียน',
+      studentClass: target.studentClass || `${target.gradeLevel}/${target.room || '1'}`,
+      schoolName: target.schoolName || 'โรงเรียนพิชัย',
+    });
+  };
+
+  const createProfile = (profileData: Partial<UserProfile>): UserProfile => {
+    const newId = `user_${Date.now()}`;
+    const newProfile: UserProfile = {
+      ...DEFAULT_USER_PROFILE,
+      ...profileData,
+      id: newId,
+      fullName: profileData.fullName?.trim() || 'นักเรียนใหม่',
+      registeredAt: new Date().toISOString().split('T')[0],
+    };
+    setSavedProfiles((prev) => [...prev, newProfile]);
+    setUserProfileState(newProfile);
+    setAcademicYearState({
+      year: newProfile.academicYear || 2568,
+      studentName: newProfile.fullName,
+      studentClass: newProfile.studentClass || `${newProfile.gradeLevel}/${newProfile.room || '1'}`,
+      schoolName: newProfile.schoolName || 'โรงเรียนพิชัย',
+    });
+    return newProfile;
+  };
+
+  const deleteProfile = (profileId: string) => {
+    setSavedProfiles((prev) => {
+      if (prev.length <= 1) return prev;
+      const remaining = prev.filter((p) => p.id !== profileId);
+      if (userProfile.id === profileId && remaining.length > 0) {
+        const fallback = remaining[0];
+        setUserProfileState(fallback);
+        setAcademicYearState({
+          year: fallback.academicYear || 2568,
+          studentName: fallback.fullName,
+          studentClass: fallback.studentClass,
+          schoolName: fallback.schoolName,
+        });
+      }
+      return remaining;
     });
   };
 
@@ -900,6 +989,10 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         logout,
         updateUserProfile,
         updateTargetGpa,
+        savedProfiles,
+        switchProfile,
+        createProfile,
+        deleteProfile,
         currentSemester,
         setCurrentSemester,
         academicYear,
