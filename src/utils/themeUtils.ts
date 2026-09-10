@@ -165,6 +165,13 @@ export function applyThemeColorToDOM(hexColor: string) {
   const hoverRgb = hslToRgb(rgbToHsl(rgb.r, rgb.g, rgb.b).h, rgbToHsl(rgb.r, rgb.g, rgb.b).s, Math.max(15, rgbToHsl(rgb.r, rgb.g, rgb.b).l - 8));
   const hover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
 
+  // Also set CSS variables directly on root element
+  if (typeof document !== 'undefined') {
+    document.documentElement.style.setProperty('--app-primary', primary);
+    document.documentElement.style.setProperty('--app-primary-hover', hover);
+    document.documentElement.style.setProperty('--app-primary-text', textColor);
+  }
+
   const styleId = 'mygrade-dynamic-theme-style';
   let styleEl = document.getElementById(styleId) as HTMLStyleElement | null;
   if (!styleEl) {
@@ -185,58 +192,98 @@ export function applyThemeColorToDOM(hexColor: string) {
       --app-primary-text: ${textColor};
       --app-primary-gradient-end: ${gradientEnd};
       --app-primary-rgb: ${rgb.r}, ${rgb.g}, ${rgb.b};
-      --app-primary-light: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.12);
-      --app-primary-subtle: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.06);
-      --app-primary-border: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22);
+      --app-primary-light: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.15);
+      --app-primary-subtle: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08);
+      --app-primary-border: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.28);
     }
 
-    /* Dynamic overrides for components using indigo */
+    /* Dynamic primary backgrounds */
+    .bg-pink-600,
+    .bg-pink-500,
     .bg-indigo-600,
     .bg-indigo-700,
+    button.bg-pink-600,
     button.bg-indigo-600,
     .app-theme-bg {
       background-color: var(--app-primary) !important;
     }
 
+    /* Dynamic hovers */
+    .hover\\:bg-pink-700:hover,
+    .hover\\:bg-pink-600:hover,
     .hover\\:bg-indigo-700:hover,
     .hover\\:bg-indigo-600:hover {
       background-color: var(--app-primary-hover) !important;
     }
 
+    /* Subtle tinted backgrounds */
+    .bg-pink-50,
+    .bg-pink-50\\/70,
+    .bg-pink-50\\/50,
+    .bg-pink-50\\/40,
+    .bg-pink-50\\/30,
     .bg-indigo-50 {
       background-color: var(--app-primary-subtle) !important;
     }
 
+    /* Light tinted backgrounds */
+    .bg-pink-100,
+    .bg-pink-100\\/90,
+    .bg-pink-100\\/70,
+    .bg-pink-100\\/50,
     .bg-indigo-100 {
       background-color: var(--app-primary-light) !important;
     }
 
+    /* Accent and link texts */
+    .text-pink-600,
+    .text-pink-700,
+    .text-pink-500,
     .text-indigo-600,
     .text-indigo-700,
     .text-indigo-800,
+    .hover\\:text-pink-600:hover,
+    .hover\\:text-pink-700:hover,
     .hover\\:text-indigo-600:hover,
     .hover\\:text-indigo-700:hover,
     .app-theme-text {
       color: var(--app-primary-text) !important;
     }
 
+    /* Accent borders */
+    .border-pink-100,
+    .border-pink-200,
+    .border-pink-200\\/80,
+    .border-pink-200\\/90,
+    .border-pink-300,
     .border-indigo-100,
-    .border-indigo-200 {
+    .border-indigo-200,
+    .border-indigo-300 {
       border-color: var(--app-primary-border) !important;
     }
 
-    .border-indigo-300,
+    .border-pink-400,
+    .border-pink-500,
+    .border-pink-600,
+    .border-indigo-400,
     .border-indigo-500,
     .border-indigo-600 {
       border-color: var(--app-primary) !important;
     }
 
+    /* Rings & focus */
+    .ring-pink-400,
+    .ring-pink-500,
+    .focus\\:ring-pink-400:focus,
+    .focus\\:ring-pink-500:focus,
     .focus\\:ring-indigo-500:focus,
     .focus\\:ring-indigo-600:focus {
       --tw-ring-color: var(--app-primary) !important;
     }
 
-    /* Logo gradient & accents */
+    /* Gradient stops */
+    .from-pink-500,
+    .from-pink-600,
     .from-indigo-600,
     .from-indigo-700 {
       --tw-gradient-from: var(--app-primary) var(--tw-gradient-from-position) !important;
@@ -244,14 +291,17 @@ export function applyThemeColorToDOM(hexColor: string) {
       --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-to) !important;
     }
 
+    .to-pink-400,
+    .to-pink-500,
+    .to-pink-600,
     .to-sky-400,
     .to-sky-600 {
       --tw-gradient-to: var(--app-primary-gradient-end) var(--tw-gradient-to-position) !important;
     }
 
-    .via-indigo-500,
-    .via-indigo-600 {
-      --tw-gradient-stops: var(--tw-gradient-from), var(--app-primary) var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
+    .via-pink-500,
+    .via-indigo-500 {
+      --tw-gradient-stops: var(--tw-gradient-from), var(--tw-gradient-via-position), var(--tw-gradient-to) !important;
     }
 
     ::selection {

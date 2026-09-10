@@ -156,16 +156,23 @@ export const Navbar: React.FC<NavbarProps> = ({
               <button
                 type="button"
                 id="theme-color-button"
-                onClick={onOpenThemeModal || openThemeModal}
-                className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-full transition-all cursor-pointer shadow-2xs group active:scale-95"
+                onClick={() => {
+                  if (onOpenThemeModal) {
+                    onOpenThemeModal();
+                  } else {
+                    openThemeModal();
+                  }
+                }}
+                className="flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-bold text-slate-700 hover:text-slate-900 bg-white hover:bg-slate-50 border border-slate-200 rounded-full transition-all cursor-pointer shadow-2xs group active:scale-95 shrink-0"
                 title="เปลี่ยนสีธีมของแอป"
+                aria-label="เปลี่ยนสีธีมของแอป"
               >
                 <div
                   className="w-3.5 h-3.5 rounded-full border border-slate-300 shadow-2xs group-hover:scale-110 transition-transform"
                   style={{ backgroundColor: themeColor }}
                 />
                 <Palette className="w-3.5 h-3.5 text-slate-500 group-hover:text-slate-800" />
-                <span className="hidden md:inline">สีธีม</span>
+                <span className="hidden sm:inline">สีธีม</span>
               </button>
 
               {/* Profile Avatar Button */}

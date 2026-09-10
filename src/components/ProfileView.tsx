@@ -17,8 +17,13 @@ import {
   Heart,
   Save,
   ShieldCheck,
+  Palette,
+  Check,
+  Sliders,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { useTheme } from '../context/ThemeContext';
+import { PRESET_THEME_COLORS } from '../utils/themeUtils';
 import { CUTE_AVATARS } from '../data/defaultData';
 import { GradeLevel, NumericGrade } from '../types';
 
@@ -36,6 +41,8 @@ export const ProfileView: React.FC = () => {
     updateGradeThresholds,
     resetGradeThresholds,
   } = useGrade();
+
+  const { themeColor, setThemeColor, openThemeModal } = useTheme();
 
   const [isEditing, setIsEditing] = useState(false);
   const [fullName, setFullName] = useState(userProfile.fullName);
@@ -304,6 +311,72 @@ export const ProfileView: React.FC = () => {
               {userProfile.dreamUniversities?.[0]?.faculty || 'ยังไม่ได้ระบุ'}
             </div>
           </div>
+        </div>
+      </div>
+
+      {/* Theme Color Settings Card */}
+      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-xs"
+              style={{ backgroundColor: themeColor }}
+            >
+              <Palette className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <span>ธีมสีของแอปพลิเคชัน (Theme Color)</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                  {themeColor.toUpperCase()}
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">
+                แตะเพื่อเปลี่ยนเฉดสีของปุ่ม เส้นขอบ และการเน้นข้อความได้ทันที
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={openThemeModal}
+            className="px-3.5 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs"
+          >
+            <Sliders className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">วงล้อสี / โค้ด HEX</span>
+          </button>
+        </div>
+
+        {/* Quick select theme chips */}
+        <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 pt-1">
+          {PRESET_THEME_COLORS.map((preset) => {
+            const isSelected = themeColor.toLowerCase() === preset.hex.toLowerCase();
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                onClick={() => setThemeColor(preset.hex)}
+                className={`p-2 rounded-2xl border text-left flex items-center gap-2 transition-all cursor-pointer ${
+                  isSelected
+                    ? 'bg-slate-900 text-white border-slate-900 shadow-xs scale-102 font-bold'
+                    : 'bg-slate-50 hover:bg-white text-slate-700 border-slate-200/80 hover:border-slate-300'
+                }`}
+                title={preset.name}
+              >
+                <div
+                  className="w-6 h-6 rounded-lg shrink-0 flex items-center justify-center text-white shadow-2xs text-xs font-bold"
+                  style={{ backgroundColor: preset.hex }}
+                >
+                  {isSelected ? <Check className="w-3 h-3 drop-shadow" /> : preset.emoji}
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] truncate font-bold leading-tight">
+                    {preset.name.split(' ')[0]}
+                  </div>
+                </div>
+              </button>
+            );
+          })}
         </div>
       </div>
 
