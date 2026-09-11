@@ -502,8 +502,8 @@ export const ExamsView: React.FC = () => {
 
       {/* Exam Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto box-border">
             <h3 className="text-lg font-black text-slate-900">
               {editingExam ? 'แก้ไขกำหนดการสอบ' : 'เพิ่มกำหนดการสอบ'}
             </h3>

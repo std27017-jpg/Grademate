@@ -130,11 +130,21 @@ export interface ScorePeriod {
   isCompleted?: boolean; // If exam/period is finished
 }
 
+export interface SubjectCategory {
+  id: string;
+  name: string; // e.g. 'วิทยาศาสตร์'
+  icon: string; // e.g. '🔬'
+  color?: string; // e.g. 'indigo'
+  description?: string;
+  isDefault?: boolean;
+}
+
 export interface Subject {
   id: string;
   semesterId: SemesterId;
   name: string; // e.g. 'คณิตศาสตร์'
   code: string; // e.g. 'ค31101'
+  category?: string; // e.g. 'วิทยาศาสตร์' or category ID/name
   credits: number; // e.g. 1.5
   color: string; // e.g. 'indigo', 'rose', 'emerald', 'amber', 'sky', 'violet'
   icon: string; // Lucide icon name
@@ -143,6 +153,29 @@ export interface Subject {
   teacherName?: string;
   classroom?: string;
   periods: Record<ScorePeriodKey, ScorePeriod>;
+}
+
+export type StudyTimerMode = 'pomodoro' | 'short' | 'normal' | 'long' | 'custom';
+
+export interface StudySession {
+  id: string;
+  subjectId: string;
+  subjectName: string;
+  subjectCode?: string;
+  category: string; // e.g. 'วิทยาศาสตร์'
+  topic: string; // e.g. 'ระบบย่อยอาหาร'
+  date: string; // YYYY-MM-DD
+  startTime: string; // HH:mm
+  endTime?: string; // HH:mm
+  durationMinutes: number; // e.g. 25
+  mode: StudyTimerMode;
+  notes?: string;
+  createdAt: string;
+}
+
+export interface StudyGoal {
+  dailyMinutes: number; // e.g. 120 (2 hours)
+  weeklyMinutes: number; // e.g. 600 (10 hours)
 }
 
 export type TaskStatus = 'todo' | 'in_progress' | 'submitted' | 'graded';

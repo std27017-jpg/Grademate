@@ -281,7 +281,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-2xl rounded-3xl p-5 sm:p-7 shadow-2xl border border-slate-100 space-y-5 max-h-[92vh] overflow-y-auto">
+      <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="space-y-1">
@@ -360,29 +360,29 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
         </div>
 
         {/* Tab Switcher: Quick 4-period vs Detailed sub-items */}
-        <div className="flex items-center justify-between border-b border-slate-200/80 pb-2">
-          <div className="flex items-center gap-1.5 p-1 bg-slate-100 rounded-xl">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200/80 pb-2">
+          <div className="flex items-center gap-1 p-1 bg-slate-100 rounded-xl overflow-x-auto scrollbar-none w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setActiveTab('quick')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-1 sm:flex-initial ${
                 activeTab === 'quick'
                   ? 'bg-white text-indigo-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              ⚡ แก้คะแนน 4 ช่วงหลัก (รวดเร็ว)
+              ⚡ แก้ 4 ช่วงหลัก (ด่วน)
             </button>
             <button
               type="button"
               onClick={() => setActiveTab('detailed')}
-              className={`px-3.5 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex-1 sm:flex-initial ${
                 activeTab === 'detailed'
                   ? 'bg-white text-indigo-600 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
-              📝 จัดการคะแนนย่อยละเอียด (Sub-items)
+              📝 คะแนนย่อย (Sub-items)
             </button>
           </div>
 

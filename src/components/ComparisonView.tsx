@@ -84,7 +84,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
   return (
     <div className="space-y-8 pb-12">
       {/* Overview of Full Academic Year (หน้าภาพรวมการเรียน) */}
-      <div className="relative overflow-hidden rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white p-6 sm:p-8 shadow-xl">
+      <div className="relative overflow-hidden rounded-2xl sm:rounded-3xl bg-gradient-to-r from-indigo-900 via-slate-900 to-indigo-950 text-white p-5 sm:p-8 shadow-xl">
         <div className="relative z-10 space-y-4">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-white/10 backdrop-blur-md border border-white/20">
             <Calendar className="w-3.5 h-3.5" />
@@ -93,7 +93,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
 
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black tracking-tight">
+              <h2 className="text-xl sm:text-3xl font-black tracking-tight">
                 ภาพรวมผลการเรียนทั้งปีการศึกษา {academicYear.year}
               </h2>
               <div className="flex items-center gap-2 mt-1.5 flex-wrap">
@@ -115,7 +115,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
             </div>
 
             {/* GPAX Big Badge */}
-            <div className="p-4 sm:p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-right shrink-0">
+            <div className="p-4 sm:p-5 rounded-2xl bg-white/10 backdrop-blur-md border border-white/15 text-left md:text-right shrink-0">
               <span className="text-xs font-medium text-slate-300 block">
                 เกรดเฉลี่ยสะสมทั้งปี (GPAX)
               </span>
@@ -185,7 +185,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* TERM 1 COLUMN */}
-          <div className="bg-white rounded-3xl border-2 border-blue-200 shadow-sm p-6 space-y-5">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border-2 border-blue-200 shadow-sm p-4 sm:p-6 space-y-5">
             {/* Term 1 Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -285,7 +285,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
           </div>
 
           {/* TERM 2 COLUMN */}
-          <div className="bg-white rounded-3xl border-2 border-rose-200 shadow-sm p-6 space-y-5">
+          <div className="bg-white rounded-2xl sm:rounded-3xl border-2 border-rose-200 shadow-sm p-4 sm:p-6 space-y-5">
             {/* Term 2 Header */}
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">
               <div className="flex items-center gap-2">
@@ -387,7 +387,7 @@ export const ComparisonView: React.FC<ComparisonViewProps> = ({ onOpenEditProfil
       </div>
 
       {/* Progression Trend Chart Across Year (กราฟพัฒนาการของคะแนน/เกรดตลอดปีการศึกษา) */}
-      <div className="bg-white p-6 sm:p-8 rounded-3xl border border-slate-200 shadow-xs space-y-4">
+      <div className="bg-white p-4 sm:p-8 rounded-2xl sm:rounded-3xl border border-slate-200 shadow-xs space-y-4">
         <div>
           <h3 className="font-black text-slate-900 text-lg">
             กราฟเปรียบเทียบและพัฒนาการผลการเรียนตลอดปีการศึกษา

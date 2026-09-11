@@ -143,7 +143,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white rounded-3xl max-w-lg w-full p-5 sm:p-6 border border-pink-100 shadow-2xl relative my-auto max-h-[94vh] flex flex-col">
+      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 border border-pink-100 shadow-2xl relative my-auto max-h-[92vh] flex flex-col box-border">
         {/* Close Button */}
         <button
           type="button"

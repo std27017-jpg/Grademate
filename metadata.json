@@ -1,6 +1,6 @@
 {
   "name": "MyGrade",
-  "description": "🌸 MyGrade — แอปช่วยวางแผนการเรียนและอนาคตของนักเรียน คำนวณเกรดตามจริง 100 คะแนน เป้าหมาย มหาวิทยาลัย อาชีพ แฟ้มสะสมผลงาน Portfolio งานและตารางสอบ",
+  "description": "🌸 MyGrade — แอปช่วยวางแผนการเรียนและอนาคตของนักเรียน คำนวณเกรดตามจริง 100 คะแนน ตัวจับเวลาอ่านหนังสือ (Study Timer) ระบบจัดหมวดหมู่วิชา เป้าหมายมหาวิทยาลัย อาชีพ แฟ้มสะสมผลงาน และตารางสอบ",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -147,14 +147,14 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-lg rounded-3xl p-6 sm:p-8 shadow-2xl border border-slate-100 space-y-5 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-8 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] overflow-y-auto box-border">
         {/* Header with MyGrade branding */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <div className="flex items-center gap-2">
               <span className="text-xl">🎓</span>
-              <h3 className="font-black text-slate-900 text-xl tracking-tight">
+              <h3 className="font-black text-slate-900 text-lg sm:text-xl tracking-tight">
                 ตั้งค่าระบบ MyGrade
               </h3>
             </div>
@@ -182,7 +182,7 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <button
             type="button"
             onClick={() => setActiveTab('profile')}
-            className={`py-2 text-xs font-bold rounded-xl transition-all ${
+            className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis ${
               activeTab === 'profile'
                 ? 'bg-white text-slate-900 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
@@ -193,18 +193,18 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
           <button
             type="button"
             onClick={() => setActiveTab('gradescale')}
-            className={`py-2 text-xs font-bold rounded-xl transition-all ${
+            className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis ${
               activeTab === 'gradescale'
                 ? 'bg-white text-slate-900 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            🎯 เกณฑ์เกรด (0–4)
+            🎯 เกณฑ์เกรด
           </button>
           <button
             type="button"
             onClick={() => setActiveTab('backup')}
-            className={`py-2 text-xs font-bold rounded-xl transition-all ${
+            className={`py-2 px-1 text-[11px] sm:text-xs font-bold rounded-xl transition-all whitespace-nowrap overflow-hidden text-ellipsis ${
               activeTab === 'backup'
                 ? 'bg-white text-slate-900 shadow-2xs'
                 : 'text-slate-600 hover:text-slate-900'

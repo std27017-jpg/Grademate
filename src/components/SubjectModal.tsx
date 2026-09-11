@@ -17,12 +17,13 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
   onClose,
   editingSubject,
 }) => {
-  const { currentSemester, addSubject, updateSubject, gradeThresholds } = useGrade();
+  const { currentSemester, addSubject, updateSubject, gradeThresholds, subjectCategories, inferSubjectCategory } = useGrade();
 
   const [form, setForm] = useState({
     semesterId: currentSemester,
     name: '',
     code: '',
+    category: '',
     credits: '1.5',
     targetGrade: '4',
     targetScore: '80',
@@ -46,6 +47,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         semesterId: editingSubject.semesterId,
         name: editingSubject.name,
         code: editingSubject.code,
+        category: editingSubject.category || inferSubjectCategory(editingSubject.name),
         credits: editingSubject.credits.toString(),
         targetGrade: editingSubject.targetGrade.toString(),
         targetScore: (editingSubject.targetScore || 80).toString(),
@@ -169,12 +171,15 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
       };
     };
 
+    const finalCategory = form.category.trim() || inferSubjectCategory(form.name);
+
     if (editingSubject) {
       updateSubject({
         ...editingSubject,
         semesterId: form.semesterId,
         name: form.name.trim(),
         code: form.code.trim(),
+        category: finalCategory,
         credits: creditsNum,
         color: form.color,
         targetGrade: targetGradeNum,
@@ -193,6 +198,7 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
         semesterId: form.semesterId,
         name: form.name.trim(),
         code: form.code.trim(),
+        category: finalCategory,
         credits: creditsNum,
         color: form.color || '#fb7185',
         icon: 'BookOpen',
@@ -213,8 +219,8 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-lg rounded-3xl p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[90vh] overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
+      <div className="bg-white w-full max-w-lg rounded-2xl sm:rounded-3xl p-4 sm:p-6 shadow-2xl border border-slate-100 space-y-4 max-h-[92vh] overflow-y-auto box-border">
         <div className="flex items-center justify-between border-b border-slate-100 pb-3">
           <div>
             <h3 className="font-bold text-slate-900 text-lg">
@@ -274,7 +280,15 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                 required
                 placeholder="เช่น คณิตศาสตร์เพิ่มเติม 3"
                 value={form.name}
-                onChange={(e) => setForm({ ...form, name: e.target.value })}
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  const suggestedCat = inferSubjectCategory(newName);
+                  setForm((prev) => ({
+                    ...prev,
+                    name: newName,
+                    category: prev.category ? prev.category : suggestedCat,
+                  }));
+                }}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm font-medium"
               />
             </div>
@@ -290,6 +304,54 @@ export const SubjectModal: React.FC<SubjectModalProps> = ({
                 onChange={(e) => setForm({ ...form, code: e.target.value })}
                 className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:ring-2 focus:ring-indigo-500 text-sm font-medium uppercase"
               />
+            </div>
+          </div>
+
+          {/* Subject Category Picker */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="block text-xs font-bold text-slate-700">
+                🏷️ หมวดหมู่วิชา
+              </label>
+              <span className="text-[11px] text-slate-400">เลือกหรือพิมพ์หมวดหมู่เอง</span>
+            </div>
+            <div className="flex gap-2">
+              <select
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="flex-1 px-3 py-2 rounded-xl border border-slate-300 text-sm bg-white font-medium"
+              >
+                <option value="">-- เลือกหมวดหมู่ หรือพิมพ์ด้านล่าง --</option>
+                {subjectCategories.map((cat) => (
+                  <option key={cat.id} value={cat.name}>
+                    {cat.icon} {cat.name}
+                  </option>
+                ))}
+              </select>
+              <input
+                type="text"
+                placeholder="หรือพิมพ์ชื่อหมวดหมู่ใหม่"
+                value={form.category}
+                onChange={(e) => setForm({ ...form, category: e.target.value })}
+                className="w-1/2 px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+              />
+            </div>
+            {/* Quick category pills */}
+            <div className="flex flex-wrap gap-1.5 mt-2">
+              {subjectCategories.slice(0, 6).map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setForm({ ...form, category: cat.name })}
+                  className={`text-[11px] px-2.5 py-1 rounded-full font-medium transition-all ${
+                    form.category === cat.name
+                      ? 'bg-pink-100 text-pink-700 border border-pink-300 font-bold'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  {cat.icon} {cat.name}
+                </button>
+              ))}
             </div>
           </div>
 

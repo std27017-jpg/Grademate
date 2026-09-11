@@ -23,6 +23,10 @@ import {
   Layers,
   ArrowRight,
   Palette,
+  Timer,
+  Filter,
+  LayoutGrid,
+  FolderTree,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
@@ -43,6 +47,7 @@ interface SubjectsViewProps {
   onOpenEditSubject: (subject: Subject) => void;
   selectedSubjectId?: string | null;
   onSelectSubject?: (subject: Subject | null) => void;
+  onNavigateToStudy?: () => void;
 }
 
 export const SubjectsView: React.FC<SubjectsViewProps> = ({
@@ -50,6 +55,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   onOpenEditSubject,
   selectedSubjectId: propSelectedSubjectId,
   onSelectSubject: propOnSelectSubject,
+  onNavigateToStudy,
 }) => {
   const {
     currentSemester,
@@ -61,11 +67,18 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     updateScoreItem,
     deleteScoreItem,
     deleteSubject,
+    subjectCategories,
+    startStudyForSubject,
+    getCategoryForSubject,
   } = useGrade();
 
   // Internal state for selected subject if not controlled externally
   const [internalSelectedSubjectId, setInternalSelectedSubjectId] = useState<string | null>(null);
   const activeSubjectId = propSelectedSubjectId !== undefined ? propSelectedSubjectId : internalSelectedSubjectId;
+
+  // Category filter and grouping
+  const [selectedCategory, setSelectedCategory] = useState<string>('all');
+  const [viewGrouping, setViewGrouping] = useState<'all' | 'grouped'>('all');
 
   const handleSelectSubject = (sub: Subject | null) => {
     if (propOnSelectSubject) {
@@ -180,6 +193,197 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   // VIEW 1: COMPACT GRID OF ALL SUBJECTS (PROGRESSIVE DISCLOSURE LEVEL 1 & 2)
   // =========================================================================
   if (!currentSubject || !currentSubjectSummary) {
+    // Filter subject summaries based on category
+    const filteredSubjectSummaries = activeSemesterSummary.subjectSummaries.filter((sSummary) => {
+      if (selectedCategory === 'all') return true;
+      const cat = getCategoryForSubject(sSummary.subject);
+      return cat.name.toLowerCase() === selectedCategory.toLowerCase();
+    });
+
+    // Group subjects by category if grouped mode
+    const groupedByCategory = subjectCategories
+      .map((cat) => {
+        const subsInCat = activeSemesterSummary.subjectSummaries.filter(
+          (sSummary) => getCategoryForSubject(sSummary.subject).name.toLowerCase() === cat.name.toLowerCase()
+        );
+        return {
+          category: cat,
+          summaries: subsInCat,
+        };
+      })
+      .filter((g) => g.summaries.length > 0);
+
+    // Also include any subjects that have other category
+    const knownCatNames = new Set(subjectCategories.map((c) => c.name.toLowerCase()));
+    const otherSummaries = activeSemesterSummary.subjectSummaries.filter(
+      (sSummary) => !knownCatNames.has(getCategoryForSubject(sSummary.subject).name.toLowerCase())
+    );
+    if (otherSummaries.length > 0) {
+      groupedByCategory.push({
+        category: {
+          id: 'other',
+          name: 'อื่น ๆ',
+          icon: '📦',
+          color: 'slate',
+        },
+        summaries: otherSummaries,
+      });
+    }
+
+    const renderCard = (subSummary: (typeof activeSemesterSummary.subjectSummaries)[0]) => {
+      const sub = subSummary.subject;
+      const progress = Math.min(100, subSummary.currentPercentage);
+      const subCat = getCategoryForSubject(sub);
+
+      return (
+        <div
+          key={sub.id}
+          className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+        >
+          <div className="space-y-3.5">
+            {/* Top Bar: Icon + Code + Options */}
+            <div className="flex items-start justify-between gap-2">
+              <div className="flex items-center gap-3 min-w-0">
+                {/* Clickable color circle avatar with palette hover badge */}
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setColorModalSubject(sub);
+                  }}
+                  className="w-11 h-11 rounded-full flex items-center justify-center shadow-2xs shrink-0 font-black text-sm hover:scale-105 active:scale-95 transition-all cursor-pointer relative group/color"
+                  style={{
+                    backgroundColor: getSubjectColor(sub.color),
+                    color: getContrastTextColor(getSubjectColor(sub.color)),
+                  }}
+                  title="คลิกเพื่อปรับเปลี่ยนสีวิชานี้ (สีพาสเทล / วงล้อสี)"
+                >
+                  {sub.name.charAt(0)}
+                  <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-2xs opacity-0 group-hover/color:opacity-100 transition-opacity border border-slate-200">
+                    <Palette className="w-2.5 h-2.5 text-indigo-600" />
+                  </span>
+                </button>
+                <div className="min-w-0">
+                  <h4 className="font-extrabold text-slate-900 text-base leading-snug truncate group-hover:text-indigo-600 transition-colors">
+                    {sub.name}
+                  </h4>
+                  <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
+                    <span className="text-xs font-semibold text-slate-400 block truncate">
+                      {sub.code} • {sub.credits} นก.
+                    </span>
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                      {subCat.icon} {subCat.name}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Edit/Palette/Delete buttons */}
+              <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setColorModalSubject(sub);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-pink-600 rounded-full hover:bg-pink-50 transition-colors cursor-pointer"
+                  title="ปรับสีวิชา (พาสเทล/วงล้อสี)"
+                >
+                  <Palette className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onOpenEditSubject(sub);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                  title="แก้ไขข้อมูลวิชา"
+                >
+                  <Edit2 className="w-3.5 h-3.5" />
+                </button>
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteSubjectClick(sub);
+                  }}
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
+                  title="ลบวิชา"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            </div>
+
+            {/* Level 1 & Level 2 Information: Score + Grade + Target */}
+            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-2.5">
+              <div className="flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนน</span>
+                  <span className="text-2xl font-black text-slate-900 tracking-tight">
+                    {subSummary.earnedScore}{' '}
+                    <span className="text-xs font-normal text-slate-400">/ 100</span>
+                  </span>
+                </div>
+                <div className="text-right flex items-center gap-1.5">
+                  <span className="inline-block px-3 py-1 rounded-full bg-white border border-slate-200 font-extrabold text-xs text-slate-800 shadow-2xs">
+                    เกรด {subSummary.estimatedGrade}
+                  </span>
+                  <span className="inline-block px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 font-bold text-xs">
+                    🎯 เป้าหมาย {sub.targetGrade}
+                  </span>
+                </div>
+              </div>
+
+              {/* Rounded Progress Bar */}
+              <div className="space-y-1">
+                <div className="flex justify-between text-[10px] text-slate-500 font-semibold">
+                  <span>ความคืบหน้า</span>
+                  <span>{progress.toFixed(0)}%</span>
+                </div>
+                <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
+                  <div
+                    className="h-full rounded-full transition-all duration-500 ease-out"
+                    style={{
+                      width: `${progress}%`,
+                      backgroundColor: getSubjectColor(sub.color),
+                    }}
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Action Buttons: [ จับเวลาอ่าน ⏱️ ] and [ ดูคะแนน → ] */}
+          <div className="grid grid-cols-2 gap-2 pt-1">
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                startStudyForSubject(sub.id);
+                if (onNavigateToStudy) onNavigateToStudy();
+              }}
+              className="w-full py-2.5 px-3 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              title="เริ่มจับเวลาอ่านหนังสือวิชานี้"
+            >
+              <Timer className="w-3.5 h-3.5 text-pink-600" />
+              <span>จับเวลาอ่าน</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => handleSelectSubject(sub)}
+              className="w-full py-2.5 px-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+            >
+              <span>ดูคะแนน</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+        </div>
+      );
+    };
+
     return (
       <div className="space-y-6 pb-8">
         {/* Header bar */}
@@ -197,7 +401,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               </span>
             </div>
             <p className="text-xs sm:text-sm text-slate-500 mt-1">
-              คลิกที่การ์ดเพื่อดูรายละเอียดคะแนน งาน และการสอบแบบเจาะลึก
+              คลิกที่การ์ดเพื่อดูรายละเอียดคะแนน งาน หรือกด "จับเวลาอ่าน" เพื่อเริ่มบันทึกเวลาเรียน
             </p>
           </div>
 
@@ -214,157 +418,136 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </div>
         </div>
 
-        {/* Compact Grid of Subject Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
-          {activeSemesterSummary.subjectSummaries.map((subSummary) => {
-            const sub = subSummary.subject;
-            const progress = Math.min(100, subSummary.currentPercentage);
+        {/* Category Filters & View Toggle Bar */}
+        <div className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
+          {/* Category Filter Pills */}
+          <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none pb-1 md:pb-0">
+            <button
+              type="button"
+              onClick={() => setSelectedCategory('all')}
+              className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
+                selectedCategory === 'all'
+                  ? 'bg-slate-900 text-white shadow-xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              ทั้งหมด ({activeSemesterSummary.subjectSummaries.length})
+            </button>
+            {subjectCategories.map((cat) => {
+              const count = activeSemesterSummary.subjectSummaries.filter(
+                (s) => getCategoryForSubject(s.subject).name.toLowerCase() === cat.name.toLowerCase()
+              ).length;
+              if (count === 0 && selectedCategory !== cat.name) return null;
+              return (
+                <button
+                  key={cat.id}
+                  type="button"
+                  onClick={() => setSelectedCategory(cat.name)}
+                  className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
+                    selectedCategory.toLowerCase() === cat.name.toLowerCase()
+                      ? 'bg-pink-600 text-white shadow-xs'
+                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  }`}
+                >
+                  <span>{cat.icon}</span>
+                  <span>{cat.name}</span>
+                  <span className="text-[10px] opacity-80">({count})</span>
+                </button>
+              );
+            })}
+          </div>
 
-            return (
-              <div
-                key={sub.id}
-                className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
-              >
-                <div className="space-y-3.5">
-                  {/* Top Bar: Icon + Code + Options */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex items-center gap-3 min-w-0">
-                      {/* Clickable color circle avatar with palette hover badge */}
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setColorModalSubject(sub);
-                        }}
-                        className="w-11 h-11 rounded-full flex items-center justify-center shadow-2xs shrink-0 font-black text-sm hover:scale-105 active:scale-95 transition-all cursor-pointer relative group/color"
-                        style={{
-                          backgroundColor: getSubjectColor(sub.color),
-                          color: getContrastTextColor(getSubjectColor(sub.color)),
-                        }}
-                        title="คลิกเพื่อปรับเปลี่ยนสีวิชานี้ (สีพาสเทล / วงล้อสี)"
-                      >
-                        {sub.name.charAt(0)}
-                        <span className="absolute -bottom-0.5 -right-0.5 w-4 h-4 bg-white rounded-full flex items-center justify-center shadow-2xs opacity-0 group-hover/color:opacity-100 transition-opacity border border-slate-200">
-                          <Palette className="w-2.5 h-2.5 text-indigo-600" />
-                        </span>
-                      </button>
-                      <div className="min-w-0">
-                        <h4 className="font-extrabold text-slate-900 text-base leading-snug truncate group-hover:text-indigo-600 transition-colors">
-                          {sub.name}
-                        </h4>
-                        <span className="text-xs font-semibold text-slate-400 block truncate">
-                          {sub.code} • {sub.credits} หน่วยกิต
-                        </span>
-                      </div>
-                    </div>
+          {/* Grouping View Switcher */}
+          <div className="flex items-center gap-1 shrink-0 bg-slate-100 p-1 rounded-xl self-end md:self-auto">
+            <button
+              type="button"
+              onClick={() => setViewGrouping('all')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewGrouping === 'all'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <LayoutGrid className="w-3.5 h-3.5" />
+              <span>การ์ดทั้งหมด</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setViewGrouping('grouped')}
+              className={`flex items-center gap-1 px-3 py-1 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                viewGrouping === 'grouped'
+                  ? 'bg-white text-slate-900 shadow-2xs'
+                  : 'text-slate-500 hover:text-slate-800'
+              }`}
+            >
+              <FolderTree className="w-3.5 h-3.5" />
+              <span>จัดตามหมวดหมู่</span>
+            </button>
+          </div>
+        </div>
 
-                    {/* Quick Edit/Palette/Delete buttons */}
-                    <div className="flex items-center gap-1 opacity-70 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setColorModalSubject(sub);
-                        }}
-                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-pink-600 rounded-full hover:bg-pink-50 transition-colors cursor-pointer"
-                        title="ปรับสีวิชา (พาสเทล/วงล้อสี)"
-                      >
-                        <Palette className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          onOpenEditSubject(sub);
-                        }}
-                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
-                        title="แก้ไขข้อมูลวิชา"
-                      >
-                        <Edit2 className="w-3.5 h-3.5" />
-                      </button>
-                      <button
-                        type="button"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteSubjectClick(sub);
-                        }}
-                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-rose-600 rounded-full hover:bg-rose-50 transition-colors cursor-pointer"
-                        title="ลบวิชา"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </div>
-
-                  {/* Level 1 & Level 2 Information: Score + Grade + Target */}
-                  <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนน</span>
-                        <span className="text-2xl font-black text-slate-900 tracking-tight">
-                          {subSummary.earnedScore}{' '}
-                          <span className="text-xs font-normal text-slate-400">/ 100</span>
-                        </span>
-                      </div>
-                      <div className="text-right flex items-center gap-1.5">
-                        <span className="inline-block px-3 py-1 rounded-full bg-white border border-slate-200 font-extrabold text-xs text-slate-800 shadow-2xs">
-                          เกรด {subSummary.estimatedGrade}
-                        </span>
-                        <span className="inline-block px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 font-bold text-xs">
-                          🎯 เป้าหมาย {sub.targetGrade}
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Rounded Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex justify-between text-[10px] text-slate-500 font-semibold">
-                        <span>ความคืบหน้า</span>
-                        <span>{progress.toFixed(0)}%</span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500 ease-out"
-                          style={{
-                            width: `${progress}%`,
-                            backgroundColor: getSubjectColor(sub.color),
-                          }}
-                        />
-                      </div>
-                    </div>
+        {/* View Mode: Grouped by Category */}
+        {viewGrouping === 'grouped' ? (
+          <div className="space-y-6">
+            {groupedByCategory.map((group) => (
+              <div key={group.category.id} className="space-y-3">
+                <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">{group.category.icon}</span>
+                    <h3 className="font-black text-slate-900 text-base">
+                      หมวด{group.category.name}
+                    </h3>
+                    <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-600">
+                      {group.summaries.length} วิชา
+                    </span>
                   </div>
                 </div>
 
-                {/* Primary Action Button: [ ดูรายละเอียด → ] */}
-                <button
-                  type="button"
-                  onClick={() => handleSelectSubject(sub)}
-                  className="w-full py-2.5 px-4 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1.5 cursor-pointer active:scale-95"
-                >
-                  <span>ดูรายละเอียด</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
-                </button>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+                  {group.summaries.map((subSummary) => renderCard(subSummary))}
+                </div>
               </div>
-            );
-          })}
-        </div>
+            ))}
+          </div>
+        ) : (
+          /* View Mode: Standard Flat Grid */
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+            {filteredSubjectSummaries.map((subSummary) => renderCard(subSummary))}
+          </div>
+        )}
 
-        {activeSemesterSummary.subjectSummaries.length === 0 && (
+        {filteredSubjectSummaries.length === 0 && (
           <div className="bg-white rounded-3xl p-12 text-center border border-slate-200 space-y-4">
             <BookOpen className="w-12 h-12 text-slate-300 mx-auto" />
             <div className="space-y-1">
-              <h4 className="text-base font-bold text-slate-800">ยังไม่มีรายวิชาในภาคเรียนนี้</h4>
+              <h4 className="text-base font-bold text-slate-800">
+                {selectedCategory === 'all'
+                  ? 'ยังไม่มีรายวิชาในภาคเรียนนี้'
+                  : `ไม่พบวิชาในหมวด "${selectedCategory}"`}
+              </h4>
               <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                เริ่มต้นเพิ่มรายวิชาเพื่อบันทึกคะแนนเก็บ คำนวณเกรด และติดตามงานได้ทันที
+                {selectedCategory === 'all'
+                  ? 'เริ่มต้นเพิ่มรายวิชาเพื่อบันทึกคะแนนเก็บ คำนวณเกรด และติดตามงานได้ทันที'
+                  : 'ลองเปลี่ยนตัวกรองหมวดหมู่ หรือแก้ไขหมวดหมู่ของวิชาที่คุณต้องการ'}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={onOpenAddSubject}
-              className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
-            >
-              + เพิ่มวิชาแรก
-            </button>
+            {selectedCategory === 'all' ? (
+              <button
+                type="button"
+                onClick={onOpenAddSubject}
+                className="px-5 py-2.5 bg-indigo-600 text-white rounded-xl text-xs font-bold shadow-md cursor-pointer"
+              >
+                + เพิ่มวิชาแรก
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setSelectedCategory('all')}
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold cursor-pointer"
+              >
+                แสดงทุกวิชา
+              </button>
+            )}
           </div>
         )}
       </div>
@@ -405,7 +588,19 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <span>กลับไปหน้ารวมวิชา</span>
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
+            <button
+              type="button"
+              onClick={() => {
+                startStudyForSubject(sub.id);
+                if (onNavigateToStudy) onNavigateToStudy();
+              }}
+              className="px-3 py-1.5 rounded-xl bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border border-pink-200 shadow-2xs"
+              title="เริ่มจับเวลาอ่านวิชานี้"
+            >
+              <Timer className="w-3.5 h-3.5 text-pink-600" />
+              <span>จับเวลาอ่าน ⏱️</span>
+            </button>
             <button
               type="button"
               onClick={() => setColorModalSubject(sub)}
@@ -453,10 +648,15 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               </span>
             </button>
             <div>
-              <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
-                {sub.name}
-              </h2>
-              <p className="text-xs sm:text-sm text-slate-500 font-medium">
+              <div className="flex items-center gap-2 flex-wrap">
+                <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+                  {sub.name}
+                </h2>
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80">
+                  {getCategoryForSubject(sub).icon} {getCategoryForSubject(sub).name}
+                </span>
+              </div>
+              <p className="text-xs sm:text-sm text-slate-500 font-medium mt-0.5">
                 รหัสวิชา: {sub.code} • {sub.credits} หน่วยกิต {sub.teacher && `• ครูผู้สอน: ${sub.teacher}`}
               </p>
             </div>
@@ -1024,8 +1224,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
 
       {/* Add / Edit Sub-Score Item Modal */}
       {itemModal.isOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-black text-slate-900">
               {itemModal.editingItem ? 'แก้ไขรายการคะแนนย่อย' : 'เพิ่มรายการคะแนนย่อย'}
             </h3>

@@ -21,6 +21,7 @@ import {
   Briefcase,
   GraduationCap,
   Lightbulb,
+  Timer,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
@@ -59,6 +60,11 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     targetGpaAnalysis,
     futureChecklist,
     portfolioItems,
+    todayStudyMinutes,
+    studyGoal,
+    studyStreakDays,
+    topSubjectToday,
+    topCategoryToday,
     updateTask,
     updateStudentName,
   } = useGrade();
@@ -274,6 +280,69 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <p className="text-xs text-slate-700 font-medium leading-relaxed">
             {getDailySuggestion()}
           </p>
+        </div>
+      </div>
+
+      {/* Today's Study Timer & Goal Progress Card */}
+      <div className="bg-white rounded-3xl p-4 sm:p-5 border border-pink-200/80 shadow-2xs hover:shadow-xs transition-all flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-center gap-3.5 min-w-0">
+          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-pink-500 to-rose-500 text-white flex items-center justify-center shadow-md shadow-pink-500/20 shrink-0">
+            <Timer className="w-6 h-6 animate-pulse" />
+          </div>
+          <div className="space-y-1 min-w-0">
+            <div className="flex items-center gap-2 flex-wrap">
+              <h3 className="text-base font-black text-slate-900 tracking-tight">
+                อ่านหนังสือวันนี้ 📚
+              </h3>
+              <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-50 text-pink-700 border border-pink-200/60 flex items-center gap-1">
+                <Flame className="w-3 h-3 text-orange-500 fill-orange-500" />
+                <span>Streak {studyStreakDays} วัน</span>
+              </span>
+            </div>
+            <p className="text-xs text-slate-500 font-medium">
+              {todayStudyMinutes > 0 ? (
+                <span>
+                  อ่านไปแล้ว <strong className="text-pink-600 font-black">{todayStudyMinutes} นาที</strong> จากเป้าหมาย {studyGoal.dailyTargetMinutes} นาที/วัน
+                  {topSubjectToday && (
+                    <span className="text-slate-400 ml-1">
+                      (เน้นวิชา: <strong className="text-slate-700 font-bold">{topSubjectToday.name}</strong>)
+                    </span>
+                  )}
+                </span>
+              ) : (
+                <span>
+                  ยังไม่ได้เริ่มอ่านหนังสือวันนี้ • ตั้งเป้าหมายไว้ {studyGoal.dailyTargetMinutes} นาที/วัน
+                </span>
+              )}
+            </p>
+          </div>
+        </div>
+
+        {/* Progress Bar & Quick Action */}
+        <div className="flex items-center gap-3 sm:gap-4 flex-1 max-w-md justify-between md:justify-end">
+          <div className="flex-1 space-y-1.5 hidden sm:block">
+            <div className="flex justify-between text-xs font-bold text-slate-600">
+              <span>ความคืบหน้า</span>
+              <span>{Math.min(100, Math.round((todayStudyMinutes / (studyGoal.dailyTargetMinutes || 1)) * 100))}%</span>
+            </div>
+            <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden border border-slate-200/60">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-pink-500 to-rose-500 transition-all duration-500"
+                style={{
+                  width: `${Math.min(100, Math.round((todayStudyMinutes / (studyGoal.dailyTargetMinutes || 1)) * 100))}%`,
+                }}
+              />
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={() => onNavigate('study')}
+            className="px-4 py-2.5 rounded-2xl bg-gradient-to-r from-pink-600 to-rose-600 hover:from-pink-700 hover:to-rose-700 text-white text-xs font-black shadow-sm transition-all flex items-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
+          >
+            <Timer className="w-4 h-4" />
+            <span>{todayStudyMinutes > 0 ? 'อ่านต่อเลย 🚀' : 'เริ่มจับเวลา ⏱️'}</span>
+          </button>
         </div>
       </div>
 

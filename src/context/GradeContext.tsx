@@ -15,6 +15,9 @@ import {
   FutureTodoItem,
   AppNotification,
   NumericGrade,
+  SubjectCategory,
+  StudySession,
+  StudyGoal,
 } from '../types';
 import {
   DEFAULT_ACADEMIC_YEAR,
@@ -25,6 +28,9 @@ import {
   DEFAULT_FUTURE_CHECKLIST,
   DEFAULT_PORTFOLIO_ITEMS,
   DEFAULT_FUTURE_TODOS,
+  DEFAULT_SUBJECT_CATEGORIES,
+  DEFAULT_STUDY_GOAL,
+  DEFAULT_STUDY_SESSIONS,
 } from '../data/defaultData';
 import {
   calculateSemesterSummary,
@@ -129,11 +135,52 @@ interface GradeContextType {
   markNotificationAsRead: (id: string) => void;
   markAllNotificationsAsRead: () => void;
 
+  // Subject Categories
+  subjectCategories: SubjectCategory[];
+  addSubjectCategory: (cat: Omit<SubjectCategory, 'id'>) => SubjectCategory;
+  updateSubjectCategory: (cat: SubjectCategory) => void;
+  deleteSubjectCategory: (id: string) => void;
+
+  // Study Timer & Sessions
+  studySessions: StudySession[];
+  addStudySession: (session: Omit<StudySession, 'id' | 'createdAt'>) => StudySession;
+  updateStudySession: (session: StudySession) => void;
+  deleteStudySession: (id: string) => void;
+  studyGoal: StudyGoal;
+  updateStudyGoal: (goal: Partial<StudyGoal>) => void;
+  selectedStudySubjectId: string | null;
+  setSelectedStudySubjectId: (id: string | null) => void;
+  startStudyForSubject: (subjectId: string, topic?: string) => void;
+
+  // Study Analytics
+  todayStudyMinutes: number;
+  weeklyStudyMinutes: number;
+  studyStreakDays: number;
+  topStudySubject: { subjectName: string; minutes: number } | null;
+  topStudyCategory: { category: string; minutes: number } | null;
+  getCategoryForSubject: (subject: Subject) => SubjectCategory;
+  inferSubjectCategory: (name: string, currentCategory?: string) => string;
+
   // Backup & Reset
   resetToDefault: () => void;
   exportJSON: () => string;
   importJSON: (jsonStr: string) => boolean;
 }
+
+export const inferSubjectCategory = (name: string, currentCategory?: string): string => {
+  if (currentCategory && currentCategory.trim()) return currentCategory.trim();
+  const n = name.toLowerCase();
+  if (n.includes('คณิต') || n.includes('math') || n.includes('พีชคณิต') || n.includes('แคลคูลัส') || n.includes('สถิติ')) return 'คณิตศาสตร์';
+  if (n.includes('ชีว') || n.includes('เคมี') || n.includes('ฟิสิกส์') || n.includes('วิทย์') || n.includes('ดาราศาสตร์') || n.includes('science')) return 'วิทยาศาสตร์';
+  if (n.includes('อังกฤษ') || n.includes('english') || n.includes('จีน') || n.includes('ญี่ปุ่น') || n.includes('เกาหลี') || n.includes('ฝรั่งเศส') || n.includes('เยอรมัน')) return 'ภาษาต่างประเทศ';
+  if (n.includes('ไทย') || n.includes('ภาษาไทย') || n.includes('วรรณคดี')) return 'ภาษาไทย';
+  if (n.includes('สังคม') || n.includes('ประวัติศาสตร์') || n.includes('ภูมิศาสตร์') || n.includes('หน้าที่พลเมือง') || n.includes('ศาสนา') || n.includes('เศรษฐศาสตร์')) return 'สังคมศึกษา';
+  if (n.includes('คอม') || n.includes('เทคโนโลยี') || n.includes('โปรแกรม') || n.includes('ai') || n.includes('วิทยาการคำนวณ')) return 'เทคโนโลยี / คอมพิวเตอร์';
+  if (n.includes('ศิลปะ') || n.includes('ดนตรี') || n.includes('นาฏศิลป์') || n.includes('วาด') || n.includes('art')) return 'ศิลปะ';
+  if (n.includes('สุขศึกษา') || n.includes('พลศึกษา') || n.includes('พละ') || n.includes('กีฬา')) return 'สุขศึกษาและพลศึกษา';
+  if (n.includes('การงาน') || n.includes('เกษตร') || n.includes('งานช่าง') || n.includes('คหกรรม') || n.includes('บัญชี')) return 'การงานอาชีพ';
+  return 'อื่น ๆ';
+};
 
 const GradeContext = createContext<GradeContextType | undefined>(undefined);
 
@@ -151,6 +198,9 @@ const STORAGE_KEYS = {
   FUTURE_TODOS: 'mygrade_future_todos',
   READ_NOTIFS: 'mygrade_read_notification_ids',
   SAVED_PROFILES: 'mygrade_saved_profiles',
+  SUBJECT_CATEGORIES: 'mygrade_subject_categories',
+  STUDY_SESSIONS: 'mygrade_study_sessions',
+  STUDY_GOAL: 'mygrade_study_goal',
   // Legacy fallback keys to ensure no data loss
   LEGACY_SEMESTER: 'grademate_active_semester',
   LEGACY_YEAR: 'grademate_academic_year',
@@ -217,11 +267,44 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const [subjects, setSubjects] = useState<Subject[]>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEYS.SUBJECTS) || localStorage.getItem(STORAGE_KEYS.LEGACY_SUBJECTS);
-      return saved ? JSON.parse(saved) : DEFAULT_SUBJECTS;
+      const list: Subject[] = saved ? JSON.parse(saved) : DEFAULT_SUBJECTS;
+      return list.map((s) => ({
+        ...s,
+        category: s.category || inferSubjectCategory(s.name),
+      }));
     } catch {
       return DEFAULT_SUBJECTS;
     }
   });
+
+  const [subjectCategories, setSubjectCategories] = useState<SubjectCategory[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.SUBJECT_CATEGORIES);
+      return saved ? JSON.parse(saved) : DEFAULT_SUBJECT_CATEGORIES;
+    } catch {
+      return DEFAULT_SUBJECT_CATEGORIES;
+    }
+  });
+
+  const [studySessions, setStudySessions] = useState<StudySession[]>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.STUDY_SESSIONS);
+      return saved ? JSON.parse(saved) : DEFAULT_STUDY_SESSIONS;
+    } catch {
+      return DEFAULT_STUDY_SESSIONS;
+    }
+  });
+
+  const [studyGoal, setStudyGoal] = useState<StudyGoal>(() => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEYS.STUDY_GOAL);
+      return saved ? JSON.parse(saved) : DEFAULT_STUDY_GOAL;
+    } catch {
+      return DEFAULT_STUDY_GOAL;
+    }
+  });
+
+  const [selectedStudySubjectId, setSelectedStudySubjectId] = useState<string | null>(null);
 
   const [tasks, setTasks] = useState<Task[]>(() => {
     try {
@@ -338,6 +421,18 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     localStorage.setItem(STORAGE_KEYS.READ_NOTIFS, JSON.stringify(readNotifIds));
   }, [readNotifIds]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.SUBJECT_CATEGORIES, JSON.stringify(subjectCategories));
+  }, [subjectCategories]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.STUDY_SESSIONS, JSON.stringify(studySessions));
+  }, [studySessions]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEYS.STUDY_GOAL, JSON.stringify(studyGoal));
+  }, [studyGoal]);
 
   // Auth Functions
   const login = (email: string, password?: string) => {
@@ -487,8 +582,10 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   // Subject Handlers
   const addSubject = (newSub: Omit<Subject, 'id'>) => {
     const id = `sub_${Date.now()}_${Math.random().toString(36).substr(2, 5)}`;
+    const category = newSub.category || inferSubjectCategory(newSub.name);
     const fullSubject: Subject = {
       ...newSub,
+      category,
       id,
     };
     setSubjects((prev) => [...prev, fullSubject]);
@@ -496,7 +593,11 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   };
 
   const updateSubject = (updated: Subject) => {
-    setSubjects((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+    const withCategory = {
+      ...updated,
+      category: updated.category || inferSubjectCategory(updated.name),
+    };
+    setSubjects((prev) => prev.map((s) => (s.id === updated.id ? withCategory : s)));
   };
 
   const deleteSubject = (id: string) => {
@@ -766,6 +867,66 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }));
   };
 
+  // Subject Category Handlers
+  const addSubjectCategory = (cat: Omit<SubjectCategory, 'id'>) => {
+    const id = `cat_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newCat: SubjectCategory = {
+      ...cat,
+      id,
+    };
+    setSubjectCategories((prev) => [...prev, newCat]);
+    return newCat;
+  };
+
+  const updateSubjectCategory = (cat: SubjectCategory) => {
+    setSubjectCategories((prev) => prev.map((c) => (c.id === cat.id ? cat : c)));
+  };
+
+  const deleteSubjectCategory = (id: string) => {
+    setSubjectCategories((prev) => prev.filter((c) => c.id !== id));
+  };
+
+  // Study Session Handlers
+  const addStudySession = (session: Omit<StudySession, 'id' | 'createdAt'>) => {
+    const id = `sess_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newSession: StudySession = {
+      ...session,
+      id,
+      createdAt: new Date().toISOString(),
+    };
+    setStudySessions((prev) => [newSession, ...prev]);
+    return newSession;
+  };
+
+  const updateStudySession = (updated: StudySession) => {
+    setStudySessions((prev) => prev.map((s) => (s.id === updated.id ? updated : s)));
+  };
+
+  const deleteStudySession = (id: string) => {
+    setStudySessions((prev) => prev.filter((s) => s.id !== id));
+  };
+
+  const updateStudyGoal = (goal: Partial<StudyGoal>) => {
+    setStudyGoal((prev) => ({ ...prev, ...goal }));
+  };
+
+  const startStudyForSubject = (subjectId: string, topic?: string) => {
+    setSelectedStudySubjectId(subjectId);
+  };
+
+  const getCategoryForSubject = (subject: Subject): SubjectCategory => {
+    const catName = subject.category || inferSubjectCategory(subject.name);
+    const found = subjectCategories.find((c) => c.name.toLowerCase() === catName.toLowerCase());
+    if (found) return found;
+    return {
+      id: 'cat_fallback',
+      name: catName,
+      color: subject.color || 'blue',
+      icon: subject.icon || 'BookOpen',
+      description: 'หมวดหมู่วิชา',
+    };
+  };
+
   // Reset to default
   const resetToDefault = () => {
     setSubjects(DEFAULT_SUBJECTS);
@@ -776,6 +937,9 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setFutureChecklist(DEFAULT_FUTURE_CHECKLIST);
     setPortfolioItems(DEFAULT_PORTFOLIO_ITEMS);
     setFutureTodos(DEFAULT_FUTURE_TODOS);
+    setSubjectCategories(DEFAULT_SUBJECT_CATEGORIES);
+    setStudySessions(DEFAULT_STUDY_SESSIONS);
+    setStudyGoal(DEFAULT_STUDY_GOAL);
     setGradeThresholds(DEFAULT_GRADE_THRESHOLDS);
     setCurrentSemesterState('term1');
     setReadNotifIds([]);
@@ -794,6 +958,9 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       futureChecklist,
       portfolioItems,
       futureTodos,
+      subjectCategories,
+      studySessions,
+      studyGoal,
       exportedAt: new Date().toISOString(),
     };
     return JSON.stringify(data, null, 2);
@@ -812,12 +979,106 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       if (data.futureChecklist) setFutureChecklist(data.futureChecklist);
       if (data.portfolioItems) setPortfolioItems(data.portfolioItems);
       if (data.futureTodos) setFutureTodos(data.futureTodos);
+      if (data.subjectCategories) setSubjectCategories(data.subjectCategories);
+      if (data.studySessions) setStudySessions(data.studySessions);
+      if (data.studyGoal) setStudyGoal(data.studyGoal);
       return true;
     } catch (e) {
       console.error('Failed to import JSON', e);
       return false;
     }
   };
+
+  // Study Analytics
+  const todayDateStr = useMemo(() => {
+    const d = new Date();
+    const year = d.getFullYear();
+    const month = String(d.getMonth() + 1).padStart(2, '0');
+    const day = String(d.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  }, []);
+
+  const todayStudyMinutes = useMemo(() => {
+    return studySessions
+      .filter((s) => s.date === todayDateStr)
+      .reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+  }, [studySessions, todayDateStr]);
+
+  const weeklyStudyMinutes = useMemo(() => {
+    const now = new Date();
+    const weekAgo = new Date();
+    weekAgo.setDate(now.getDate() - 7);
+    const weekAgoStr = weekAgo.toISOString().split('T')[0];
+    return studySessions
+      .filter((s) => s.date >= weekAgoStr)
+      .reduce((acc, curr) => acc + (curr.durationMinutes || 0), 0);
+  }, [studySessions]);
+
+  const studyStreakDays = useMemo(() => {
+    if (studySessions.length === 0) return 0;
+    const sessionDates: string[] = Array.from(new Set<string>(studySessions.map((s) => s.date))).sort().reverse();
+    if (sessionDates.length === 0) return 0;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const latestDate = new Date(sessionDates[0]);
+    const diffTime = today.getTime() - latestDate.getTime();
+    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+
+    if (diffDays > 1) {
+      return 0;
+    }
+
+    let streak = 0;
+    let expected = diffDays === 0 ? today : latestDate;
+
+    for (const dStr of sessionDates) {
+      const expectedStr = expected.toISOString().split('T')[0];
+      if (dStr === expectedStr) {
+        streak++;
+        expected.setDate(expected.getDate() - 1);
+      } else {
+        break;
+      }
+    }
+    return Math.max(1, streak);
+  }, [studySessions]);
+
+  const topStudySubject = useMemo(() => {
+    if (studySessions.length === 0) return null;
+    const map: Record<string, number> = {};
+    studySessions.forEach((s) => {
+      const name = s.subjectName || 'ทั่วไป';
+      map[name] = (map[name] || 0) + s.durationMinutes;
+    });
+    let topName = '';
+    let maxMin = -1;
+    Object.entries(map).forEach(([name, min]) => {
+      if (min > maxMin) {
+        maxMin = min;
+        topName = name;
+      }
+    });
+    return topName ? { subjectName: topName, minutes: maxMin } : null;
+  }, [studySessions]);
+
+  const topStudyCategory = useMemo(() => {
+    if (studySessions.length === 0) return null;
+    const map: Record<string, number> = {};
+    studySessions.forEach((s) => {
+      const cat = s.category || 'ทั่วไป';
+      map[cat] = (map[cat] || 0) + s.durationMinutes;
+    });
+    let topCat = '';
+    let maxMin = -1;
+    Object.entries(map).forEach(([cat, min]) => {
+      if (min > maxMin) {
+        maxMin = min;
+        topCat = cat;
+      }
+    });
+    return topCat ? { category: topCat, minutes: maxMin } : null;
+  }, [studySessions]);
 
   // Computed summaries with dynamic thresholds
   const term1Summary = useMemo(
@@ -1040,6 +1301,29 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         unreadNotificationCount,
         markNotificationAsRead,
         markAllNotificationsAsRead,
+        // Subject Categories
+        subjectCategories,
+        addSubjectCategory,
+        updateSubjectCategory,
+        deleteSubjectCategory,
+        // Study Timer & Sessions
+        studySessions,
+        addStudySession,
+        updateStudySession,
+        deleteStudySession,
+        studyGoal,
+        updateStudyGoal,
+        selectedStudySubjectId,
+        setSelectedStudySubjectId,
+        startStudyForSubject,
+        // Study Analytics
+        todayStudyMinutes,
+        weeklyStudyMinutes,
+        studyStreakDays,
+        topStudySubject,
+        topStudyCategory,
+        getCategoryForSubject,
+        inferSubjectCategory,
         resetToDefault,
         exportJSON,
         importJSON,

@@ -208,7 +208,7 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* FILTER BAR: Capsule [ทั้งหมด] [วันนี้] [ใกล้ส่ง] [เสร็จแล้ว] */}
-      <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-2 sm:p-2.5 rounded-full border border-slate-200/80 shadow-2xs">
+      <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-2 sm:p-2.5 rounded-2xl sm:rounded-full border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none w-full sm:w-auto">
           {[
             { id: 'all' as const, label: 'ทั้งหมด', count: semesterTasks.length },
@@ -390,8 +390,8 @@ export const TasksView: React.FC = () => {
 
       {/* Task Modal (Add/Edit) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-3xl shadow-xl p-6 space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto box-border">
             <h3 className="text-lg font-black text-slate-900">
               {editingTask ? 'แก้ไขข้อมูลงาน' : 'เพิ่มงานใหม่'}
             </h3>

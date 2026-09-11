@@ -1003,8 +1003,8 @@ export const FuturePlannerView: React.FC = () => {
 
       {/* Modal 1: Add Dream University */}
       {isAddUniModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-indigo-100 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 border border-indigo-100 shadow-2xl relative max-h-[92vh] overflow-y-auto box-border">
             <h3 className="text-lg font-black text-slate-900 mb-3">เพิ่มมหาวิทยาลัยในฝัน 🎓</h3>
             <form onSubmit={handleAddUniversity} className="space-y-3">
               <div>
@@ -1086,8 +1086,8 @@ export const FuturePlannerView: React.FC = () => {
 
       {/* Modal 2: Add/Edit Portfolio Item */}
       {isAddPortModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-pink-100 shadow-2xl relative my-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 border border-pink-100 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto box-border">
             <h3 className="text-lg font-black text-slate-900 mb-3">
               {editingPortItem ? 'แก้ไขผลงาน 📁' : 'เพิ่มผลงานใน Portfolio 📁'}
             </h3>
@@ -1178,8 +1178,8 @@ export const FuturePlannerView: React.FC = () => {
 
       {/* Modal 3: Add Checklist Item */}
       {isAddChecklistOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-pink-100 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 border border-pink-100 shadow-2xl relative max-h-[92vh] overflow-y-auto box-border">
             <h3 className="text-lg font-black text-slate-900 mb-3">เพิ่มข้อเช็กลิสต์ความพร้อม 🚀</h3>
             <form
               onSubmit={(e) => {
@@ -1228,8 +1228,8 @@ export const FuturePlannerView: React.FC = () => {
 
       {/* Modal 4: Add Future Todo */}
       {isAddTodoOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 border border-indigo-100 shadow-2xl relative">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs">
+          <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full p-4 sm:p-6 border border-indigo-100 shadow-2xl relative max-h-[92vh] overflow-y-auto box-border">
             <h3 className="text-lg font-black text-slate-900 mb-3">เพิ่มสิ่งที่ต้องทำเพื่ออนาคต 📝</h3>
             <form
               onSubmit={(e) => {

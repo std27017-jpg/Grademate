@@ -281,42 +281,42 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
       onMouseUp={handleMouseUp}
     >
-      <div className="bg-white w-full max-w-xl rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh]">
+      <div className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] box-border">
         {/* Header */}
-        <div className="px-6 py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-3">
+        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+          <div className="flex items-center gap-2.5 sm:gap-3">
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md transition-all duration-300"
+              className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-white shadow-md transition-all duration-300 shrink-0"
               style={{ backgroundColor: activeColor }}
             >
-              <Palette className="w-5 h-5" />
+              <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-900 text-lg flex items-center gap-2">
+              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg flex items-center gap-1.5 sm:gap-2">
                 <span>ปรับแต่งสีธีมของแอป</span>
-                <span className="text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700">
+                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 hidden xs:inline">
                   Theme Customizer
                 </span>
               </h3>
-              <p className="text-xs text-slate-500">
-                เลือกจากวงล้อสี, จิ้มสี, กรอกโค้ดสี HEX หรือเลือกจากชุดสีแนะนำ
+              <p className="text-[11px] sm:text-xs text-slate-500">
+                เลือกจากวงล้อสี, จิ้มสี, กรอกโค้ดสี HEX หรือชุดสีแนะนำ
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Tab switcher: Wheel vs Presets */}
-        <div className="px-6 pt-4 pb-2 border-b border-slate-100 flex items-center gap-2 bg-white">
+        <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2 border-b border-slate-100 flex items-center gap-2 bg-white">
           <button
             type="button"
             onClick={() => setActiveTab('wheel')}

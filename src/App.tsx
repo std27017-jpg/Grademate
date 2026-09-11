@@ -4,6 +4,7 @@ import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Navbar, NavTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
 import { SubjectsView } from './components/SubjectsView';
+import { StudyView } from './components/StudyView';
 import { TasksView } from './components/TasksView';
 import { ExamsView } from './components/ExamsView';
 import { FuturePlannerView } from './components/FuturePlannerView';
@@ -94,7 +95,7 @@ function MainAppContent() {
       />
 
       {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 pt-6 pb-24 sm:pb-12">
+      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-28 md:pb-12 box-border">
         {activeTab === 'dashboard' && (
           <DashboardView
             onNavigate={(tab) => setActiveTab(tab)}
@@ -116,8 +117,11 @@ function MainAppContent() {
             onOpenEditSubject={handleOpenEditSubject}
             selectedSubjectId={selectedSubjectForDetail?.id || null}
             onSelectSubject={setSelectedSubjectForDetail}
+            onNavigateToStudy={() => setActiveTab('study')}
           />
         )}
+
+        {activeTab === 'study' && <StudyView />}
 
         {activeTab === 'tasks' && <TasksView />}
 
@@ -137,7 +141,7 @@ function MainAppContent() {
       </main>
 
       {/* Subtle Footer */}
-      <footer className="border-t border-slate-200/80 bg-white/70 py-6 text-center text-xs text-slate-500">
+      <footer className="border-t border-slate-200/80 bg-white/70 py-6 text-center text-xs text-slate-500 mb-16 md:mb-0">
         <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>🌸 MyGrade • ผู้ช่วยวางแผนคะแนนและอนาคตของนักเรียนมัธยม</span>
           <span>คำนวณตามจริง 100 คะแนน • บันทึก Portfolio • ติดตามงาน & ตารางสอบ</span>
