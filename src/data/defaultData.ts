@@ -139,43 +139,21 @@ export const DEFAULT_STUDY_SESSIONS: StudySession[] = [
 ];
 
 export const DEFAULT_USER_PROFILE: UserProfile = {
-  id: 'user_std27017',
-  email: 'std27017@phichai.ac.th',
-  fullName: 'ชญาภา สุขสมบูรณ์',
-  nickname: 'น้ำหวาน',
-  studentClass: 'ม.5/1',
-  gradeLevel: 'ม.5',
-  room: '1',
-  studentNumber: '17',
-  schoolName: 'โรงเรียนพิชัย',
+  id: 'user_default',
+  email: '',
+  fullName: '',
+  nickname: '',
+  studentClass: '',
+  gradeLevel: '',
+  room: '',
+  studentNumber: '',
+  schoolName: '',
   academicYear: 2568,
   avatar: '🌸',
-  targetGpa: 3.5,
-  dreamCareer: 'สัตวแพทย์',
-  dreamUniversities: [
-    {
-      id: 'u_cmu',
-      universityName: 'มหาวิทยาลัยเชียงใหม่',
-      faculty: 'คณะสัตวแพทยศาสตร์',
-      major: 'สาขาสัตวแพทยศาสตร์',
-      priority: 1,
-    },
-    {
-      id: 'u_cu',
-      universityName: 'จุฬาลงกรณ์มหาวิทยาลัย',
-      faculty: 'คณะสัตวแพทยศาสตร์',
-      major: 'สาขาสัตวแพทยศาสตร์',
-      priority: 2,
-    },
-    {
-      id: 'u_ku',
-      universityName: 'มหาวิทยาลัยเกษตรศาสตร์',
-      faculty: 'คณะสัตวแพทยศาสตร์',
-      major: 'สาขาสัตวแพทยศาสตร์',
-      priority: 3,
-    },
-  ],
-  registeredAt: '2026-05-15',
+  targetGpa: 0,
+  dreamCareer: '',
+  dreamUniversities: [],
+  registeredAt: '2026-09-01',
 };
 
 export const DEFAULT_FUTURE_CHECKLIST: FutureChecklistItem[] = [
@@ -438,9 +416,9 @@ export const CUTE_AVATARS = [
 
 export const DEFAULT_ACADEMIC_YEAR: AcademicYearConfig = {
   year: 2568,
-  studentName: 'ชญาภา สุขสมบูรณ์',
-  studentClass: 'ม.5/1',
-  schoolName: 'โรงเรียนพิชัย',
+  studentName: '',
+  studentClass: '',
+  schoolName: '',
 };
 
 export const DEFAULT_SUBJECTS: Subject[] = [

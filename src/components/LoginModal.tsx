@@ -25,8 +25,8 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 }) => {
   const { login, loginAsDemo, userProfile } = useGrade();
 
-  const [email, setEmail] = useState(userProfile.email || 'std27017@phichai.ac.th');
-  const [password, setPassword] = useState('MyGrade2026!');
+  const [email, setEmail] = useState(userProfile.email || '');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [error, setError] = useState('');
@@ -46,12 +46,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
 
     login(email, password);
     onClose();
-  };
-
-  const handleFillDemo = () => {
-    setEmail('std27017@phichai.ac.th');
-    setPassword('MyGrade2026!');
-    setError('');
   };
 
   return (
@@ -100,7 +94,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   setEmail(e.target.value);
                   setError('');
                 }}
-                placeholder="std27017@phichai.ac.th"
+                placeholder="กรอกอีเมลของคุณ"
                 className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
@@ -110,13 +104,6 @@ export const LoginModal: React.FC<LoginModalProps> = ({
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-bold text-slate-700">รหัสผ่าน (Password)</label>
-              <button
-                type="button"
-                onClick={handleFillDemo}
-                className="text-[11px] text-pink-600 hover:underline font-semibold"
-              >
-                ใส่ข้อมูลตัวอย่าง
-              </button>
             </div>
             <div className="relative">
               <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -127,7 +114,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
                   setPassword(e.target.value);
                   setError('');
                 }}
-                placeholder="รหัสผ่านของคุณ"
+                placeholder="กรอกรหัสผ่านของคุณ"
                 className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
               <button
@@ -174,7 +161,7 @@ export const LoginModal: React.FC<LoginModalProps> = ({
             className="w-full py-2 px-4 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-700 text-xs font-bold border border-pink-200 transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
           >
             <UserCheck className="w-3.5 h-3.5" />
-            <span>เข้าใช้งานด่วนด้วยบัญชีทดลอง (ชญาภา)</span>
+            <span>ทดลองใช้งานระบบทันที (Guest Mode)</span>
           </button>
 
           {/* Switch to Register */}

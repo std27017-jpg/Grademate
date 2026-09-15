@@ -58,30 +58,30 @@ export const ProfileView: React.FC = () => {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [modalTab, setModalTab] = useState<'edit' | 'switch'>('edit');
 
-  const [fullName, setFullName] = useState(userProfile.fullName);
+  const [fullName, setFullName] = useState(userProfile.fullName || '');
   const [nickname, setNickname] = useState(userProfile.nickname || '');
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>(userProfile.gradeLevel || 'ม.5');
-  const [room, setRoom] = useState(userProfile.room || '1');
-  const [studentNumber, setStudentNumber] = useState(userProfile.studentNumber || '17');
-  const [schoolName, setSchoolName] = useState(userProfile.schoolName || 'โรงเรียนพิชัย');
+  const [room, setRoom] = useState(userProfile.room || '');
+  const [studentNumber, setStudentNumber] = useState(userProfile.studentNumber || '');
+  const [schoolName, setSchoolName] = useState(userProfile.schoolName || '');
   const [avatar, setAvatar] = useState(userProfile.avatar || '🌸');
-  const [selectedYear, setSelectedYear] = useState<number>(academicYear?.year || userProfile.academicYear || 2568);
+  const [selectedYear, setSelectedYear] = useState<number | string>(academicYear?.year || userProfile.academicYear || 2568);
   const [targetGpa, setTargetGpa] = useState<NumericGrade>(userProfile.targetGpa || 3.5);
-  const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || 'สัตวแพทย์');
+  const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || '');
   const [showThresholds, setShowThresholds] = useState(false);
 
   // Sync state whenever userProfile or academicYear changes
   useEffect(() => {
-    setFullName(userProfile.fullName);
+    setFullName(userProfile.fullName || '');
     setNickname(userProfile.nickname || '');
     setGradeLevel(userProfile.gradeLevel || 'ม.5');
-    setRoom(userProfile.room || '1');
-    setStudentNumber(userProfile.studentNumber || '17');
-    setSchoolName(userProfile.schoolName || 'โรงเรียนพิชัย');
+    setRoom(userProfile.room || '');
+    setStudentNumber(userProfile.studentNumber || '');
+    setSchoolName(userProfile.schoolName || '');
     setAvatar(userProfile.avatar || '🌸');
     setSelectedYear(academicYear?.year || userProfile.academicYear || 2568);
     setTargetGpa(userProfile.targetGpa || 3.5);
-    setDreamCareer(userProfile.dreamCareer || 'สัตวแพทย์');
+    setDreamCareer(userProfile.dreamCareer || '');
   }, [userProfile, academicYear]);
 
   // File refs
@@ -90,8 +90,8 @@ export const ProfileView: React.FC = () => {
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
-    const trimmedName = fullName.trim() || 'นักเรียน';
-    const trimmedClass = `${gradeLevel}/${room.trim() || '1'}`;
+    const trimmedName = fullName.trim();
+    const trimmedClass = gradeLevel && room.trim() ? `${gradeLevel}/${room.trim()}` : gradeLevel || '';
     const parsedYear = Number(selectedYear) || 2568;
 
     updateUserProfile({
@@ -190,35 +190,39 @@ export const ProfileView: React.FC = () => {
           <div className="space-y-1.5 flex-1 min-w-0">
             <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2">
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 truncate">
-                {userProfile.fullName}
+                {userProfile.fullName || 'ยังไม่ได้กรอกข้อมูล'}
               </h2>
               {userProfile.nickname && (
                 <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-700">
                   น้อง{userProfile.nickname}
                 </span>
               )}
-              <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
-                {userProfile.gradeLevel || 'ม.ปลาย'}
-              </span>
+              {userProfile.gradeLevel && (
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-900 text-white">
+                  {userProfile.gradeLevel}
+                </span>
+              )}
             </div>
 
             <div className="text-xs text-slate-600 font-medium flex flex-wrap items-center justify-center sm:justify-start gap-x-4 gap-y-1">
               <span className="flex items-center gap-1">
                 <School className="w-3.5 h-3.5 text-slate-400" />
-                <span>{userProfile.schoolName || 'โรงเรียนพิชัย'}</span>
+                <span>{userProfile.schoolName || 'ยังไม่ได้กรอกข้อมูล'}</span>
               </span>
               <span>
-                ชั้น {userProfile.gradeLevel || 'ม.5'}/{userProfile.room || '1'} (เลขที่ {userProfile.studentNumber || '17'})
+                {userProfile.gradeLevel || userProfile.room || userProfile.studentNumber
+                  ? `ชั้น ${userProfile.gradeLevel || '-'}/${userProfile.room || '-'} (เลขที่ ${userProfile.studentNumber || '-'})`
+                  : 'ยังไม่ได้ระบุระดับชั้นและห้อง'}
               </span>
               <span className="flex items-center gap-1">
                 <Calendar className="w-3.5 h-3.5 text-slate-400" />
-                <span>ปีการศึกษา {currentYearNum}</span>
+                <span>ปีการศึกษา {userProfile.academicYear || currentYearNum || 'ยังไม่ได้กรอกข้อมูล'}</span>
               </span>
             </div>
 
             <div className="text-xs text-slate-500 font-medium flex items-center justify-center sm:justify-start gap-1 pt-0.5">
               <Mail className="w-3.5 h-3.5 text-slate-400" />
-              <span>{userProfile.email || 'std27017@phichai.ac.th'}</span>
+              <span>{userProfile.email || 'ยังไม่ได้ระบุอีเมล'}</span>
             </div>
           </div>
 
@@ -320,6 +324,7 @@ export const ProfileView: React.FC = () => {
                 required
                 value={fullName}
                 onChange={(e) => setFullName(e.target.value)}
+                placeholder="กรอกชื่อ-นามสกุล"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
@@ -329,6 +334,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={nickname}
                 onChange={(e) => setNickname(e.target.value)}
+                placeholder="กรอกชื่อเล่น"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
@@ -355,6 +361,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={room}
                 onChange={(e) => setRoom(e.target.value)}
+                placeholder="กรอกห้อง"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 text-center"
               />
             </div>
@@ -364,6 +371,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={studentNumber}
                 onChange={(e) => setStudentNumber(e.target.value)}
+                placeholder="กรอกเลขที่"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400 text-center"
               />
             </div>
@@ -376,6 +384,7 @@ export const ProfileView: React.FC = () => {
                 type="text"
                 value={schoolName}
                 onChange={(e) => setSchoolName(e.target.value)}
+                placeholder="กรอกชื่อโรงเรียน"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
@@ -384,7 +393,8 @@ export const ProfileView: React.FC = () => {
               <input
                 type="number"
                 value={selectedYear}
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
+                onChange={(e) => setSelectedYear(e.target.value ? Number(e.target.value) : '')}
+                placeholder="กรอกปีการศึกษา"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
@@ -408,12 +418,12 @@ export const ProfileView: React.FC = () => {
               </select>
             </div>
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1">อาชีพในฝัน</label>
+              <label className="block text-xs font-bold text-slate-700 mb-1">เป้าหมายของคุณ / อาชีพในฝัน</label>
               <input
                 type="text"
                 value={dreamCareer}
                 onChange={(e) => setDreamCareer(e.target.value)}
-                placeholder="เช่น สัตวแพทย์, วิศวะคอมพิวเตอร์"
+                placeholder="กรอกเป้าหมายของคุณ"
                 className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
               />
             </div>
@@ -492,7 +502,7 @@ export const ProfileView: React.FC = () => {
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">
                       <span className="text-xs font-bold text-slate-900 truncate">
-                        {p.fullName}
+                        {p.fullName || 'ยังไม่ได้กรอกข้อมูล'}
                       </span>
                       {p.nickname && (
                         <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-pink-100 text-pink-700 shrink-0">
@@ -501,7 +511,7 @@ export const ProfileView: React.FC = () => {
                       )}
                     </div>
                     <div className="text-[11px] text-slate-500 truncate">
-                      ชั้น {p.studentClass || `${p.gradeLevel}/${p.room || '1'}`} • {p.schoolName || 'โรงเรียน'}
+                      {p.studentClass ? `ชั้น ${p.studentClass}` : 'ยังไม่ได้ระบุชั้น'} • {p.schoolName || 'ยังไม่ได้กรอกข้อมูล'}
                     </div>
                   </div>
                 </div>

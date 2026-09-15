@@ -54,16 +54,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [activeTab, setActiveTab] = useState<'edit' | 'switch'>(initialTab);
 
   // Edit form state
-  const [fullName, setFullName] = useState(userProfile.fullName);
+  const [fullName, setFullName] = useState(userProfile.fullName || '');
   const [nickname, setNickname] = useState(userProfile.nickname || '');
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>(userProfile.gradeLevel || 'ม.5');
-  const [room, setRoom] = useState(userProfile.room || '1');
-  const [studentNumber, setStudentNumber] = useState(userProfile.studentNumber || '17');
-  const [schoolName, setSchoolName] = useState(userProfile.schoolName || 'โรงเรียนพิชัย');
+  const [room, setRoom] = useState(userProfile.room || '');
+  const [studentNumber, setStudentNumber] = useState(userProfile.studentNumber || '');
+  const [schoolName, setSchoolName] = useState(userProfile.schoolName || '');
   const [year, setYear] = useState<number>(academicYear?.year || userProfile.academicYear || 2568);
   const [avatar, setAvatar] = useState(userProfile.avatar || '🌸');
   const [targetGpa, setTargetGpa] = useState<NumericGrade>(userProfile.targetGpa || 3.5);
-  const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || 'สัตวแพทย์');
+  const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
   // New profile creation form
@@ -71,8 +71,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [newFullName, setNewFullName] = useState('');
   const [newNickname, setNewNickname] = useState('');
   const [newGradeLevel, setNewGradeLevel] = useState<GradeLevel>('ม.4');
-  const [newRoom, setNewRoom] = useState('1');
-  const [newSchool, setNewSchool] = useState('โรงเรียนพิชัย');
+  const [newRoom, setNewRoom] = useState('');
+  const [newSchool, setNewSchool] = useState('');
   const [newAvatar, setNewAvatar] = useState('🐰');
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -80,16 +80,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   useEffect(() => {
     if (isOpen) {
-      setFullName(userProfile.fullName);
+      setFullName(userProfile.fullName || '');
       setNickname(userProfile.nickname || '');
       setGradeLevel(userProfile.gradeLevel || 'ม.5');
-      setRoom(userProfile.room || '1');
-      setStudentNumber(userProfile.studentNumber || '17');
-      setSchoolName(userProfile.schoolName || 'โรงเรียนพิชัย');
+      setRoom(userProfile.room || '');
+      setStudentNumber(userProfile.studentNumber || '');
+      setSchoolName(userProfile.schoolName || '');
       setYear(academicYear?.year || userProfile.academicYear || 2568);
       setAvatar(userProfile.avatar || '🌸');
       setTargetGpa(userProfile.targetGpa || 3.5);
-      setDreamCareer(userProfile.dreamCareer || 'สัตวแพทย์');
+      setDreamCareer(userProfile.dreamCareer || '');
       setSavedSuccess(false);
       setIsCreatingNew(false);
       setActiveTab(initialTab);
@@ -357,7 +357,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     required
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="เช่น น.ส.ชญาภา สุขสมบูรณ์"
+                    placeholder="กรอกชื่อ-นามสกุล"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 text-sm font-semibold text-slate-800"
                   />
                 </div>
@@ -367,7 +367,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    placeholder="เช่น น้ำหวาน"
+                    placeholder="กรอกชื่อเล่น"
                     className="w-full px-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 text-sm font-semibold text-slate-800"
                   />
                 </div>
@@ -395,7 +395,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     type="text"
                     value={room}
                     onChange={(e) => setRoom(e.target.value)}
-                    placeholder="1"
+                    placeholder="กรอกห้อง"
                     className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 text-xs font-semibold text-slate-800 text-center"
                   />
                 </div>
@@ -405,7 +405,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                     type="text"
                     value={studentNumber}
                     onChange={(e) => setStudentNumber(e.target.value)}
-                    placeholder="17"
+                    placeholder="กรอกเลขที่"
                     className="w-full px-3 py-2.5 rounded-xl border border-slate-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 text-xs font-semibold text-slate-800 text-center"
                   />
                 </div>
@@ -420,7 +420,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       type="text"
                       value={schoolName}
                       onChange={(e) => setSchoolName(e.target.value)}
-                      placeholder="โรงเรียนพิชัย"
+                      placeholder="กรอกชื่อโรงเรียน"
                       className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 text-sm font-medium text-slate-800"
                     />
                     <School className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -433,7 +433,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       type="number"
                       value={year}
                       onChange={(e) => setYear(Number(e.target.value))}
-                      placeholder="2568"
+                      placeholder="กรอกปีการศึกษา"
                       className="w-full pl-9 pr-3.5 py-2.5 rounded-xl border border-slate-300 focus:border-pink-500 focus:ring-2 focus:ring-pink-100 text-sm font-medium text-slate-800"
                     />
                     <Calendar className="w-4 h-4 text-slate-400 absolute left-3 top-3" />
@@ -468,14 +468,14 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                   <div>
                     <label className="block text-[11px] font-semibold text-slate-600 mb-1">
-                      อาชีพในฝัน (Dream Career)
+                      เป้าหมายของคุณ / อาชีพในฝัน
                     </label>
                     <div className="relative">
                       <input
                         type="text"
                         value={dreamCareer}
                         onChange={(e) => setDreamCareer(e.target.value)}
-                        placeholder="เช่น สัตวแพทย์, วิศวกรซอฟต์แวร์"
+                        placeholder="กรอกเป้าหมายของคุณ"
                         className="w-full pl-8 pr-3 py-2 rounded-xl border border-slate-300 text-xs font-medium text-slate-800 bg-white"
                       />
                       <Compass className="w-3.5 h-3.5 text-slate-400 absolute left-2.5 top-2.5" />
@@ -666,7 +666,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         required
                         value={newFullName}
                         onChange={(e) => setNewFullName(e.target.value)}
-                        placeholder="ชื่อนักเรียน"
+                        placeholder="กรอกชื่อ-นามสกุล"
                         className="w-full px-3 py-2 bg-white rounded-xl border border-slate-300 text-xs font-semibold text-slate-800"
                       />
                     </div>
@@ -678,7 +678,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         type="text"
                         value={newNickname}
                         onChange={(e) => setNewNickname(e.target.value)}
-                        placeholder="เช่น น้องพลอย"
+                        placeholder="กรอกชื่อเล่น"
                         className="w-full px-3 py-2 bg-white rounded-xl border border-slate-300 text-xs font-semibold text-slate-800"
                       />
                     </div>
@@ -709,7 +709,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         type="text"
                         value={newRoom}
                         onChange={(e) => setNewRoom(e.target.value)}
-                        placeholder="1"
+                        placeholder="กรอกห้อง"
                         className="w-full px-2.5 py-2 bg-white rounded-xl border border-slate-300 text-xs font-semibold text-slate-800 text-center"
                       />
                     </div>
@@ -721,7 +721,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         type="text"
                         value={newSchool}
                         onChange={(e) => setNewSchool(e.target.value)}
-                        placeholder="โรงเรียน"
+                        placeholder="กรอกชื่อโรงเรียน"
                         className="w-full px-2.5 py-2 bg-white rounded-xl border border-slate-300 text-xs font-semibold text-slate-800"
                       />
                     </div>

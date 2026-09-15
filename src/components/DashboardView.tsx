@@ -201,7 +201,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 ) : (
                   <div className="flex items-center gap-1.5 flex-wrap">
                     <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                      สวัสดี, {userProfile.fullName || academicYear.studentName} 💗
+                      สวัสดี, {userProfile.fullName || academicYear.studentName || 'ยังไม่ได้กรอกข้อมูล'} 💗
                     </h2>
                     <button
                       type="button"
@@ -219,7 +219,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
 
               <p className="text-xs text-slate-500 font-medium mt-0.5">
-                {userProfile.schoolName || academicYear.schoolName} • ชั้น {userProfile.gradeLevel || 'ม.5'}/{userProfile.room || '1'} (เลขที่ {userProfile.studentNumber || '17'}) • ปี {academicYear.year}
+                {userProfile.schoolName || academicYear.schoolName || 'ยังไม่ได้กรอกข้อมูล'} • {userProfile.studentClass ? `ชั้น ${userProfile.studentClass}` : (userProfile.gradeLevel ? `ชั้น ${userProfile.gradeLevel}${userProfile.room ? `/${userProfile.room}` : ''}` : 'ยังไม่ได้ระบุชั้น')}{userProfile.studentNumber ? ` (เลขที่ ${userProfile.studentNumber})` : ''} • ปี {academicYear.year}
               </p>
             </div>
           </div>

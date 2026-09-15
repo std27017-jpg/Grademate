@@ -43,23 +43,23 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   const [step, setStep] = useState<1 | 2>(1);
 
   // Form Fields
-  const [email, setEmail] = useState('std27017@phichai.ac.th');
-  const [password, setPassword] = useState('MyGrade2026!');
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [fullName, setFullName] = useState('ชญาภา สุขสมบูรณ์');
-  const [nickname, setNickname] = useState('น้ำหวาน');
+  const [fullName, setFullName] = useState('');
+  const [nickname, setNickname] = useState('');
   const [gradeLevel, setGradeLevel] = useState<GradeLevel>('ม.5');
-  const [room, setRoom] = useState('1');
-  const [studentNumber, setStudentNumber] = useState('17');
-  const [schoolName, setSchoolName] = useState('โรงเรียนพิชัย');
+  const [room, setRoom] = useState('');
+  const [studentNumber, setStudentNumber] = useState('');
+  const [schoolName, setSchoolName] = useState('');
   const [academicYear, setAcademicYear] = useState<number>(2568);
   const [avatar, setAvatar] = useState('🌸');
 
   // Goals Fields (Step 2)
   const [targetGpa, setTargetGpa] = useState<NumericGrade>(3.5);
-  const [dreamCareer, setDreamCareer] = useState('สัตวแพทย์');
-  const [dreamUniversity, setDreamUniversity] = useState('มหาวิทยาลัยเชียงใหม่');
-  const [dreamFaculty, setDreamFaculty] = useState('คณะสัตวแพทยศาสตร์');
+  const [dreamCareer, setDreamCareer] = useState('');
+  const [dreamUniversity, setDreamUniversity] = useState('');
+  const [dreamFaculty, setDreamFaculty] = useState('');
 
   // Errors
   const [emailError, setEmailError] = useState('');
@@ -89,7 +89,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
     setEmail(val);
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(val)) {
-      setEmailError('รูปแบบอีเมลไม่ถูกต้อง ตัวอย่าง: std27017@phichai.ac.th');
+      setEmailError('รูปแบบอีเมลไม่ถูกต้อง ตัวอย่าง: user@school.ac.th');
     } else if (!val.includes('.ac.th') && !val.includes('.edu') && !val.includes('school')) {
       setEmailError('แนะนำให้ใช้อีเมลโรงเรียน เช่น @...ac.th หรือโดเมนโรงเรียน');
     } else {
@@ -220,7 +220,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="email"
                     value={email}
                     onChange={(e) => validateEmail(e.target.value)}
-                    placeholder="เช่น std27017@phichai.ac.th"
+                    placeholder="กรอกอีเมลของคุณ"
                     className={`w-full pl-10 pr-4 py-2.5 bg-slate-50 border rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 ${
                       emailError ? 'border-amber-300 focus:ring-amber-400' : 'border-slate-200 focus:ring-pink-400'
                     }`}
@@ -248,7 +248,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                       setPassword(e.target.value);
                       setPasswordError('');
                     }}
-                    placeholder="ความยาว 6 ตัวอักษรขึ้นไป"
+                    placeholder="กรอกรหัสผ่านอย่างน้อย 6 ตัวอักษร"
                     className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                   <button
@@ -297,7 +297,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="text"
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
-                    placeholder="เช่น ชญาภา สุขสมบูรณ์"
+                    placeholder="กรอกชื่อ-นามสกุล"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                 </div>
@@ -309,7 +309,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="text"
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
-                    placeholder="เช่น น้ำหวาน"
+                    placeholder="กรอกชื่อเล่น"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                 </div>
@@ -335,8 +335,8 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="text"
                     value={room}
                     onChange={(e) => setRoom(e.target.value)}
-                    placeholder="1"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    placeholder="กรอกห้อง"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                 </div>
                 <div>
@@ -345,8 +345,8 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="text"
                     value={studentNumber}
                     onChange={(e) => setStudentNumber(e.target.value)}
-                    placeholder="17"
-                    className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
+                    placeholder="กรอกเลขที่"
+                    className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                 </div>
               </div>
@@ -359,7 +359,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="text"
                     value={schoolName}
                     onChange={(e) => setSchoolName(e.target.value)}
-                    placeholder="โรงเรียนพิชัย"
+                    placeholder="กรอกชื่อโรงเรียน"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                 </div>
@@ -369,7 +369,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                     type="number"
                     value={academicYear}
                     onChange={(e) => setAcademicYear(Number(e.target.value))}
-                    placeholder="2568"
+                    placeholder="กรอกปีการศึกษา"
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                   />
                 </div>
@@ -418,7 +418,7 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
                   type="text"
                   value={dreamCareer}
                   onChange={(e) => setDreamCareer(e.target.value)}
-                  placeholder="เช่น สัตวแพทย์, แพทย์, วิศวกร"
+                  placeholder="กรอกเป้าหมายของคุณ"
                   className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-2xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-pink-400"
                 />
                 {/* Preset Chips */}

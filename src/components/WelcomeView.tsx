@@ -135,7 +135,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenRegister, onOpen
               className="inline-flex items-center gap-1.5 text-xs text-indigo-600 hover:text-indigo-800 font-bold bg-indigo-50/80 hover:bg-indigo-100 px-3.5 py-1.5 rounded-full border border-indigo-200/80 transition-all cursor-pointer"
             >
               <UserCheck className="w-3.5 h-3.5" />
-              <span>เข้าใช้งานบัญชีทดลอง (ชญาภา สุขสมบูรณ์) 🌸</span>
+              <span>ทดลองใช้งานระบบทันที (Guest Mode) ✨</span>
             </button>
           </div>
         </div>
