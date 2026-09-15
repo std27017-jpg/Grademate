@@ -85,9 +85,9 @@ export const Navbar: React.FC<NavbarProps> = ({
     <>
       {/* ========================================================================= */}
       {/* HEADER: Fixed width 100%, Stable Height (56px mobile / 64px desktop)       */}
-      {/* Guaranteed Zero Layout Shift, Zero Wobbly Motion                         */}
+      {/* Liquid Glass Aesthetic with Translucent Backdrop Blur & White Border Highlight */}
       {/* ========================================================================= */}
-      <header className="sticky top-0 z-40 w-full bg-white/95 backdrop-blur-md border-b border-slate-200/80 shadow-2xs transition-colors box-border">
+      <header className="sticky top-0 z-40 w-full bg-white/75 backdrop-blur-xl border-b border-white/70 shadow-xs transition-colors box-border">
         {/* MOBILE HEADER (< md: 320px - 767px) */}
         <div className="md:hidden flex items-center justify-between h-14 px-3 w-full box-border">
           {/* Left: Menu Toggle Button with touch area >= 44px */}
@@ -482,15 +482,24 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MOBILE FIXED BOTTOM NAVIGATION: 100% width, Safe Area, High-Contrast       */}
+      {/* MOBILE FLOATING LIQUID GLASS BOTTOM NAVIGATION                            */}
       {/* 5 Essential Tabs: 🏠 หน้าแรก | 📊 คะแนน | 📝 งาน | 📚 อ่าน | 👤 โปรไฟล์  */}
+      {/* Floating glass bar with backdrop blur, white border, and soft glowing shadow */}
       {/* ========================================================================= */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-lg pb-[env(safe-area-inset-bottom,0px)] box-border"
+        className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-lg mx-auto pointer-events-none box-border"
       >
-        <div className="max-w-md mx-auto w-full px-2.5 py-1.5">
-          <div className="grid grid-cols-5 gap-1.5">
+        <div
+          className="pointer-events-auto rounded-3xl p-1.5 sm:p-2 border border-white/80 shadow-xl transition-all"
+          style={{
+            background: 'rgba(255, 255, 255, 0.78)',
+            backdropFilter: 'blur(24px) saturate(180%)',
+            WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+            boxShadow: '0 12px 36px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.16), 0 4px 12px 0 rgba(0,0,0,0.04), inset 0 1px 1px 0 rgba(255, 255, 255, 0.8)',
+          }}
+        >
+          <div className="grid grid-cols-5 gap-1">
             {mobileBottomTabs.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -499,24 +508,32 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id={`mobile-bottom-tab-${item.id}`}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center justify-center min-h-[50px] py-1 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 ${
+                  className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-95 ${
                     isActive
-                      ? 'bg-pink-50 text-pink-700 font-black shadow-2xs ring-1 ring-pink-300/60'
-                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-bold'
+                      ? 'text-white font-black shadow-md'
+                      : 'text-slate-700 hover:text-slate-900 hover:bg-white/50 font-bold'
                   }`}
+                  style={
+                    isActive
+                      ? {
+                          backgroundColor: 'var(--app-primary, #db2777)',
+                          boxShadow: '0 4px 14px rgba(var(--app-primary-rgb, 219, 39, 119), 0.35)',
+                        }
+                      : undefined
+                  }
                 >
                   <div
-                    className={`w-7 h-7 rounded-full flex items-center justify-center mb-0.5 transition-transform ${
-                      isActive ? 'scale-110 text-pink-600' : 'text-slate-600'
+                    className={`w-6 h-6 rounded-full flex items-center justify-center mb-0.5 transition-transform ${
+                      isActive ? 'scale-110 text-white' : 'text-slate-700'
                     }`}
                   >
                     <AppIcon
                       name={item.iconName}
-                      size={19}
-                      className={isActive ? 'text-pink-600' : 'text-slate-600'}
+                      size={18}
+                      className={isActive ? 'text-white' : 'text-slate-700'}
                     />
                   </div>
-                  <span className="text-[11px] leading-tight text-center font-bold truncate w-full">
+                  <span className="text-[10.5px] leading-tight text-center font-extrabold truncate w-full">
                     {item.label}
                   </span>
                 </button>

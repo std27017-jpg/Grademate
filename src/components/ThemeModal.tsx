@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useId } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import {
   X,
   Palette,
@@ -10,17 +10,22 @@ import {
   CheckCheck,
   Eye,
   Pipette,
+  Grid,
+  Layers,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useTheme } from '../context/ThemeContext';
 import {
   PRESET_THEME_COLORS,
   DEFAULT_THEME_COLOR,
+  DEFAULT_THEME_PATTERN,
   hexToRgb,
   rgbToHex,
   hslToRgb,
   rgbToHsl,
+  getThemeBackgroundPalette,
 } from '../utils/themeUtils';
+import { THEME_PATTERNS, ThemePatternId, getPatternSvgDataUri } from '../utils/themePatterns';
 
 interface ThemeModalProps {
   isOpen: boolean;
@@ -28,13 +33,14 @@ interface ThemeModalProps {
 }
 
 export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
-  const { themeColor, setThemeColor, resetThemeColor } = useTheme();
+  const { themeColor, themePattern, setThemeColor, setThemePattern, resetThemeColor } = useTheme();
 
-  // Working color state in modal
+  // Working state in modal
   const [activeColor, setActiveColor] = useState(themeColor);
+  const [activePattern, setActivePattern] = useState<ThemePatternId>(themePattern);
   const [hexInput, setHexInput] = useState(themeColor);
   const [isValidHex, setIsValidHex] = useState(true);
-  const [activeTab, setActiveTab] = useState<'wheel' | 'presets'>('wheel');
+  const [activeTab, setActiveTab] = useState<'patterns' | 'wheel' | 'presets'>('patterns');
   const [copied, setCopied] = useState(false);
   const [lightness, setLightness] = useState(50);
 
@@ -42,10 +48,11 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDraggingRef = useRef(false);
 
-  // Sync with current themeColor when modal opens
+  // Sync with current themeColor and themePattern when modal opens
   useEffect(() => {
     if (isOpen) {
       setActiveColor(themeColor);
+      setActivePattern(themePattern);
       setHexInput(themeColor);
       setIsValidHex(true);
 
@@ -55,7 +62,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
         setLightness(hsl.l);
       }
     }
-  }, [isOpen, themeColor]);
+  }, [isOpen, themeColor, themePattern]);
 
   // Draw color wheel on canvas
   const drawWheel = () => {
@@ -72,7 +79,6 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
 
     ctx.clearRect(0, 0, width, height);
 
-    // Draw hue / saturation circle
     const imgData = ctx.createImageData(width, height);
     const data = imgData.data;
 
@@ -85,11 +91,9 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
         const index = (y * width + x) * 4;
 
         if (dist <= radius) {
-          // Calculate angle (0 - 360)
           let angle = (Math.atan2(dy, dx) * 180) / Math.PI;
           if (angle < 0) angle += 360;
 
-          // Saturation (0 - 100)
           const sat = (dist / radius) * 100;
           const rgb = hslToRgb(angle, sat, lightness);
 
@@ -98,14 +102,14 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
           data[index + 2] = rgb.b;
           data[index + 3] = 255;
         } else {
-          data[index + 3] = 0; // transparent outside wheel
+          data[index + 3] = 0;
         }
       }
     }
 
     ctx.putImageData(imgData, 0, 0);
 
-    // Draw active color indicator pointer
+    // Indicator pointer
     const currentRgb = hexToRgb(activeColor);
     if (currentRgb) {
       const hsl = rgbToHsl(currentRgb.r, currentRgb.g, currentRgb.b);
@@ -128,10 +132,8 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Redraw wheel whenever activeColor or lightness changes
   useEffect(() => {
     if (isOpen && activeTab === 'wheel') {
-      // Delay slightly to ensure canvas is attached to DOM
       const timer = setTimeout(() => {
         drawWheel();
       }, 30);
@@ -139,7 +141,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     }
   }, [isOpen, activeTab, lightness, activeColor]);
 
-  // Handle click or drag on color wheel
+  // Handle color wheel interaction
   const handleWheelInteraction = (clientX: number, clientY: number) => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -196,7 +198,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle custom Hex code text input
+  // Custom Hex Input
   const handleHexInputChange = (value: string) => {
     let clean = value.trim();
     if (!clean.startsWith('#')) {
@@ -216,7 +218,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle native color picker change
+  // Native color pick
   const handleNativeColorPick = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value;
     setActiveColor(val);
@@ -230,7 +232,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Handle Preset Click
+  // Choose preset
   const handleSelectPreset = (hex: string) => {
     setActiveColor(hex);
     setHexInput(hex);
@@ -243,32 +245,40 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     }
   };
 
-  // Copy hex code to clipboard
+  // Choose pattern
+  const handleSelectPattern = (patternId: ThemePatternId) => {
+    setActivePattern(patternId);
+    setThemePattern(patternId);
+  };
+
+  // Copy hex
   const handleCopyHex = () => {
     navigator.clipboard.writeText(activeColor);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
 
-  // Apply & Close with celebration
+  // Apply & Close
   const handleApply = () => {
     setThemeColor(activeColor);
+    setThemePattern(activePattern);
     try {
       confetti({
-        particleCount: 45,
-        spread: 60,
+        particleCount: 50,
+        spread: 70,
         origin: { y: 0.8 },
       });
     } catch (e) {
-      // Confetti fallback
+      // fallback
     }
     onClose();
   };
 
-  // Reset to default
+  // Reset
   const handleReset = () => {
     resetThemeColor();
     setActiveColor(DEFAULT_THEME_COLOR);
+    setActivePattern(DEFAULT_THEME_PATTERN);
     setHexInput(DEFAULT_THEME_COLOR);
     setIsValidHex(true);
     setLightness(50);
@@ -276,82 +286,192 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
 
   if (!isOpen) return null;
 
-  const currentRgb = hexToRgb(activeColor) || { r: 99, g: 102, b: 241 };
+  const currentRgb = hexToRgb(activeColor) || { r: 219, g: 39, b: 119 };
   const currentHsl = rgbToHsl(currentRgb.r, currentRgb.g, currentRgb.b);
+  const palette = getThemeBackgroundPalette(currentRgb);
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in duration-200"
+      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200"
       onMouseUp={handleMouseUp}
     >
-      <div className="bg-white w-full max-w-xl rounded-2xl sm:rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col max-h-[92vh] box-border">
-        {/* Header */}
-        <div className="px-4 sm:px-6 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-          <div className="flex items-center gap-2.5 sm:gap-3">
+      <div
+        className="w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col max-h-[92vh] box-border relative shadow-2xl border border-white/80"
+        style={{
+          background: 'rgba(255, 255, 255, 0.88)',
+          backdropFilter: 'blur(28px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          boxShadow: `0 20px 50px -10px rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.8)`,
+        }}
+      >
+        {/* Header with Liquid Glass aesthetic */}
+        <div className="px-5 sm:px-6 py-4 border-b border-white/60 flex items-center justify-between bg-white/40 backdrop-blur-md">
+          <div className="flex items-center gap-3">
             <div
-              className="w-9 h-9 sm:w-10 sm:h-10 rounded-2xl flex items-center justify-center text-white shadow-md transition-all duration-300 shrink-0"
-              style={{ backgroundColor: activeColor }}
+              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white shadow-md transition-all duration-300 shrink-0"
+              style={{
+                backgroundColor: activeColor,
+                boxShadow: `0 4px 14px rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.4)`,
+              }}
             >
-              <Palette className="w-4 h-4 sm:w-5 sm:h-5" />
+              <Palette className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg flex items-center gap-1.5 sm:gap-2">
-                <span>ปรับแต่งสีธีมของแอป</span>
-                <span className="text-[10px] sm:text-xs font-semibold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700 hidden xs:inline">
-                  Theme Customizer
+              <h3 className="font-extrabold text-slate-900 text-base sm:text-lg flex items-center gap-2">
+                <span>ปรับแต่งธีม & ลวดลาย Liquid Glass</span>
+                <span
+                  className="text-[10px] font-bold px-2 py-0.5 rounded-full text-white shadow-2xs"
+                  style={{ backgroundColor: activeColor }}
+                >
+                  Theme Studio
                 </span>
               </h3>
-              <p className="text-[11px] sm:text-xs text-slate-500">
-                เลือกจากวงล้อสี, จิ้มสี, กรอกโค้ดสี HEX หรือชุดสีแนะนำ
+              <p className="text-[11px] sm:text-xs text-slate-600 font-medium">
+                เลือกทั้งสีธีมหลัก, วงล้อสี, และลวดลายพื้นหลังที่จะแสดงทั่วทั้งระบบ
               </p>
             </div>
           </div>
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 sm:p-2 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-2 text-slate-500 hover:text-slate-900 rounded-full hover:bg-white/60 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
-        {/* Tab switcher: Wheel vs Presets */}
-        <div className="px-4 sm:px-6 pt-3 sm:pt-4 pb-2 border-b border-slate-100 flex items-center gap-2 bg-white">
+        {/* 3 Main Tabs: Patterns | Color Wheel | Presets */}
+        <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-white/50 flex items-center gap-1.5 sm:gap-2 bg-white/30">
+          <button
+            type="button"
+            onClick={() => setActiveTab('patterns')}
+            className={`flex-1 py-2 px-2.5 sm:px-3 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              activeTab === 'patterns'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-white/60 text-slate-700 hover:bg-white/90 border border-white/60'
+            }`}
+          >
+            <Grid className="w-3.5 h-3.5" />
+            <span>ลวดลายพื้นหลัง ({THEME_PATTERNS.length})</span>
+          </button>
+
           <button
             type="button"
             onClick={() => setActiveTab('wheel')}
-            className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            className={`flex-1 py-2 px-2.5 sm:px-3 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'wheel'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-white/60 text-slate-700 hover:bg-white/90 border border-white/60'
             }`}
           >
             <Pipette className="w-3.5 h-3.5" />
-            <span>วงล้อสี & ใส่โค้ดสี (Color Wheel & Hex)</span>
+            <span>วงล้อสี & รหัส HEX</span>
           </button>
+
           <button
             type="button"
             onClick={() => setActiveTab('presets')}
-            className={`flex-1 py-2 px-3 text-xs font-bold rounded-xl flex items-center justify-center gap-2 transition-all cursor-pointer ${
+            className={`flex-1 py-2 px-2.5 sm:px-3 text-xs font-bold rounded-2xl flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'presets'
-                ? 'bg-slate-900 text-white shadow-sm'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200/80'
+                ? 'bg-slate-900 text-white shadow-md'
+                : 'bg-white/60 text-slate-700 hover:bg-white/90 border border-white/60'
             }`}
           >
             <Sparkles className="w-3.5 h-3.5" />
-            <span>ชุดสีสำเร็จรูป ({PRESET_THEME_COLORS.length} ธีม)</span>
+            <span>ชุดสีสำเร็จรูป ({PRESET_THEME_COLORS.length})</span>
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-6 overflow-y-auto space-y-5">
-          {activeTab === 'wheel' ? (
+        <div className="p-4 sm:p-6 overflow-y-auto space-y-5">
+          {/* TAB 1: Patterns */}
+          {activeTab === 'patterns' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900 flex items-center gap-1.5">
+                    <Layers className="w-4 h-4 text-pink-600" />
+                    <span>เลือกลวดลายพื้นหลังของแอป (Pattern Background)</span>
+                  </h4>
+                  <p className="text-[11px] text-slate-600">
+                    ลวดลายจะปูทั่วทั้งหน้าจอของแอป ผสมผสานกับ Gradient และ Liquid Glass Card
+                  </p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2.5 sm:gap-3">
+                {THEME_PATTERNS.map((pattern) => {
+                  const isSelected = activePattern === pattern.id;
+                  const patternPreviewUri = getPatternSvgDataUri(pattern.id, activeColor);
+
+                  return (
+                    <button
+                      key={pattern.id}
+                      type="button"
+                      onClick={() => handleSelectPattern(pattern.id)}
+                      className={`p-3 rounded-2xl border text-left flex flex-col justify-between relative overflow-hidden transition-all duration-200 cursor-pointer min-h-[96px] ${
+                        isSelected
+                          ? 'border-2 shadow-md scale-[1.02] bg-white'
+                          : 'bg-white/60 hover:bg-white/90 border-white/70 hover:border-slate-300'
+                      }`}
+                      style={{
+                        borderColor: isSelected ? activeColor : undefined,
+                        boxShadow: isSelected
+                          ? `0 8px 24px -4px rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.25)`
+                          : undefined,
+                      }}
+                    >
+                      {/* Live Pattern Texture Preview inside button */}
+                      {pattern.id !== 'none' && pattern.id !== 'gradient' && (
+                        <div
+                          className="absolute inset-0 pointer-events-none opacity-25"
+                          style={{
+                            backgroundImage: patternPreviewUri,
+                            backgroundRepeat: 'repeat',
+                            backgroundSize:
+                              pattern.id === 'polka'
+                                ? '24px 24px'
+                                : pattern.id === 'sparkles'
+                                ? '32px 32px'
+                                : '40px 40px',
+                          }}
+                        />
+                      )}
+
+                      <div className="flex items-center justify-between w-full relative z-10">
+                        <span className="text-xl">{pattern.emoji}</span>
+                        {isSelected && (
+                          <div
+                            className="w-5 h-5 rounded-full text-white flex items-center justify-center shadow-xs"
+                            style={{ backgroundColor: activeColor }}
+                          >
+                            <Check className="w-3 h-3" />
+                          </div>
+                        )}
+                      </div>
+
+                      <div className="relative z-10 mt-2">
+                        <h5 className="font-extrabold text-xs text-slate-900 truncate">
+                          {pattern.name}
+                        </h5>
+                        <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">
+                          {pattern.desc}
+                        </p>
+                      </div>
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* TAB 2: Color Wheel */}
+          {activeTab === 'wheel' && (
             <div className="space-y-5">
-              {/* Color Wheel + Preview Row */}
               <div className="flex flex-col sm:flex-row items-center gap-6 justify-center">
                 {/* Canvas Color Wheel */}
                 <div className="relative flex flex-col items-center">
-                  <div className="p-2 bg-slate-50 rounded-full border border-slate-200 shadow-inner">
+                  <div className="p-2 bg-white/80 rounded-full border border-white/80 shadow-md backdrop-blur-md">
                     <canvas
                       ref={canvasRef}
                       width={210}
@@ -361,10 +481,10 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                       onTouchStart={handleTouchStart}
                       onTouchMove={handleTouchMove}
                       className="cursor-crosshair rounded-full touch-none block"
-                      title="คลิกหรือลากบนวงล้อสีเพื่อเลือกสีที่ต้องการ"
+                      title="คลิกหรือลากบนวงล้อสีเพื่อเลือกเฉดสีที่ต้องการ"
                     />
                   </div>
-                  <span className="text-[11px] text-slate-400 mt-2 font-medium">
+                  <span className="text-[11px] text-slate-600 mt-2 font-semibold">
                     คลิกหรือลากบนวงล้อสีเพื่อเลือกเฉดสี
                   </span>
                 </div>
@@ -372,29 +492,29 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                 {/* Color Information & Native Picker */}
                 <div className="flex-1 w-full max-w-xs space-y-4">
                   {/* Big Color Preview Box */}
-                  <div className="p-4 rounded-2xl border border-slate-200 bg-slate-50 space-y-3">
+                  <div className="p-4 rounded-3xl border border-white/70 bg-white/70 shadow-xs backdrop-blur-md space-y-3">
                     <div className="flex items-center gap-3">
                       <div
-                        className="w-14 h-14 rounded-2xl shadow-md border-2 border-white ring-1 ring-slate-200 flex items-center justify-center text-white shrink-0"
+                        className="w-14 h-14 rounded-2xl shadow-md border-2 border-white flex items-center justify-center text-white shrink-0"
                         style={{ backgroundColor: activeColor }}
                       >
                         <Check className="w-6 h-6 drop-shadow" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <span className="text-[11px] text-slate-500 font-semibold block">
+                        <span className="text-[11px] text-slate-500 font-bold block">
                           สีที่เลือกปัจจุบัน
                         </span>
                         <span className="font-mono font-black text-slate-900 text-lg uppercase block">
                           {activeColor}
                         </span>
-                        <span className="text-[11px] text-slate-500 block truncate">
+                        <span className="text-[11px] text-slate-600 font-semibold block truncate">
                           RGB({currentRgb.r}, {currentRgb.g}, {currentRgb.b})
                         </span>
                       </div>
                     </div>
 
                     {/* Native Pipette / HTML5 Color Input button */}
-                    <label className="flex items-center justify-center gap-2 w-full py-2 px-3 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 cursor-pointer transition-colors shadow-2xs">
+                    <label className="flex items-center justify-center gap-2 w-full py-2.5 px-3 bg-white/90 hover:bg-white border border-white/80 rounded-2xl text-xs font-bold text-slate-700 cursor-pointer transition-colors shadow-2xs">
                       <input
                         type="color"
                         value={activeColor}
@@ -406,11 +526,11 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                   </div>
 
                   {/* Lightness Slider */}
-                  <div className="space-y-1.5">
-                    <div className="flex items-center justify-between text-xs font-bold text-slate-700">
+                  <div className="space-y-1.5 p-3 rounded-2xl bg-white/60 border border-white/60">
+                    <div className="flex items-center justify-between text-xs font-bold text-slate-800">
                       <span className="flex items-center gap-1">
-                        <Sliders className="w-3.5 h-3.5 text-slate-400" />
-                        <span>ความสว่างของสี (Lightness):</span>
+                        <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                        <span>ความสว่าง (Lightness):</span>
                       </span>
                       <span className="font-mono">{lightness}%</span>
                     </div>
@@ -428,22 +548,22 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                         setHexInput(newHex);
                         setThemeColor(newHex);
                       }}
-                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-indigo-600"
+                      className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-pink-600"
                     />
                   </div>
                 </div>
               </div>
 
               {/* Custom Hex Code Input Section */}
-              <div className="p-4 bg-slate-50 rounded-2xl border border-slate-200 space-y-2">
+              <div className="p-4 bg-white/70 rounded-3xl border border-white/80 space-y-2 backdrop-blur-md">
                 <label className="text-xs font-bold text-slate-800 flex items-center justify-between">
                   <span>ใส่โค้ดสีตามต้องการ (HEX Code):</span>
                   <span
-                    className={`text-[11px] font-semibold ${
-                      isValidHex ? 'text-emerald-600' : 'text-rose-500'
+                    className={`text-[11px] font-bold ${
+                      isValidHex ? 'text-emerald-700' : 'text-rose-600'
                     }`}
                   >
-                    {isValidHex ? '✓ โค้ดสีถูกต้อง' : '⚠️ รูปแบบ Hex ไม่ถูกต้อง (เช่น #6366F1)'}
+                    {isValidHex ? '✓ โค้ดสีถูกต้อง' : '⚠️ รูปแบบ Hex ไม่ถูกต้อง (เช่น #DB2777)'}
                   </span>
                 </label>
 
@@ -453,15 +573,15 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                       type="text"
                       value={hexInput}
                       onChange={(e) => handleHexInputChange(e.target.value)}
-                      placeholder="#6366F1 หรือ 6366F1"
-                      className={`w-full pl-3 pr-9 py-2 rounded-xl text-sm font-mono font-bold bg-white border ${
+                      placeholder="#DB2777"
+                      className={`w-full pl-3 pr-9 py-2 rounded-2xl text-sm font-mono font-bold bg-white/90 border ${
                         isValidHex
-                          ? 'border-slate-300 focus:border-indigo-500'
+                          ? 'border-slate-300 focus:border-pink-500'
                           : 'border-rose-400 focus:border-rose-500 text-rose-600'
-                      } focus:outline-none focus:ring-2 focus:ring-indigo-500/20`}
+                      } focus:outline-none focus:ring-2 focus:ring-pink-500/20`}
                     />
                     <div
-                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-slate-200"
+                      className="absolute right-2.5 top-1/2 -translate-y-1/2 w-4 h-4 rounded-full border border-slate-200 shadow-2xs"
                       style={{ backgroundColor: isValidHex ? activeColor : 'transparent' }}
                     />
                   </div>
@@ -469,7 +589,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                   <button
                     type="button"
                     onClick={handleCopyHex}
-                    className="px-3 py-2 bg-white hover:bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer"
+                    className="px-3.5 py-2 bg-white/90 hover:bg-white border border-white/80 rounded-2xl text-xs font-bold text-slate-700 flex items-center gap-1.5 transition-colors cursor-pointer shadow-2xs"
                     title="คัดลอกโค้ดสี"
                   >
                     {copied ? (
@@ -485,25 +605,25 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                     )}
                   </button>
                 </div>
-                <p className="text-[11px] text-slate-500">
-                  ตัวอย่างโค้ดสียอดนิยม: <code className="text-slate-700 font-bold">#6366F1</code>,{' '}
-                  <code className="text-slate-700 font-bold">#0EA5E9</code>,{' '}
-                  <code className="text-slate-700 font-bold">#10B981</code>,{' '}
-                  <code className="text-slate-700 font-bold">#F43F5E</code>,{' '}
-                  <code className="text-slate-700 font-bold">#8B5CF6</code>
-                </p>
               </div>
             </div>
-          ) : (
-            /* Presets Tab */
+          )}
+
+          {/* TAB 3: Presets */}
+          {activeTab === 'presets' && (
             <div className="space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-700">
-                  คลิกเพื่อเลือกธีมสีสำเร็จรูปที่ผ่านการปรับแต่งความคมชัดมาแล้ว:
-                </span>
+                <div>
+                  <h4 className="text-xs sm:text-sm font-bold text-slate-900">
+                    ชุดสีสำเร็จรูปตามสไตล์ Modern Teen ({PRESET_THEME_COLORS.length} ธีม)
+                  </h4>
+                  <p className="text-[11px] text-slate-600">
+                    ผ่านการทดสอบอัตราส่วนความคมชัด (Contrast) และแมทช์กับ Liquid Glass
+                  </p>
+                </div>
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 {PRESET_THEME_COLORS.map((preset) => {
                   const isSelected = activeColor.toLowerCase() === preset.hex.toLowerCase();
                   return (
@@ -511,25 +631,32 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
                       key={preset.id}
                       type="button"
                       onClick={() => handleSelectPreset(preset.hex)}
-                      className={`p-3 rounded-2xl border text-left flex items-center gap-3 transition-all cursor-pointer ${
+                      className={`p-3.5 rounded-3xl border text-left flex items-center gap-3.5 transition-all cursor-pointer ${
                         isSelected
-                          ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-[1.02]'
-                          : 'bg-white hover:bg-slate-50 text-slate-800 border-slate-200 hover:border-slate-300'
+                          ? 'bg-slate-900 text-white border-slate-900 shadow-lg scale-[1.02]'
+                          : 'bg-white/70 hover:bg-white text-slate-800 border-white/70 hover:border-slate-300'
                       }`}
                     >
                       <div
-                        className="w-9 h-9 rounded-xl flex items-center justify-center text-white shadow-sm shrink-0 font-bold text-sm relative"
+                        className="w-11 h-11 rounded-2xl flex items-center justify-center text-white shadow-md shrink-0 font-bold text-base relative"
                         style={{ backgroundColor: preset.hex }}
                       >
-                        {isSelected ? <Check className="w-4 h-4 drop-shadow" /> : preset.emoji}
+                        {isSelected ? <Check className="w-5 h-5 drop-shadow" /> : preset.emoji}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <h5 className="font-bold text-xs truncate">
+                        <h5 className="font-extrabold text-xs truncate">
                           {preset.name}
                         </h5>
+                        <p
+                          className={`text-[10px] font-medium truncate mt-0.5 ${
+                            isSelected ? 'text-slate-300' : 'text-slate-500'
+                          }`}
+                        >
+                          {preset.description}
+                        </p>
                         <span
-                          className={`font-mono text-[10px] block ${
-                            isSelected ? 'text-slate-300' : 'text-slate-400'
+                          className={`font-mono text-[10px] font-bold block mt-1 ${
+                            isSelected ? 'text-pink-300' : 'text-slate-600'
                           }`}
                         >
                           {preset.hex.toUpperCase()}
@@ -542,41 +669,48 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
             </div>
           )}
 
-          {/* Live Component Preview Section */}
-          <div className="p-4 bg-slate-50/80 rounded-2xl border border-slate-200/80 space-y-3">
-            <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-              <Eye className="w-3.5 h-3.5 text-slate-500" />
-              <span>ตัวอย่างการแสดงผลส่วนต่างๆ ในแอป (Live Preview):</span>
+          {/* Live Liquid Glass Component Preview Section */}
+          <div className="p-4 rounded-3xl border border-white/80 space-y-3 glass-secondary">
+            <div className="flex items-center gap-2 text-xs font-bold text-slate-800">
+              <Eye className="w-3.5 h-3.5 text-slate-600" />
+              <span>ตัวอย่างการแสดงผลจริงบนพื้นหลัง (Live Liquid Glass Preview):</span>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-2xs space-y-3">
+            <div
+              className="p-4 rounded-2xl border border-white/80 shadow-md space-y-3 relative overflow-hidden"
+              style={{
+                background: 'rgba(255, 255, 255, 0.75)',
+                backdropFilter: 'blur(20px)',
+                WebkitBackdropFilter: 'blur(20px)',
+              }}
+            >
               {/* Fake top bar */}
-              <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100">
+              <div className="flex items-center justify-between gap-3 pb-3 border-b border-white/60">
                 <div className="flex items-center gap-2">
                   <div
-                    className="w-7 h-7 rounded-lg flex items-center justify-center text-white text-xs font-bold shadow-xs"
+                    className="w-7 h-7 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-xs"
                     style={{ backgroundColor: activeColor }}
                   >
-                    MG
+                    🌸
                   </div>
-                  <span className="font-extrabold text-sm" style={{ color: activeColor }}>
-                    🎓 MyGrade
+                  <span className="font-black text-sm text-slate-900">
+                    MyGrade
                   </span>
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span
-                    className="text-[11px] font-bold px-2 py-0.5 rounded-full"
+                    className="text-[11px] font-black px-2.5 py-0.5 rounded-full"
                     style={{
-                      backgroundColor: `rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.12)`,
+                      backgroundColor: `rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.15)`,
                       color: activeColor,
                     }}
                   >
-                    เกรดเฉลี่ย 3.85
+                    เกรดเฉลี่ย 3.90 🌟
                   </span>
                   <button
                     type="button"
-                    className="px-2.5 py-1 rounded-lg text-white text-xs font-bold shadow-xs"
+                    className="px-3 py-1 rounded-xl text-white text-xs font-bold shadow-xs active:scale-95 transition-all"
                     style={{ backgroundColor: activeColor }}
                   >
                     ปุ่มหลัก
@@ -586,14 +720,14 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
 
               {/* Fake progress bar */}
               <div className="space-y-1">
-                <div className="flex justify-between text-[11px] text-slate-500 font-semibold">
+                <div className="flex justify-between text-[11px] text-slate-700 font-bold">
                   <span>คะแนนสะสมวิชาคณิตศาสตร์</span>
-                  <span style={{ color: activeColor }}>85 / 100 คะแนน</span>
+                  <span style={{ color: activeColor }}>88 / 100 คะแนน (เกรด 4.00)</span>
                 </div>
-                <div className="w-full h-2 bg-slate-100 rounded-full overflow-hidden">
+                <div className="w-full h-2.5 bg-white/80 rounded-full overflow-hidden border border-white/60">
                   <div
                     className="h-full rounded-full transition-all duration-300"
-                    style={{ width: '85%', backgroundColor: activeColor }}
+                    style={{ width: '88%', backgroundColor: activeColor }}
                   />
                 </div>
               </div>
@@ -602,33 +736,36 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer actions */}
-        <div className="px-6 py-4 border-t border-slate-100 bg-slate-50 flex items-center justify-between gap-3">
+        <div className="px-5 sm:px-6 py-4 border-t border-white/60 bg-white/50 backdrop-blur-md flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={handleReset}
-            className="px-3.5 py-2 rounded-xl text-xs font-bold text-slate-600 hover:text-slate-900 hover:bg-slate-200 transition-colors flex items-center gap-1.5 cursor-pointer"
-            title="คืนค่าสีเป็นสีม่วงครามเริ่มต้น"
+            className="px-3.5 py-2 rounded-2xl text-xs font-bold text-slate-700 hover:text-slate-900 hover:bg-white/80 transition-colors flex items-center gap-1.5 cursor-pointer"
+            title="คืนค่าสีเป็นซากุระหวานและลายดอกไม้เริ่มต้น"
           >
             <RotateCcw className="w-3.5 h-3.5" />
-            <span>คืนค่าสีเริ่มต้น</span>
+            <span>คืนค่าเริ่มต้น</span>
           </button>
 
           <div className="flex items-center gap-2">
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-200 transition-colors cursor-pointer"
+              className="px-4 py-2 rounded-2xl text-xs font-bold text-slate-700 hover:bg-white/80 transition-colors cursor-pointer"
             >
-              ปิด
+              ยกเลิก
             </button>
             <button
               type="button"
               onClick={handleApply}
-              className="px-5 py-2 rounded-xl text-xs font-black text-white shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
-              style={{ backgroundColor: activeColor }}
+              className="px-5 py-2 rounded-2xl text-xs font-black text-white shadow-md hover:brightness-110 active:scale-95 transition-all flex items-center gap-1.5 cursor-pointer"
+              style={{
+                backgroundColor: activeColor,
+                boxShadow: `0 4px 14px rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.35)`,
+              }}
             >
               <Check className="w-4 h-4" />
-              <span>ตกลง ใช้สีนี้</span>
+              <span>ตกลง ใช้ธีม & ลวดลายนี้</span>
             </button>
           </div>
         </div>

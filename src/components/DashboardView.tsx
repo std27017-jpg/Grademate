@@ -189,9 +189,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   return (
     <div className="space-y-6 pb-12 text-left">
       {/* ========================================================================= */}
-      {/* SECTION 1: HEADER & USER PROFILE WITH TEEN BANNER                         */}
+      {/* SECTION 1: HEADER & USER PROFILE WITH LIQUID GLASS BANNER                 */}
       {/* ========================================================================= */}
-      <div className="bg-gradient-to-r from-pink-100/70 via-purple-100/50 to-indigo-100/60 rounded-3xl p-5 sm:p-6 border border-pink-200/90 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div
+        className="rounded-3xl p-5 sm:p-6 border border-white/80 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.65) 100%)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          boxShadow: '0 12px 36px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.12), 0 2px 8px 0 rgba(0,0,0,0.03)',
+        }}
+      >
         <div className="space-y-2">
           <div className="flex items-center gap-3 flex-wrap">
             <div className="w-13 h-13 rounded-2xl bg-white shadow-xs border-2 border-pink-200 flex items-center justify-center text-2xl select-none shrink-0">
@@ -286,7 +294,13 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ========================================================================= */}
       <div
         onClick={() => onNavigate('future')}
-        className="bg-gradient-to-br from-pink-50 via-white to-purple-50 rounded-3xl p-5 sm:p-6 border-2 border-pink-200/90 shadow-sm hover:shadow-md transition-all cursor-pointer relative overflow-hidden group"
+        className="rounded-3xl p-5 sm:p-6 border border-white/85 shadow-lg hover:shadow-xl transition-all cursor-pointer relative overflow-hidden group"
+        style={{
+          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.68) 100%)',
+          backdropFilter: 'blur(24px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
+          boxShadow: '0 14px 40px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.15), 0 2px 8px 0 rgba(0,0,0,0.03)',
+        }}
       >
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1.5 min-w-0">

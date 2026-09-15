@@ -19,6 +19,7 @@ import { WelcomeView } from './components/WelcomeView';
 import { RegisterModal } from './components/RegisterModal';
 import { LoginModal } from './components/LoginModal';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
+import { ThemeBackground } from './components/ThemeBackground';
 import { Subject } from './types';
 
 function MainAppContent() {
@@ -78,7 +79,7 @@ function MainAppContent() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans selection:bg-pink-500 selection:text-white">
+    <ThemeBackground className="text-slate-900 selection:bg-pink-500 selection:text-white">
       {/* Top and Mobile Navigation */}
       <Navbar
         activeTab={activeTab}
@@ -193,7 +194,7 @@ function MainAppContent() {
           setIsRegisterModalOpen(true);
         }}
       />
-    </div>
+    </ThemeBackground>
   );
 }
 

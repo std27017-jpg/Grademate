@@ -142,8 +142,16 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs overflow-y-auto">
-      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-lg w-full p-4 sm:p-6 border border-pink-100 shadow-2xl relative my-auto max-h-[92vh] flex flex-col box-border">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+      <div
+        className="rounded-3xl max-w-lg w-full p-5 sm:p-7 border border-white/80 shadow-2xl relative my-auto max-h-[92vh] flex flex-col box-border"
+        style={{
+          background: 'rgba(255, 255, 255, 0.88)',
+          backdropFilter: 'blur(28px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(28px) saturate(180%)',
+          boxShadow: '0 24px 60px -12px rgba(var(--app-primary-rgb, 219, 39, 119), 0.25), 0 0 0 1px rgba(255, 255, 255, 0.9)',
+        }}
+      >
         {/* Close Button */}
         <button
           type="button"
