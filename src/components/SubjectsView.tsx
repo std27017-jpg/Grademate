@@ -60,6 +60,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   const {
     currentSemester,
     activeSemesterSummary,
+    userProfile,
     tasks,
     exams,
     updateTask,
@@ -415,6 +416,52 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               <Plus className="w-4 h-4" />
               <span>เพิ่มวิชาใหม่</span>
             </button>
+          </div>
+        </div>
+
+        {/* Overview Stats Bar: วิชาทั้งหมด, คะแนนเฉลี่ย, เกรด (GPA), วิชาที่ควรโฟกัส */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+          <div className="bg-white p-4 rounded-2xl border border-indigo-200/90 shadow-2xs">
+            <span className="text-xs font-bold text-slate-600 block">📚 วิชาทั้งหมด</span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {activeSemesterSummary.subjectSummaries.length}{' '}
+              <span className="text-xs font-bold text-slate-600">วิชา</span>
+            </div>
+            <span className="text-[11px] text-indigo-700 font-bold">
+              {activeSemesterSummary.totalCredits} หน่วยกิตรวม
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-pink-200/90 shadow-2xs">
+            <span className="text-xs font-bold text-slate-600 block">📊 คะแนนเฉลี่ย</span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {activeSemesterSummary.overallPercentage.toFixed(1)}%
+            </div>
+            <span className="text-[11px] text-pink-700 font-bold">
+              เก็บแล้ว {activeSemesterSummary.totalEarnedScore} คะแนน
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-purple-200/90 shadow-2xs">
+            <span className="text-xs font-bold text-slate-600 block">🏆 เกรดเฉลี่ย (GPA)</span>
+            <div className="text-2xl font-black text-slate-900 mt-1">
+              {activeSemesterSummary.gpa.toFixed(2)}
+            </div>
+            <span className="text-[11px] text-purple-700 font-bold">
+              เป้าหมายที่ตั้ง {userProfile.targetGpa.toFixed(2)}
+            </span>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-amber-200/90 shadow-2xs">
+            <span className="text-xs font-bold text-slate-600 block">🔥 วิชาที่ควรโฟกัส</span>
+            <div className="text-sm font-black text-slate-900 truncate mt-1">
+              {activeSemesterSummary.focusAdvice[0]?.subject?.name || 'พร้อมทุกวิชา ✨'}
+            </div>
+            <span className="text-[11px] text-amber-700 font-bold block truncate">
+              {activeSemesterSummary.focusAdvice[0]
+                ? `ขาดอีก ${activeSemesterSummary.focusAdvice[0].gapToTarget} แต้มสู่เกรด ${activeSemesterSummary.focusAdvice[0].subject.targetGrade}`
+                : 'คะแนนอยู่ในเกณฑ์เป้าหมาย'}
+            </span>
           </div>
         </div>
 

@@ -125,10 +125,10 @@ export const ExamsView: React.FC = () => {
       examDate: new Date().toISOString().split('T')[0],
       startTime: '08:30',
       endTime: '10:30',
-      room: 'ห้อง 324',
+      room: '',
       maxScore: '20',
-      topicsText: 'ลำดับและอนุกรม\nความน่าจะเป็น\nเซต',
-      tips: 'ทบทวนสูตรและตัวอย่างข้อสอบเก่า',
+      topicsText: '',
+      tips: '',
       studyStatus: 'not_started',
     });
     setIsModalOpen(true);
@@ -221,6 +221,49 @@ export const ExamsView: React.FC = () => {
             <Plus className="w-4 h-4" />
             <span>เพิ่มการสอบ</span>
           </button>
+        </div>
+      </div>
+
+      {/* 4 Summary Cards: สอบที่กำลังจะถึง | ตารางสอบ | หัวข้อสอบ | Progress การอ่าน */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+        <div className="bg-white p-4 rounded-2xl border border-sky-200/90 shadow-2xs">
+          <span className="text-xs font-bold text-slate-600 block">🎯 สอบที่กำลังจะถึง</span>
+          <div className="text-sm font-black text-slate-900 truncate mt-1">
+            {nextExamSub?.name || 'ไม่มีการสอบเร็ว ๆ นี้'}
+          </div>
+          <span className="text-[11px] text-sky-700 font-bold block truncate">
+            {nextExamDays !== null
+              ? nextExamDays === 0
+                ? 'สอบวันนี้!'
+                : `อีก ${nextExamDays} วัน`
+              : 'พร้อมสำหรับการสอบ'}
+          </span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-indigo-200/90 shadow-2xs">
+          <span className="text-xs font-bold text-slate-600 block">📅 ตารางสอบ</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {semesterExams.length} <span className="text-xs font-bold text-slate-600">วิชา</span>
+          </div>
+          <span className="text-[11px] text-indigo-700 font-bold">ในภาคเรียนนี้</span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-purple-200/90 shadow-2xs">
+          <span className="text-xs font-bold text-slate-600 block">📑 หัวข้อสอบทั้งหมด</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {semesterExams.reduce((acc, e) => acc + (e.topics?.length || 0), 0)}{' '}
+            <span className="text-xs font-bold text-slate-600">หัวข้อ</span>
+          </div>
+          <span className="text-[11px] text-purple-700 font-bold">บันทึกแนวข้อสอบแล้ว</span>
+        </div>
+
+        <div className="bg-white p-4 rounded-2xl border border-emerald-200/90 shadow-2xs">
+          <span className="text-xs font-bold text-slate-600 block">📚 Progress การอ่าน</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {Object.values(checkedTopics).filter(Boolean).length}{' '}
+            <span className="text-xs font-bold text-slate-600">หัวข้ออ่านแล้ว</span>
+          </div>
+          <span className="text-[11px] text-emerald-700 font-bold">ทบทวนเตรียมพร้อม</span>
         </div>
       </div>
 

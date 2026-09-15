@@ -54,12 +54,12 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'profile', label: 'โปรไฟล์', iconName: 'profile' },
   ];
 
-  // Mobile Bottom Navigation 5 essential tabs
+  // Mobile Bottom Navigation 5 essential tabs (Modern Teen Mobile App)
   const mobileBottomTabs: { id: NavTab; label: string; iconName: IconName }[] = [
-    { id: 'dashboard', label: 'หน้าหลัก', iconName: 'home' },
-    { id: 'subjects', label: 'วิชา', iconName: 'subjects' },
-    { id: 'study', label: 'อ่านหนังสือ', iconName: 'study' },
-    { id: 'future', label: 'เป้าหมาย', iconName: 'goals' },
+    { id: 'dashboard', label: 'หน้าแรก', iconName: 'home' },
+    { id: 'subjects', label: 'คะแนน', iconName: 'subjects' },
+    { id: 'tasks', label: 'งาน', iconName: 'tasks' },
+    { id: 'study', label: 'อ่าน', iconName: 'study' },
     { id: 'profile', label: 'โปรไฟล์', iconName: 'profile' },
   ];
 
@@ -482,15 +482,15 @@ export const Navbar: React.FC<NavbarProps> = ({
       )}
 
       {/* ========================================================================= */}
-      {/* MOBILE FIXED BOTTOM NAVIGATION: 100% width, Safe Area, Zero Overflow       */}
-      {/* 5 Essential Tabs: 🏠 Home | 📚 วิชา | ⏱️ อ่าน | 🎯 เป้าหมาย | 👤 โปรไฟล์ */}
+      {/* MOBILE FIXED BOTTOM NAVIGATION: 100% width, Safe Area, High-Contrast       */}
+      {/* 5 Essential Tabs: 🏠 หน้าแรก | 📊 คะแนน | 📝 งาน | 📚 อ่าน | 👤 โปรไฟล์  */}
       {/* ========================================================================= */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/80 shadow-lg pb-[env(safe-area-inset-bottom,0px)] box-border"
+        className="md:hidden fixed bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md border-t border-slate-200/90 shadow-lg pb-[env(safe-area-inset-bottom,0px)] box-border"
       >
-        <div className="max-w-md mx-auto w-full px-2 py-1">
-          <div className="grid grid-cols-5 gap-1">
+        <div className="max-w-md mx-auto w-full px-2.5 py-1.5">
+          <div className="grid grid-cols-5 gap-1.5">
             {mobileBottomTabs.map((item) => {
               const isActive = activeTab === item.id;
               return (
@@ -499,24 +499,24 @@ export const Navbar: React.FC<NavbarProps> = ({
                   id={`mobile-bottom-tab-${item.id}`}
                   type="button"
                   onClick={() => setActiveTab(item.id)}
-                  className={`flex flex-col items-center justify-center min-h-[48px] py-1 px-1 rounded-xl transition-all cursor-pointer select-none active:scale-95 ${
+                  className={`flex flex-col items-center justify-center min-h-[50px] py-1 px-1 rounded-2xl transition-all duration-200 cursor-pointer select-none active:scale-90 ${
                     isActive
-                      ? 'bg-pink-50 text-pink-700 font-black shadow-2xs'
-                      : 'text-slate-500 hover:text-slate-800'
+                      ? 'bg-pink-50 text-pink-700 font-black shadow-2xs ring-1 ring-pink-300/60'
+                      : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50 font-bold'
                   }`}
                 >
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center mb-0.5 transition-transform ${
-                      isActive ? 'scale-110 text-pink-600' : 'text-slate-400'
+                    className={`w-7 h-7 rounded-full flex items-center justify-center mb-0.5 transition-transform ${
+                      isActive ? 'scale-110 text-pink-600' : 'text-slate-600'
                     }`}
                   >
                     <AppIcon
                       name={item.iconName}
-                      size={18}
-                      className={isActive ? 'text-pink-600' : 'text-slate-400'}
+                      size={19}
+                      className={isActive ? 'text-pink-600' : 'text-slate-600'}
                     />
                   </div>
-                  <span className="text-[10px] leading-none text-center font-bold truncate w-full">
+                  <span className="text-[11px] leading-tight text-center font-bold truncate w-full">
                     {item.label}
                   </span>
                 </button>

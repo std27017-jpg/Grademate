@@ -207,6 +207,65 @@ export const TasksView: React.FC = () => {
         </div>
       </div>
 
+      {/* Task Summary Metric Grid: งานทั้งหมด | ใกล้ครบกำหนด | เสร็จแล้ว */}
+      <div className="grid grid-cols-3 gap-3">
+        <div
+          onClick={() => {
+            setActiveFilter('all');
+            setShowAllUrgent(false);
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            activeFilter === 'all'
+              ? 'bg-indigo-50/80 border-indigo-300 shadow-xs'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+          }`}
+        >
+          <span className="text-xs font-bold text-slate-600 block">📝 งานทั้งหมด</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {semesterTasks.length} <span className="text-xs font-bold text-slate-600">งาน</span>
+          </div>
+          <span className="text-[11px] text-indigo-700 font-bold">รวมทุกรายวิชา</span>
+        </div>
+
+        <div
+          onClick={() => {
+            setActiveFilter('urgent');
+            setShowAllUrgent(false);
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            activeFilter === 'urgent'
+              ? 'bg-amber-50/80 border-amber-300 shadow-xs'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+          }`}
+        >
+          <span className="text-xs font-bold text-slate-600 block">⏰ ใกล้ครบกำหนด</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {pendingCount} <span className="text-xs font-bold text-slate-600">งาน</span>
+          </div>
+          <span className="text-[11px] text-amber-700 font-bold">
+            {todayCount > 0 ? `ส่งวันนี้ ${todayCount} งาน!` : 'ต้องรีบส่ง'}
+          </span>
+        </div>
+
+        <div
+          onClick={() => {
+            setActiveFilter('completed');
+            setShowAllUrgent(false);
+          }}
+          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+            activeFilter === 'completed'
+              ? 'bg-emerald-50/80 border-emerald-300 shadow-xs'
+              : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+          }`}
+        >
+          <span className="text-xs font-bold text-slate-600 block">✓ เสร็จแล้ว</span>
+          <div className="text-2xl font-black text-slate-900 mt-1">
+            {completedCount} <span className="text-xs font-bold text-slate-600">งาน</span>
+          </div>
+          <span className="text-[11px] text-emerald-700 font-bold">ส่งเรียบร้อยแล้ว</span>
+        </div>
+      </div>
+
       {/* FILTER BAR: Capsule [ทั้งหมด] [วันนี้] [ใกล้ส่ง] [เสร็จแล้ว] */}
       <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-2 sm:p-2.5 rounded-2xl sm:rounded-full border border-slate-200/80 shadow-2xs">
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none w-full sm:w-auto">
