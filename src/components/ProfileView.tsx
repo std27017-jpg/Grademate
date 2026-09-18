@@ -25,6 +25,8 @@ import {
   Users,
   Trash2,
   Compass,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useTheme } from '../context/ThemeContext';
@@ -33,6 +35,7 @@ import { CUTE_AVATARS } from '../data/defaultData';
 import { GradeLevel, NumericGrade, UserProfile } from '../types';
 import { AvatarDisplay } from './AvatarDisplay';
 import { EditProfileModal } from './EditProfileModal';
+import { uploadImageToStorage, validateImageFile } from '../utils/fileStorage';
 
 export const ProfileView: React.FC = () => {
   const {
@@ -70,6 +73,10 @@ export const ProfileView: React.FC = () => {
   const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || '');
   const [showThresholds, setShowThresholds] = useState(false);
 
+  // Avatar upload status
+  const [avatarUploadStatus, setAvatarUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [avatarUploadMessage, setAvatarUploadMessage] = useState<string>('');
+
   // Sync state whenever userProfile or academicYear changes
   useEffect(() => {
     setFullName(userProfile.fullName || '');
@@ -93,6 +100,7 @@ export const ProfileView: React.FC = () => {
     const trimmedName = fullName.trim();
     const trimmedClass = gradeLevel && room.trim() ? `${gradeLevel}/${room.trim()}` : gradeLevel || '';
     const parsedYear = Number(selectedYear) || 2568;
+    const isUrl = avatar.startsWith('/uploads/') || avatar.startsWith('/api/') || avatar.startsWith('http');
 
     updateUserProfile({
       fullName: trimmedName,
@@ -104,6 +112,7 @@ export const ProfileView: React.FC = () => {
       schoolName: schoolName.trim(),
       academicYear: parsedYear,
       avatar,
+      avatarUrl: isUrl ? avatar : undefined,
       targetGpa,
       dreamCareer: dreamCareer.trim(),
     });
@@ -118,28 +127,54 @@ export const ProfileView: React.FC = () => {
     setIsEditing(false);
   };
 
-  const handleAvatarUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (!file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้นค่ะ');
+    // 1. Validation (<= 5MB and valid image)
+    const validation = validateImageFile(file);
+    if (!validation.ok) {
+      setAvatarUploadStatus('error');
+      setAvatarUploadMessage(validation.error || 'ไฟล์รูปไม่ถูกต้อง');
+      e.target.value = '';
       return;
     }
 
-    if (file.size > 4 * 1024 * 1024) {
-      alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 4MB ค่ะ');
-      return;
-    }
+    // 2. Uploading status
+    setAvatarUploadStatus('uploading');
+    setAvatarUploadMessage('กำลังอัปโหลดรูปโปรไฟล์...');
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        setAvatar(dataUrl);
-      }
-    };
-    reader.readAsDataURL(file);
+    try {
+      // 3. Proper storage flow: File -> Storage -> URL -> Database
+      // Canvas compression and square cropping are performed inside uploadImageToStorage,
+      // and uploaded to backend storage (/api/upload). Zero Base64 into localStorage!
+      const result = await uploadImageToStorage(file);
+      const storageUrl = result.url;
+
+      // 4. Update preview and sync globally with clean URL
+      setAvatar(storageUrl);
+      updateUserProfile({
+        avatar: storageUrl,
+        avatarUrl: storageUrl,
+      });
+
+      // 5. Success
+      setAvatarUploadStatus('success');
+      setAvatarUploadMessage('เปลี่ยนรูปโปรไฟล์สำเร็จ ✨');
+
+      setTimeout(() => {
+        setAvatarUploadStatus((cur) => (cur === 'success' ? 'idle' : cur));
+        setAvatarUploadMessage('');
+      }, 3000);
+    } catch (err) {
+      console.error('Avatar upload failed in ProfileView:', err);
+      setAvatarUploadStatus('error');
+      setAvatarUploadMessage(
+        err instanceof Error ? err.message : 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+      );
+    } finally {
+      e.target.value = '';
+    }
   };
 
   const handleFileImport = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -164,11 +199,18 @@ export const ProfileView: React.FC = () => {
       <div className="bg-gradient-to-r from-pink-500/10 via-purple-500/10 to-indigo-500/10 rounded-3xl p-5 sm:p-6 border border-pink-200/80 shadow-xs relative overflow-hidden">
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-5 text-center sm:text-left">
           {/* Avatar */}
-          <div className="relative group">
-            <div className="w-20 h-20 rounded-full bg-white shadow-md border-3 border-pink-300 flex items-center justify-center overflow-hidden">
+          <div className="relative group shrink-0">
+            <div
+              className="w-20 h-20 sm:w-22 sm:h-22 rounded-2xl backdrop-blur-md shadow-md border-2 border-pink-300/90 ring-1 ring-white/70 flex items-center justify-center overflow-hidden"
+              style={{ borderRadius: '18px', overflow: 'hidden' }}
+            >
               <AvatarDisplay
                 avatar={userProfile.avatar || '🌸'}
-                size="2xl"
+                avatarUrl={userProfile.avatarUrl}
+                size="full"
+                shape="inherit"
+                className="w-full h-full [border-radius:inherit]"
+                style={{ width: '100%', height: '100%', borderRadius: 'inherit' }}
                 editable
                 onEdit={() => setIsEditing(true)}
               />
@@ -179,7 +221,7 @@ export const ProfileView: React.FC = () => {
                 setModalTab('edit');
                 setIsModalOpen(true);
               }}
-              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-pink-600 text-white flex items-center justify-center shadow-xs hover:bg-pink-700 transition-transform active:scale-95 cursor-pointer border-2 border-white"
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-xs hover:bg-pink-700 transition-transform active:scale-95 cursor-pointer border-2 border-white"
               title="เปลี่ยนรูปโปรไฟล์"
             >
               <Camera className="w-3.5 h-3.5" />
@@ -276,23 +318,71 @@ export const ProfileView: React.FC = () => {
               <button
                 type="button"
                 onClick={() => avatarUploadRef.current?.click()}
-                className="px-3 py-1 bg-white hover:bg-pink-100 text-pink-700 text-xs font-bold rounded-full border border-pink-200 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                disabled={avatarUploadStatus === 'uploading'}
+                className={`px-3 py-1 bg-white hover:bg-pink-100 text-pink-700 text-xs font-bold rounded-full border border-pink-200 transition-colors flex items-center gap-1.5 shadow-2xs ${
+                  avatarUploadStatus === 'uploading' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'
+                }`}
               >
-                <Upload className="w-3.5 h-3.5" />
-                <span>อัปโหลดรูปของตัวเอง</span>
+                {avatarUploadStatus === 'uploading' ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600" />
+                ) : (
+                  <Upload className="w-3.5 h-3.5" />
+                )}
+                <span>{avatarUploadStatus === 'uploading' ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปของตัวเอง'}</span>
               </button>
               <input
                 type="file"
                 ref={avatarUploadRef}
                 onChange={handleAvatarUpload}
-                accept="image/*"
+                accept="image/jpeg,image/png,image/webp,image/gif,image/*"
                 className="hidden"
               />
             </div>
 
+            {/* Status alerts */}
+            {avatarUploadStatus === 'uploading' && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-pink-100/70 border border-pink-200 text-pink-800 text-xs font-medium animate-pulse">
+                <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600 shrink-0" />
+                <span>กำลังอัปโหลดรูปโปรไฟล์...</span>
+              </div>
+            )}
+
+            {avatarUploadStatus === 'success' && (
+              <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                <span>{avatarUploadMessage || 'เปลี่ยนรูปโปรไฟล์สำเร็จ ✨'}</span>
+              </div>
+            )}
+
+            {avatarUploadStatus === 'error' && (
+              <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                <div className="flex items-center gap-1.5 min-w-0">
+                  <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                  <span className="truncate">{avatarUploadMessage || 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => avatarUploadRef.current?.click()}
+                  className="px-2.5 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold cursor-pointer shrink-0 transition-colors"
+                >
+                  ลองใหม่อีกครั้ง
+                </button>
+              </div>
+            )}
+
             <div className="flex items-center gap-3">
-              <div className="w-14 h-14 rounded-2xl bg-white shadow-2xs border-2 border-pink-300 flex items-center justify-center overflow-hidden shrink-0">
-                <AvatarDisplay avatar={avatar} size="xl" />
+              <div
+                className="w-14 h-14 rounded-2xl backdrop-blur-xs shadow-2xs border-2 border-pink-300 flex items-center justify-center overflow-hidden shrink-0"
+                style={{ borderRadius: '16px', overflow: 'hidden' }}
+              >
+                <AvatarDisplay
+                  avatar={avatar}
+                  avatarUrl={avatar.startsWith('/uploads/') || avatar.startsWith('/api/') || avatar.startsWith('http') ? avatar : undefined}
+                  size="full"
+                  shape="inherit"
+                  className="w-full h-full [border-radius:inherit]"
+                  style={{ width: '100%', height: '100%', borderRadius: 'inherit' }}
+                />
               </div>
 
               <div className="flex-1">
@@ -301,11 +391,20 @@ export const ProfileView: React.FC = () => {
                     <button
                       key={av}
                       type="button"
-                      onClick={() => setAvatar(av)}
+                      onClick={() => {
+                        setAvatar(av);
+                        updateUserProfile({ avatar: av });
+                        setAvatarUploadStatus('success');
+                        setAvatarUploadMessage('เปลี่ยนรูปโปรไฟล์สำเร็จ ✨');
+                        setTimeout(() => {
+                          setAvatarUploadStatus((cur) => (cur === 'success' ? 'idle' : cur));
+                          setAvatarUploadMessage('');
+                        }, 2500);
+                      }}
                       className={`w-8 h-8 rounded-xl text-base flex items-center justify-center transition-all cursor-pointer ${
                         avatar === av
                           ? 'bg-pink-500 text-white scale-110 shadow-xs ring-2 ring-pink-300'
-                          : 'hover:bg-pink-50 text-slate-700'
+                          : 'hover:bg-pink-50 text-slate-700 hover:scale-105'
                       }`}
                     >
                       {av}
@@ -496,8 +595,18 @@ export const ProfileView: React.FC = () => {
                 }`}
               >
                 <div className="flex items-center gap-3 min-w-0">
-                  <div className="w-10 h-10 rounded-xl bg-white shadow-2xs border border-pink-200 flex items-center justify-center overflow-hidden shrink-0">
-                    <AvatarDisplay avatar={p.avatar} size="md" />
+                  <div
+                    className="w-10 h-10 rounded-xl backdrop-blur-xs shadow-2xs border border-pink-200 flex items-center justify-center overflow-hidden shrink-0"
+                    style={{ borderRadius: '12px', overflow: 'hidden' }}
+                  >
+                    <AvatarDisplay
+                      avatar={p.avatar}
+                      avatarUrl={p.avatarUrl}
+                      size="full"
+                      shape="inherit"
+                      className="w-full h-full [border-radius:inherit]"
+                      style={{ width: '100%', height: '100%', borderRadius: 'inherit' }}
+                    />
                   </div>
                   <div className="min-w-0">
                     <div className="flex items-center gap-1.5">

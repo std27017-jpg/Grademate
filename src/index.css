@@ -1,5 +1,24 @@
 @import "tailwindcss";
 
+:root {
+  /* Typography Color System (High Contrast & Clear Readability) */
+  --text-primary: #0f172a;    /* Deep Slate 900 for titles, values, primary labels */
+  --text-secondary: #334155;  /* Slate 700 for subtitles, descriptions, content */
+  --text-muted: #475569;      /* Slate 600 for subtle notes & timestamps (contrast > 4.5:1) */
+  --text-on-accent: #ffffff;  /* Pure white strictly for solid dark buttons & badges */
+  --text-link: #db2777;       /* Dynamic Theme Primary link */
+  --text-success: #047857;    /* Deep Emerald 700 */
+  --text-warning: #b45309;    /* Deep Amber 700 */
+  --text-danger: #be123c;     /* Deep Rose 700 */
+
+  /* Liquid Glass Card Backgrounds - Opacities engineered for text readability */
+  --glass-bg-primary: rgba(255, 255, 255, 0.86);
+  --glass-bg-secondary: rgba(255, 255, 255, 0.78);
+  --glass-bg-soft: rgba(255, 255, 255, 0.65);
+  --glass-bg-floating: rgba(255, 255, 255, 0.92);
+  --glass-border: rgba(255, 255, 255, 0.85);
+}
+
 @layer base {
   *,
   ::before,
@@ -20,7 +39,55 @@
   body {
     font-family: 'Prompt', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
+    color: var(--text-primary);
+    background-color: #fdf2f8;
   }
+
+  /* Universal high-contrast inputs and placeholders */
+  input, select, textarea {
+    color: var(--text-primary);
+  }
+
+  input::placeholder, textarea::placeholder {
+    color: #64748b !important; /* Slate 500 - clear, distinct readability */
+    opacity: 1 !important;
+  }
+}
+
+/* Typography Utility Classes */
+.text-theme-primary { color: var(--text-primary) !important; }
+.text-theme-secondary { color: var(--text-secondary) !important; }
+.text-theme-muted { color: var(--text-muted) !important; }
+.text-theme-on-accent { color: var(--text-on-accent) !important; }
+.text-theme-link { color: var(--text-link) !important; }
+.text-theme-success { color: var(--text-success) !important; }
+.text-theme-warning { color: var(--text-warning) !important; }
+.text-theme-danger { color: var(--text-danger) !important; }
+
+/* Global accessibility upgrade: elevate faint grays on light backgrounds */
+.text-slate-400:not([data-dark-context="true"]) {
+  color: #475569 !important; /* Elevate slate-400 from 2.5:1 to 5.2:1 contrast */
+}
+.text-slate-300:not([data-dark-context="true"]) {
+  color: #64748b !important; /* Elevate slate-300 to readable contrast */
+}
+.text-gray-400:not([data-dark-context="true"]) {
+  color: #4b5563 !important;
+}
+.text-gray-300:not([data-dark-context="true"]) {
+  color: #6b7280 !important;
+}
+
+/* Inside dark containers, preserve light readable text */
+.bg-slate-900 .text-slate-400,
+.bg-slate-950 .text-slate-400,
+.bg-indigo-950 .text-slate-400,
+.bg-slate-900 .text-slate-300,
+.bg-slate-950 .text-slate-300,
+.bg-indigo-950 .text-slate-300,
+[data-dark-context="true"] .text-slate-400,
+[data-dark-context="true"] .text-slate-300 {
+  color: #cbd5e1 !important;
 }
 
 /* Custom smooth scrollbar */

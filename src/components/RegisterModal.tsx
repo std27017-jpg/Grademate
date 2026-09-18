@@ -144,12 +144,13 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
       <div
-        className="rounded-3xl max-w-lg w-full p-5 sm:p-7 border border-white/80 shadow-2xl relative my-auto max-h-[92vh] flex flex-col box-border"
+        className="rounded-3xl max-w-lg w-full p-5 sm:p-7 border shadow-2xl relative my-auto max-h-[92vh] flex flex-col box-border"
         style={{
-          background: 'rgba(255, 255, 255, 0.88)',
+          background: 'var(--theme-glass, rgba(255, 255, 255, 0.88))',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          boxShadow: '0 24px 60px -12px rgba(var(--app-primary-rgb, 219, 39, 119), 0.25), 0 0 0 1px rgba(255, 255, 255, 0.9)',
+          borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+          boxShadow: 'var(--theme-glow, 0 24px 60px -12px rgba(var(--app-primary-rgb, 219, 39, 119), 0.25))',
         }}
       >
         {/* Close Button */}
@@ -163,13 +164,29 @@ export const RegisterModal: React.FC<RegisterModalProps> = ({
 
         {/* Modal Header */}
         <div className="mb-4 text-center">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-gradient-to-tr from-pink-400 via-purple-500 to-indigo-500 text-white shadow-md shadow-pink-500/20 mb-2">
-            <GraduationCap className="w-6 h-6" />
+          <div
+            id="register-header-icon-container"
+            className="inline-flex items-center justify-center w-14 h-14 rounded-full mb-2 transition-transform hover:scale-105"
+            style={{
+              backgroundColor: 'var(--theme-accent-soft, rgba(var(--app-primary-rgb, 219, 39, 119), 0.16))',
+              border: '1.5px solid var(--theme-accent-border, rgba(var(--app-primary-rgb, 219, 39, 119), 0.40))',
+              boxShadow: '0 6px 20px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.22), inset 0 1px 2px rgba(255, 255, 255, 0.45)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
+            }}
+          >
+            <GraduationCap
+              className="w-7 h-7 drop-shadow-xs"
+              style={{
+                color: 'var(--theme-icon, var(--theme-primary, #db2777))',
+                strokeWidth: 2.3,
+              }}
+            />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: 'var(--theme-text-primary, #0f172a)' }}>
             {step === 1 ? 'สมัครบัญชี MyGrade 🌸' : 'ตั้งค่าเป้าหมายของฉัน 🎯'}
           </h2>
-          <p className="text-xs text-slate-500 font-medium mt-0.5">
+          <p className="text-xs font-semibold mt-0.5" style={{ color: 'var(--theme-text-secondary, #475569)' }}>
             {step === 1
               ? 'ขั้นตอนที่ 1/2: ข้อมูลส่วนตัวและบัญชีผู้ใช้'
               : 'ขั้นตอนที่ 2/2: เกรดเป้าหมาย คณะ และอาชีพในฝัน'}

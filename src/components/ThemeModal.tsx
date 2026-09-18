@@ -296,12 +296,13 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
       onMouseUp={handleMouseUp}
     >
       <div
-        className="w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col max-h-[92vh] box-border relative shadow-2xl border border-white/80"
+        className="w-full max-w-2xl rounded-3xl overflow-hidden flex flex-col max-h-[92vh] box-border relative shadow-2xl border"
         style={{
-          background: 'rgba(255, 255, 255, 0.88)',
+          background: 'var(--theme-glass, rgba(255, 255, 255, 0.88))',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          boxShadow: `0 20px 50px -10px rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.25), 0 0 0 1px rgba(255, 255, 255, 0.8)`,
+          borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+          boxShadow: `0 20px 50px -10px rgba(${currentRgb.r}, ${currentRgb.g}, ${currentRgb.b}, 0.25)`,
         }}
       >
         {/* Header with Liquid Glass aesthetic */}

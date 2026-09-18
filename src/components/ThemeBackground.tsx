@@ -15,34 +15,35 @@ export const ThemeBackground: React.FC<ThemeBackgroundProps> = ({ children, clas
     <div
       className={`min-h-screen w-full relative overflow-x-hidden flex flex-col font-sans transition-colors duration-500 ${className}`}
       style={{
-        background: 'linear-gradient(135deg, var(--app-bg-start, #fdf2f8) 0%, var(--app-bg-mid, #faf5ff) 50%, var(--app-bg-end, #eef2ff) 100%)',
+        background: 'var(--theme-background-gradient, linear-gradient(135deg, var(--app-bg-start, #fdf2f8) 0%, var(--app-bg-mid, #faf5ff) 50%, var(--app-bg-end, #eef2ff) 100%))',
+        color: 'var(--theme-text-primary, var(--text-primary, #0f172a))',
       }}
     >
       {/* LAYER 2 & 3: Floating Atmospheric Blurred Glowing Color Blobs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0" aria-hidden="true">
         {/* Glowing Blob 1 - Top Left / Center */}
         <div
-          className="absolute -top-20 -left-20 w-[26rem] sm:w-[36rem] h-[26rem] sm:h-[36rem] rounded-full filter blur-[70px] sm:blur-[100px] opacity-45 animate-blob-1 mix-blend-multiply"
+          className="absolute -top-20 -left-20 w-[26rem] sm:w-[36rem] h-[26rem] sm:h-[36rem] rounded-full filter blur-[70px] sm:blur-[100px] animate-blob-1 blob-mix"
           style={{ backgroundColor: 'var(--app-blob-1, #f472b6)' }}
         />
 
         {/* Glowing Blob 2 - Top Right / Middle */}
         <div
-          className="absolute top-1/4 -right-24 w-[28rem] sm:w-[38rem] h-[28rem] sm:h-[38rem] rounded-full filter blur-[80px] sm:blur-[110px] opacity-40 animate-blob-2 mix-blend-multiply"
+          className="absolute top-1/4 -right-24 w-[28rem] sm:w-[38rem] h-[28rem] sm:h-[38rem] rounded-full filter blur-[80px] sm:blur-[110px] animate-blob-2 blob-mix"
           style={{ backgroundColor: 'var(--app-blob-2, #c084fc)' }}
         />
 
         {/* Glowing Blob 3 - Bottom Left / Center */}
         <div
-          className="absolute -bottom-28 left-1/3 w-[24rem] sm:w-[32rem] h-[24rem] sm:h-[32rem] rounded-full filter blur-[75px] sm:blur-[95px] opacity-35 animate-blob-3 mix-blend-multiply"
-          style={{ backgroundColor: 'var(--app-primary, #db2777)' }}
+          className="absolute -bottom-28 left-1/3 w-[24rem] sm:w-[32rem] h-[24rem] sm:h-[32rem] rounded-full filter blur-[75px] sm:blur-[95px] animate-blob-3 blob-mix"
+          style={{ backgroundColor: 'var(--app-blob-3, var(--theme-primary, #db2777))' }}
         />
 
         {/* Radial ambient highlight at top */}
         <div
-          className="absolute top-0 left-0 right-0 h-96 opacity-40"
+          className="absolute top-0 left-0 right-0 h-96 opacity-30"
           style={{
-            background: 'radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.8) 0%, transparent 70%)',
+            background: 'radial-gradient(circle at 50% 10%, rgba(255, 255, 255, 0.6) 0%, transparent 70%)',
           }}
         />
       </div>

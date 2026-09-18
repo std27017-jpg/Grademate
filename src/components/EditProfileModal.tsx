@@ -16,10 +16,13 @@ import {
   Compass,
   GraduationCap,
   Target,
+  Loader2,
+  AlertCircle,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { AvatarDisplay } from './AvatarDisplay';
 import { GradeLevel, NumericGrade, UserProfile } from '../types';
+import { uploadImageToStorage, validateImageFile } from '../utils/fileStorage';
 
 interface EditProfileModalProps {
   isOpen: boolean;
@@ -66,6 +69,10 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const [dreamCareer, setDreamCareer] = useState(userProfile.dreamCareer || '');
   const [savedSuccess, setSavedSuccess] = useState(false);
 
+  // Upload status states
+  const [uploadStatus, setUploadStatus] = useState<'idle' | 'uploading' | 'success' | 'error'>('idle');
+  const [uploadMessage, setUploadMessage] = useState<string>('');
+
   // New profile creation form
   const [isCreatingNew, setIsCreatingNew] = useState(false);
   const [newFullName, setNewFullName] = useState('');
@@ -91,6 +98,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       setTargetGpa(userProfile.targetGpa || 3.5);
       setDreamCareer(userProfile.dreamCareer || '');
       setSavedSuccess(false);
+      setUploadStatus('idle');
+      setUploadMessage('');
       setIsCreatingNew(false);
       setActiveTab(initialTab);
     }
@@ -98,38 +107,73 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Handle image upload as avatar
-  const handleImageUpload = (
+  // Safe and non-blocking image upload as avatar
+  const handleImageUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
-    setter: (val: string) => void
+    setter: (val: string) => void,
+    isCurrentProfile = false
   ) => {
     const file = e.target.files?.[0];
-    if (!file) return;
-
-    if (!file.type.startsWith('image/')) {
-      alert('กรุณาเลือกไฟล์รูปภาพเท่านั้นค่ะ (JPG, PNG, WebP)');
+    if (!file) {
       return;
     }
 
-    if (file.size > 4 * 1024 * 1024) {
-      alert('ไฟล์รูปภาพมีขนาดใหญ่เกิน 4MB ค่ะ กรุณาเลือกรูปขนาดเล็กลง');
+    // 1. Validation
+    const validation = validateImageFile(file);
+    if (!validation.ok) {
+      setUploadStatus('error');
+      setUploadMessage(validation.error || 'ไฟล์ไม่ถูกต้อง กรุณาเลือกไฟล์ใหม่');
+      e.target.value = '';
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target?.result as string;
-      if (dataUrl) {
-        setter(dataUrl);
+    // 2. Set uploading status
+    setUploadStatus('uploading');
+    setUploadMessage('กำลังอัปโหลดรูปโปรไฟล์...');
+
+    try {
+      // 3. Proper storage flow: File -> Storage -> URL -> Database
+      // Canvas compression and square cropping are performed inside uploadImageToStorage,
+      // and uploaded to backend storage (/api/upload). Zero Base64 into localStorage!
+      const result = await uploadImageToStorage(file);
+      const storageUrl = result.url;
+
+      // 4. Update preview setter
+      setter(storageUrl);
+
+      // If current profile, sync URL to GradeContext immediately
+      if (isCurrentProfile) {
+        updateUserProfile({
+          avatar: storageUrl,
+          avatarUrl: storageUrl,
+        });
       }
-    };
-    reader.readAsDataURL(file);
+
+      // 5. Success feedback
+      setUploadStatus('success');
+      setUploadMessage('เปลี่ยนรูปโปรไฟล์สำเร็จ ✨');
+
+      setTimeout(() => {
+        setUploadStatus((cur) => (cur === 'success' ? 'idle' : cur));
+        setUploadMessage('');
+      }, 3000);
+    } catch (err) {
+      console.error('Image upload failed:', err);
+      setUploadStatus('error');
+      setUploadMessage(
+        err instanceof Error ? err.message : 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'
+      );
+    } finally {
+      // Always reset file input value so user can reselect the same file if needed
+      e.target.value = '';
+    }
   };
 
   const handleSaveProfile = (e: React.FormEvent) => {
     e.preventDefault();
     const trimmedName = fullName.trim() || 'นักเรียน';
     const trimmedClass = `${gradeLevel}/${room.trim() || '1'}`;
+    const isUrl = avatar.startsWith('/uploads/') || avatar.startsWith('/api/') || avatar.startsWith('http');
 
     updateUserProfile({
       fullName: trimmedName,
@@ -141,6 +185,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       schoolName: schoolName.trim() || 'โรงเรียน',
       academicYear: Number(year) || 2568,
       avatar,
+      avatarUrl: isUrl ? avatar : undefined,
       targetGpa,
       dreamCareer: dreamCareer.trim(),
     });
@@ -155,6 +200,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
   const handleCreateNewProfile = (e: React.FormEvent) => {
     e.preventDefault();
     if (!newFullName.trim()) return;
+    const isUrl = newAvatar.startsWith('/uploads/') || newAvatar.startsWith('/api/') || newAvatar.startsWith('http');
 
     createProfile({
       fullName: newFullName.trim(),
@@ -164,6 +210,7 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
       studentClass: `${newGradeLevel}/${newRoom.trim() || '1'}`,
       schoolName: newSchool.trim() || 'โรงเรียน',
       avatar: newAvatar,
+      avatarUrl: isUrl ? newAvatar : undefined,
       academicYear: Number(year) || 2568,
       targetGpa: 3.5,
       dreamCareer: 'ยังไม่ได้ระบุ',
@@ -274,34 +321,60 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                 <div className="flex items-center gap-4">
                   {/* Current Avatar Preview */}
                   <div className="relative group">
-                    <div className="w-16 h-16 rounded-2xl bg-white shadow-md border-2 border-pink-300 flex items-center justify-center overflow-hidden">
-                      <AvatarDisplay avatar={avatar} size="xl" />
+                    <div
+                      className="w-16 h-16 rounded-2xl backdrop-blur-xs shadow-md border-2 border-pink-300 flex items-center justify-center overflow-hidden"
+                      style={{ borderRadius: '16px', overflow: 'hidden' }}
+                    >
+                      <AvatarDisplay
+                        avatar={avatar}
+                        avatarUrl={avatar.startsWith('/uploads/') || avatar.startsWith('/api/') || avatar.startsWith('http') ? avatar : undefined}
+                        size="full"
+                        shape="inherit"
+                        className="w-full h-full [border-radius:inherit]"
+                        style={{ width: '100%', height: '100%', borderRadius: 'inherit' }}
+                      />
                     </div>
                     <button
                       type="button"
                       onClick={() => fileInputRef.current?.click()}
-                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-full bg-pink-600 text-white flex items-center justify-center shadow-xs hover:bg-pink-700 transition-transform active:scale-95 cursor-pointer"
+                      className="absolute -bottom-1 -right-1 w-6 h-6 rounded-xl bg-pink-600 text-white flex items-center justify-center shadow-xs hover:bg-pink-700 transition-transform active:scale-95 cursor-pointer"
                       title="อัปโหลดรูปภาพของตัวเอง"
                     >
                       <Camera className="w-3.5 h-3.5" />
                     </button>
                   </div>
 
-                  <div className="flex-1 space-y-1.5">
-                    <div className="flex flex-wrap gap-2">
+                  <div className="flex-1 space-y-2">
+                    <div className="flex flex-wrap items-center gap-2">
                       <button
                         type="button"
                         onClick={() => fileInputRef.current?.click()}
-                        className="px-3 py-1.5 rounded-full bg-white hover:bg-pink-50 text-pink-700 border border-pink-200 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                        disabled={uploadStatus === 'uploading'}
+                        className={`px-3 py-1.5 rounded-full bg-white hover:bg-pink-50 text-pink-700 border border-pink-200 text-xs font-bold transition-all flex items-center gap-1.5 shadow-2xs ${
+                          uploadStatus === 'uploading' ? 'opacity-60 cursor-not-allowed' : 'cursor-pointer active:scale-95'
+                        }`}
                       >
-                        <Upload className="w-3.5 h-3.5" />
-                        <span>อัปโหลดรูปของฉัน</span>
+                        {uploadStatus === 'uploading' ? (
+                          <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600" />
+                        ) : (
+                          <Upload className="w-3.5 h-3.5" />
+                        )}
+                        <span>{uploadStatus === 'uploading' ? 'กำลังอัปโหลด...' : 'อัปโหลดรูปของฉัน'}</span>
                       </button>
 
-                      {avatar.startsWith('data:image') && (
+                      {avatar && (avatar.startsWith('data:image') || avatar.startsWith('http')) && (
                         <button
                           type="button"
-                          onClick={() => setAvatar('🌸')}
+                          onClick={() => {
+                            setAvatar('🌸');
+                            updateUserProfile({ avatar: '🌸' });
+                            setUploadStatus('success');
+                            setUploadMessage('เปลี่ยนเป็นไอคอนเรียบร้อย ✨');
+                            setTimeout(() => {
+                              setUploadStatus((c) => (c === 'success' ? 'idle' : c));
+                              setUploadMessage('');
+                            }, 2500);
+                          }}
                           className="px-3 py-1.5 rounded-full bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-semibold transition-colors flex items-center gap-1 cursor-pointer"
                         >
                           <RotateCcw className="w-3 h-3" />
@@ -309,14 +382,46 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                         </button>
                       )}
                     </div>
-                    <p className="text-[11px] text-slate-400 leading-tight">
-                      เลือกรูปถ่ายจริงจากเครื่อง หรือแตะเลือกไอคอนการ์ตูนด้านล่างได้เลยค่ะ
+
+                    {/* Dynamic Upload Status Display */}
+                    {uploadStatus === 'uploading' && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-pink-100/70 border border-pink-200 text-pink-800 text-xs font-medium animate-pulse">
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-pink-600 shrink-0" />
+                        <span>กำลังอัปโหลดรูปโปรไฟล์...</span>
+                      </div>
+                    )}
+
+                    {uploadStatus === 'success' && (
+                      <div className="flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-xs font-medium">
+                        <Check className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                        <span>{uploadMessage || 'เปลี่ยนรูปโปรไฟล์สำเร็จ ✨'}</span>
+                      </div>
+                    )}
+
+                    {uploadStatus === 'error' && (
+                      <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-rose-50 border border-rose-200 text-rose-700 text-xs font-medium">
+                        <div className="flex items-center gap-1.5 min-w-0">
+                          <AlertCircle className="w-3.5 h-3.5 text-rose-500 shrink-0" />
+                          <span className="truncate">{uploadMessage || 'อัปโหลดรูปไม่สำเร็จ กรุณาลองใหม่อีกครั้ง'}</span>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => fileInputRef.current?.click()}
+                          className="px-2.5 py-0.5 bg-rose-100 hover:bg-rose-200 text-rose-800 rounded-lg text-[11px] font-bold cursor-pointer shrink-0 transition-colors"
+                        >
+                          ลองใหม่อีกครั้ง
+                        </button>
+                      </div>
+                    )}
+
+                    <p className="text-[11px] text-slate-500 leading-tight">
+                      รองรับ JPG, PNG, WEBP (บีบอัดอัตโนมัติให้ภาพคมชัดและเปิดได้เร็วทันที)
                     </p>
                     <input
                       type="file"
                       ref={fileInputRef}
-                      onChange={(e) => handleImageUpload(e, setAvatar)}
-                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, setAvatar, true)}
+                      accept="image/jpeg,image/png,image/webp,image/gif,image/*"
                       className="hidden"
                     />
                   </div>
@@ -332,7 +437,16 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       <button
                         key={av}
                         type="button"
-                        onClick={() => setAvatar(av)}
+                        onClick={() => {
+                          setAvatar(av);
+                          updateUserProfile({ avatar: av });
+                          setUploadStatus('success');
+                          setUploadMessage('เปลี่ยนรูปโปรไฟล์สำเร็จ ✨');
+                          setTimeout(() => {
+                            setUploadStatus((c) => (c === 'success' ? 'idle' : c));
+                            setUploadMessage('');
+                          }, 2500);
+                        }}
                         className={`w-8 h-8 rounded-xl text-base flex items-center justify-center transition-all cursor-pointer ${
                           avatar === av
                             ? 'bg-pink-500 text-white scale-110 shadow-xs ring-2 ring-pink-300'
@@ -536,8 +650,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       }`}
                     >
                       <div className="flex items-center gap-3 min-w-0">
-                        <div className="w-12 h-12 rounded-2xl bg-white shadow-2xs border border-pink-200 flex items-center justify-center overflow-hidden shrink-0">
-                          <AvatarDisplay avatar={p.avatar} size="lg" />
+                        <div
+                          className="w-12 h-12 rounded-2xl backdrop-blur-xs shadow-2xs border border-pink-200 flex items-center justify-center overflow-hidden shrink-0"
+                          style={{ borderRadius: '16px', overflow: 'hidden' }}
+                        >
+                          <AvatarDisplay
+                            avatar={p.avatar}
+                            avatarUrl={p.avatarUrl}
+                            size="full"
+                            shape="inherit"
+                            className="w-full h-full [border-radius:inherit]"
+                            style={{ width: '100%', height: '100%', borderRadius: 'inherit' }}
+                          />
                         </div>
                         <div className="min-w-0">
                           <div className="flex items-center gap-2">
@@ -619,8 +743,18 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
 
                   {/* Avatar Picker for new profile */}
                   <div className="flex items-center gap-3">
-                    <div className="w-12 h-12 rounded-2xl bg-white shadow-2xs border border-pink-200 flex items-center justify-center shrink-0">
-                      <AvatarDisplay avatar={newAvatar} size="lg" />
+                    <div
+                      className="w-12 h-12 rounded-2xl backdrop-blur-xs shadow-2xs border border-pink-200 flex items-center justify-center shrink-0 overflow-hidden"
+                      style={{ borderRadius: '16px', overflow: 'hidden' }}
+                    >
+                      <AvatarDisplay
+                        avatar={newAvatar}
+                        avatarUrl={newAvatar.startsWith('/uploads/') || newAvatar.startsWith('/api/') || newAvatar.startsWith('http') ? newAvatar : undefined}
+                        size="full"
+                        shape="inherit"
+                        className="w-full h-full [border-radius:inherit]"
+                        style={{ width: '100%', height: '100%', borderRadius: 'inherit' }}
+                      />
                     </div>
                     <div className="flex-1 space-y-1">
                       <div className="flex flex-wrap gap-1">
@@ -649,8 +783,8 @@ export const EditProfileModal: React.FC<EditProfileModalProps> = ({
                       <input
                         type="file"
                         ref={newProfileFileInputRef}
-                        onChange={(e) => handleImageUpload(e, setNewAvatar)}
-                        accept="image/*"
+                        onChange={(e) => handleImageUpload(e, setNewAvatar, false)}
+                        accept="image/jpeg,image/png,image/webp,image/*"
                         className="hidden"
                       />
                     </div>

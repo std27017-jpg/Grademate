@@ -16,7 +16,7 @@ export const PRESET_THEME_COLORS: ThemeColorPreset[] = [
     emoji: '🌸',
     hex: '#db2777',
     category: 'โทนสีสดใสยอดนิยม',
-    description: 'ชมพูอ่อน → ชมพูสด → ม่วงพาสเทล',
+    description: 'ชมพูอ่อน → ซากุระสดใส → ม่วงพาสเทล',
   },
   {
     id: 'purple',
@@ -35,28 +35,44 @@ export const PRESET_THEME_COLORS: ThemeColorPreset[] = [
     description: 'ฟ้าอ่อน → Sky Blue → ไซแอนสดใส',
   },
   {
-    id: 'emerald',
-    name: 'เขียวมิ้นท์ธรรมชาติ (Mint Fresh)',
+    id: 'green',
+    name: 'เขียวมิ้นท์ธรรมชาติ (Mint Green)',
     emoji: '💚',
     hex: '#059669',
     category: 'โทนสีสดใสยอดนิยม',
-    description: 'เขียวมิ้นท์ → มรกตสด → ทีล',
+    description: 'เขียวมิ้นท์ → มรกตสดใส → ทีลธรรมชาติ',
   },
   {
-    id: 'peach',
-    name: 'ส้มพีชคอรัล (Peach Coral)',
-    emoji: '🍑',
-    hex: '#ea580c',
-    category: 'โทนสีสดใสยอดนิยม',
-    description: 'ครีมพีช → ส้มสดใส → คอรัลอบอุ่น',
-  },
-  {
-    id: 'amber',
+    id: 'yellow',
     name: 'เหลืองบัตเตอร์อบอุ่น (Honey Butter)',
     emoji: '💛',
     hex: '#d97706',
     category: 'โทนสีสดใสยอดนิยม',
     description: 'เนยหวาน → ซอฟต์ออเรนจ์ → อำพันทอง',
+  },
+  {
+    id: 'orange',
+    name: 'ส้มสดใสพีชคอรัล (Sunset Orange)',
+    emoji: '🧡',
+    hex: '#ea580c',
+    category: 'โทนสีสดใสยอดนิยม',
+    description: 'ครีมพีช → ส้มสดใส → ซันเซ็ตคอรัล',
+  },
+  {
+    id: 'sky',
+    name: 'สกายบลูสดใส (Bright Sky)',
+    emoji: '🌌',
+    hex: '#0ea5e9',
+    category: 'โทนสีสดใสยอดนิยม',
+    description: 'ฟ้าสว่าง → สกายบลูพาสเทล → ไซแอน',
+  },
+  {
+    id: 'dark',
+    name: 'ดาร์กมิดไนท์ดีพบลู (Midnight Dark)',
+    emoji: '🌙',
+    hex: '#1e293b',
+    category: 'โทนสุขุมมินิมอล',
+    description: 'เนวีบลู → มิดไนท์คอสโม → สเลทเข้มหรู',
   },
   {
     id: 'rose',
@@ -81,14 +97,6 @@ export const PRESET_THEME_COLORS: ThemeColorPreset[] = [
     hex: '#0d9488',
     category: 'โทนธรรมชาติ',
     description: 'เขียวทะเล → เทอร์ควอยซ์ → ฟ้ามิ้นท์',
-  },
-  {
-    id: 'dark',
-    name: 'มิดไนท์ดีพบลู (Midnight Navy)',
-    emoji: '🌙',
-    hex: '#1e293b',
-    category: 'โทนสุขุมมินิมอล',
-    description: 'เนวีบลู → ม่วงมิดไนท์ → สเลทเข้ม',
   },
 ];
 
@@ -210,11 +218,11 @@ export function rgbToHsl(r: number, g: number, b: number): { h: number; s: numbe
   };
 }
 
-// Ensure high-contrast readable text
+// Ensure high-contrast readable text (WCAG AA compliant >= 4.5:1 on light backdrops)
 export function getReadableTextColor(rgb: { r: number; g: number; b: number }): string {
   const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-  if (hsl.l > 42) {
-    const darkenedRgb = hslToRgb(hsl.h, Math.min(hsl.s + 15, 100), 32);
+  if (hsl.l > 36) {
+    const darkenedRgb = hslToRgb(hsl.h, Math.min(hsl.s + 20, 100), 28);
     return rgbToHex(darkenedRgb.r, darkenedRgb.g, darkenedRgb.b);
   }
   return rgbToHex(rgb.r, rgb.g, rgb.b);
@@ -231,20 +239,22 @@ export function getGradientSecondaryColor(rgb: { r: number; g: number; b: number
 // Generate pastel background gradient steps based on theme
 export function getThemeBackgroundPalette(rgb: { r: number; g: number; b: number }) {
   const hsl = rgbToHsl(rgb.r, rgb.g, rgb.b);
-  const isDarkTheme = hsl.l < 30;
+  const isDarkTheme = hsl.l < 30 || (rgb.r <= 35 && rgb.g <= 45 && rgb.b <= 65);
 
   if (isDarkTheme) {
-    const bgStart = hslToRgb(hsl.h, Math.min(hsl.s, 40), 12);
-    const bgMid = hslToRgb((hsl.h + 20) % 360, Math.min(hsl.s, 45), 10);
-    const bgEnd = hslToRgb((hsl.h + 40) % 360, Math.min(hsl.s, 35), 8);
-    const blob1 = hslToRgb(hsl.h, 60, 25);
-    const blob2 = hslToRgb((hsl.h + 45) % 360, 60, 20);
+    const bgStart = '#0f172a'; // Deep slate
+    const bgMid = '#1e1b4b';   // Deep indigo midnight
+    const bgEnd = '#020617';   // Rich midnight
+    const blob1 = '#6366f1';   // Indigo glow
+    const blob2 = '#a855f7';   // Purple glow
+    const blob3 = '#38bdf8';   // Sky blue glow
     return {
-      bgStart: rgbToHex(bgStart.r, bgStart.g, bgStart.b),
-      bgMid: rgbToHex(bgMid.r, bgMid.g, bgMid.b),
-      bgEnd: rgbToHex(bgEnd.r, bgEnd.g, bgEnd.b),
-      blob1: rgbToHex(blob1.r, blob1.g, blob1.b),
-      blob2: rgbToHex(blob2.r, blob2.g, blob2.b),
+      bgStart,
+      bgMid,
+      bgEnd,
+      blob1,
+      blob2,
+      blob3,
       isDark: true,
     };
   }
@@ -285,23 +295,60 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
   const palette = getThemeBackgroundPalette(rgb);
   const patternUri = getPatternSvgDataUri(patternId, primary);
 
+  const themeVars = {
+    '--theme-primary': primary,
+    '--theme-secondary': gradientEnd,
+    '--theme-background': palette.bgStart,
+    '--theme-background-gradient': `linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%)`,
+    '--theme-glass': palette.isDark ? 'rgba(30, 41, 59, 0.86)' : 'rgba(255, 255, 255, 0.86)',
+    '--theme-glass-secondary': palette.isDark ? 'rgba(30, 41, 59, 0.76)' : 'rgba(255, 255, 255, 0.76)',
+    '--theme-glass-border': palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)',
+    '--theme-glass-border-accent': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.45' : '0.35'})`,
+    '--theme-glow': `0 12px 36px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.18'})`,
+    '--theme-button': `linear-gradient(135deg, ${primary} 0%, ${gradientEnd} 100%)`,
+    '--theme-button-text': '#ffffff',
+    '--theme-text-primary': palette.isDark ? '#f8fafc' : '#0f172a',
+    '--theme-text-secondary': palette.isDark ? '#cbd5e1' : '#334155',
+    '--theme-icon': palette.isDark ? (gradientEnd || '#818cf8') : primary,
+    '--theme-progress': primary,
+    '--theme-accent-soft': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'})`,
+    '--theme-accent-border': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.42' : '0.32'})`,
+    '--theme-pill-bg': palette.isDark ? 'rgba(30, 41, 59, 0.75)' : 'rgba(255, 255, 255, 0.75)',
+
+    // Legacy & system variables
+    '--app-primary': primary,
+    '--app-primary-hover': hover,
+    '--app-primary-text': textColor,
+    '--app-primary-gradient-end': gradientEnd,
+    '--app-primary-rgb': `${rgb.r}, ${rgb.g}, ${rgb.b}`,
+    '--app-bg-start': palette.bgStart,
+    '--app-bg-mid': palette.bgMid,
+    '--app-bg-end': palette.bgEnd,
+    '--app-blob-1': palette.blob1,
+    '--app-blob-2': palette.blob2,
+    '--app-blob-3': palette.blob3 || palette.blob1,
+    '--app-pattern-uri': patternUri,
+  };
+
   if (typeof document !== 'undefined') {
     const root = document.documentElement;
-    root.style.setProperty('--app-primary', primary);
-    root.style.setProperty('--app-primary-hover', hover);
-    root.style.setProperty('--app-primary-text', textColor);
-    root.style.setProperty('--app-primary-gradient-end', gradientEnd);
-    root.style.setProperty('--app-primary-rgb', `${rgb.r}, ${rgb.g}, ${rgb.b}`);
-    root.style.setProperty('--app-bg-start', palette.bgStart);
-    root.style.setProperty('--app-bg-mid', palette.bgMid);
-    root.style.setProperty('--app-bg-end', palette.bgEnd);
-    root.style.setProperty('--app-blob-1', palette.blob1);
-    root.style.setProperty('--app-blob-2', palette.blob2);
-    root.style.setProperty('--app-pattern-uri', patternUri);
 
-    // Ensure body has no solid gray background
+    if (palette.isDark) {
+      root.setAttribute('data-theme-dark', 'true');
+      document.body.setAttribute('data-theme-dark', 'true');
+    } else {
+      root.removeAttribute('data-theme-dark');
+      document.body.removeAttribute('data-theme-dark');
+    }
+
+    Object.entries(themeVars).forEach(([key, value]) => {
+      root.style.setProperty(key, value);
+    });
+
+    // Ensure body styling matches
     document.body.style.backgroundColor = palette.bgStart;
-    document.body.style.backgroundImage = `linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%)`;
+    document.body.style.backgroundImage = themeVars['--theme-background-gradient'];
+    document.body.style.color = palette.isDark ? '#f8fafc' : '#0f172a';
   }
 
   const styleId = 'mygrade-dynamic-theme-style';
@@ -319,6 +366,25 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
 
   styleEl.textContent = `
     :root {
+      --theme-primary: ${primary};
+      --theme-secondary: ${gradientEnd};
+      --theme-background: ${palette.bgStart};
+      --theme-background-gradient: linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%);
+      --theme-glass: ${palette.isDark ? 'rgba(30, 41, 59, 0.86)' : 'rgba(255, 255, 255, 0.86)'};
+      --theme-glass-secondary: ${palette.isDark ? 'rgba(30, 41, 59, 0.76)' : 'rgba(255, 255, 255, 0.76)'};
+      --theme-glass-border: ${palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)'};
+      --theme-glass-border-accent: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.45' : '0.35'});
+      --theme-glow: 0 12px 36px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.18'});
+      --theme-button: linear-gradient(135deg, ${primary} 0%, ${gradientEnd} 100%);
+      --theme-button-text: #ffffff;
+      --theme-text-primary: ${palette.isDark ? '#f8fafc' : '#0f172a'};
+      --theme-text-secondary: ${palette.isDark ? '#cbd5e1' : '#334155'};
+      --theme-icon: ${palette.isDark ? (gradientEnd || '#818cf8') : primary};
+      --theme-progress: ${primary};
+      --theme-accent-soft: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'});
+      --theme-accent-border: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.42' : '0.32'});
+      --theme-pill-bg: ${palette.isDark ? 'rgba(30, 41, 59, 0.75)' : 'rgba(255, 255, 255, 0.75)'};
+
       --app-primary: ${primary};
       --app-primary-hover: ${hover};
       --app-primary-text: ${textColor};
@@ -329,17 +395,48 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       --app-bg-end: ${palette.bgEnd};
       --app-blob-1: ${palette.blob1};
       --app-blob-2: ${palette.blob2};
+      --app-blob-3: ${palette.blob3 || palette.blob1};
       --app-pattern-uri: ${patternUri};
 
+      /* Typography Color System (WCAG AA Compliant) */
+      --text-primary: ${palette.isDark ? '#f8fafc' : '#0f172a'};
+      --text-secondary: ${palette.isDark ? '#cbd5e1' : '#334155'};
+      --text-muted: ${palette.isDark ? '#94a3b8' : '#475569'};
+      --text-on-accent: #ffffff;
+      --text-link: ${textColor};
+      --text-success: ${palette.isDark ? '#34d399' : '#047857'};
+      --text-warning: ${palette.isDark ? '#fbbf24' : '#b45309'};
+      --text-danger: ${palette.isDark ? '#f87171' : '#be123c'};
+
       /* Liquid Glass Variables */
-      --glass-bg-primary: rgba(255, 255, 255, 0.72);
-      --glass-bg-secondary: rgba(255, 255, 255, 0.58);
-      --glass-bg-soft: rgba(255, 255, 255, 0.42);
-      --glass-bg-floating: rgba(255, 255, 255, 0.82);
-      --glass-border: rgba(255, 255, 255, 0.75);
-      --glass-border-accent: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35);
-      --glass-shadow: 0 8px 32px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.10), 0 2px 8px 0 rgba(0,0,0,0.03);
-      --glass-shadow-lg: 0 14px 44px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.16), 0 4px 14px 0 rgba(0,0,0,0.05);
+      --glass-bg-primary: var(--theme-glass);
+      --glass-bg-secondary: var(--theme-glass-secondary);
+      --glass-bg-soft: ${palette.isDark ? 'rgba(30, 41, 59, 0.65)' : 'rgba(255, 255, 255, 0.65)'};
+      --glass-bg-floating: ${palette.isDark ? 'rgba(15, 23, 42, 0.94)' : 'rgba(255, 255, 255, 0.92)'};
+      --glass-border: var(--theme-glass-border);
+      --glass-border-accent: var(--theme-glass-border-accent);
+      --glass-shadow: var(--theme-glow);
+      --glass-shadow-lg: 0 16px 48px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.30' : '0.20'});
+    }
+
+    /* Dedicated Theme Class Utility Hooks */
+    .app-theme-btn {
+      background: var(--theme-button) !important;
+      color: var(--theme-button-text) !important;
+      box-shadow: var(--theme-glow) !important;
+    }
+    .app-theme-icon-container {
+      background-color: var(--theme-accent-soft) !important;
+      border: 1.5px solid var(--theme-accent-border) !important;
+      box-shadow: 0 4px 16px 0 rgba(var(--app-primary-rgb), 0.22) !important;
+      backdrop-filter: blur(10px) !important;
+      -webkit-backdrop-filter: blur(10px) !important;
+    }
+    .app-theme-icon {
+      color: var(--theme-icon) !important;
+    }
+    .app-theme-progress {
+      background-color: var(--theme-progress) !important;
     }
 
     /* Core Liquid Glass Classes */
@@ -349,6 +446,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
       border: 1px solid var(--glass-border) !important;
       box-shadow: var(--glass-shadow-lg) !important;
+      color: var(--text-primary);
     }
 
     .glass-secondary {
@@ -357,42 +455,97 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
       border: 1px solid var(--glass-border) !important;
       box-shadow: var(--glass-shadow) !important;
+      color: var(--text-primary);
     }
 
     .glass-soft {
       background: var(--glass-bg-soft) !important;
       backdrop-filter: blur(12px) !important;
       -webkit-backdrop-filter: blur(12px) !important;
-      border: 1px solid rgba(255, 255, 255, 0.55) !important;
+      border: 1px solid rgba(255, 255, 255, 0.65) !important;
+      color: var(--text-primary);
     }
 
     .glass-floating {
       background: var(--glass-bg-floating) !important;
       backdrop-filter: blur(24px) saturate(190%) !important;
       -webkit-backdrop-filter: blur(24px) saturate(190%) !important;
-      border: 1.5px solid rgba(255, 255, 255, 0.85) !important;
+      border: 1.5px solid var(--glass-border) !important;
       box-shadow: var(--glass-shadow-lg) !important;
+      color: var(--text-primary);
     }
 
+    /* Liquid Glass Inputs - Maximum Text Readability */
     .glass-input {
-      background: rgba(255, 255, 255, 0.70) !important;
-      backdrop-filter: blur(10px) !important;
-      -webkit-backdrop-filter: blur(10px) !important;
-      border: 1px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.25) !important;
+      background: rgba(255, 255, 255, 0.92) !important;
+      backdrop-filter: blur(12px) !important;
+      -webkit-backdrop-filter: blur(12px) !important;
+      border: 1.5px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.30) !important;
+      color: var(--text-primary) !important;
     }
     .glass-input:focus {
-      background: rgba(255, 255, 255, 0.92) !important;
+      background: #ffffff !important;
       border-color: var(--app-primary) !important;
-      box-shadow: 0 0 0 3px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.18) !important;
+      box-shadow: 0 0 0 3px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22) !important;
+    }
+    .glass-input::placeholder {
+      color: #64748b !important;
+      opacity: 1 !important;
     }
 
-    /* Convert standard flat white cards to translucent liquid glass smoothly */
-    .bg-white:not([data-opaque="true"]):not(select):not(option) {
-      background-color: rgba(255, 255, 255, 0.76) !important;
+    /* Convert standard flat white cards to translucent liquid glass with readable text */
+    .bg-white:not([data-opaque="true"]):not(select):not(option):not(input):not(textarea) {
+      background-color: ${palette.isDark ? 'rgba(30, 41, 59, 0.88)' : 'rgba(255, 255, 255, 0.84)'} !important;
       backdrop-filter: blur(16px) saturate(170%);
       -webkit-backdrop-filter: blur(16px) saturate(170%);
-      border-color: rgba(255, 255, 255, 0.75);
-      box-shadow: 0 8px 30px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08);
+      border-color: ${palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)'};
+      box-shadow: 0 8px 30px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.24' : '0.08'});
+      color: var(--text-primary);
+    }
+
+    /* Dark theme specific overrides to eliminate harsh white surfaces and black text on dark bg */
+    [data-theme-dark="true"] .text-slate-900,
+    [data-theme-dark="true"] .text-slate-800,
+    [data-theme-dark="true"] .text-slate-700 {
+      color: #f8fafc !important;
+    }
+    [data-theme-dark="true"] .text-slate-600,
+    [data-theme-dark="true"] .text-slate-500 {
+      color: #cbd5e1 !important;
+    }
+    [data-theme-dark="true"] .text-slate-400 {
+      color: #94a3b8 !important;
+    }
+    [data-theme-dark="true"] .bg-white\/80,
+    [data-theme-dark="true"] .bg-white\/90,
+    [data-theme-dark="true"] .bg-white\/75,
+    [data-theme-dark="true"] .bg-white\/70,
+    [data-theme-dark="true"] .bg-white\/65,
+    [data-theme-dark="true"] .bg-white\/60 {
+      background-color: rgba(30, 41, 59, 0.88) !important;
+      border-color: rgba(255, 255, 255, 0.16) !important;
+      color: #f8fafc !important;
+    }
+    [data-theme-dark="true"] .bg-slate-100,
+    [data-theme-dark="true"] .bg-slate-100\/80,
+    [data-theme-dark="true"] .bg-slate-100\/95,
+    [data-theme-dark="true"] .bg-slate-50 {
+      background-color: rgba(15, 23, 42, 0.70) !important;
+      border-color: rgba(255, 255, 255, 0.14) !important;
+    }
+    [data-theme-dark="true"] .border-slate-200,
+    [data-theme-dark="true"] .border-slate-200\/80,
+    [data-theme-dark="true"] .border-slate-200\/60,
+    [data-theme-dark="true"] .border-slate-100 {
+      border-color: rgba(255, 255, 255, 0.14) !important;
+    }
+    [data-theme-dark="true"] .blob-mix {
+      mix-blend-mode: screen !important;
+      opacity: 0.35 !important;
+    }
+    html:not([data-theme-dark="true"]) .blob-mix {
+      mix-blend-mode: multiply !important;
+      opacity: 0.42 !important;
     }
 
     /* Smooth Floating Animation for background blobs */
@@ -444,7 +597,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     .bg-pink-50\\/40,
     .bg-pink-50\\/30,
     .bg-indigo-50 {
-      background-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.08) !important;
+      background-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.20' : '0.08'}) !important;
     }
 
     /* Light tinted backgrounds */
@@ -453,7 +606,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     .bg-pink-100\\/70,
     .bg-pink-100\\/50,
     .bg-indigo-100 {
-      background-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.16) !important;
+      background-color: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.16'}) !important;
     }
 
     /* Accent texts */

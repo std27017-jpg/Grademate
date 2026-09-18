@@ -32,6 +32,7 @@ import { NavTab } from './Navbar';
 import { getDaysRemaining, formatShortThaiDate } from '../utils/gradeCalculations';
 import { Task, Subject } from '../types';
 import { getSubjectColor } from '../utils/colorUtils';
+import { AvatarDisplay } from './AvatarDisplay';
 
 interface DashboardViewProps {
   onNavigate: (tab: NavTab) => void;
@@ -202,8 +203,39 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       >
         <div className="space-y-2">
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="w-13 h-13 rounded-2xl bg-white shadow-xs border-2 border-pink-200 flex items-center justify-center text-2xl select-none shrink-0">
-              {userProfile.avatar || '🌸'}
+            <div
+              onClick={() => {
+                if (onOpenEditProfile) {
+                  onOpenEditProfile();
+                } else {
+                  onNavigate('profile');
+                }
+              }}
+              className="w-14 h-14 sm:w-16 sm:h-16 rounded-[18px] backdrop-blur-md border border-white/80 ring-1 ring-pink-500/20 shadow-sm flex items-center justify-center select-none shrink-0 overflow-hidden cursor-pointer hover:border-pink-400 hover:ring-pink-500/40 hover:shadow-md transition-all active:scale-95 group relative"
+              style={{
+                borderRadius: '18px',
+                overflow: 'hidden',
+              }}
+              title="ดูและแก้ไขรูปโปรไฟล์"
+            >
+              <AvatarDisplay
+                avatar={userProfile.avatar || '🌸'}
+                avatarUrl={userProfile.avatarUrl}
+                size="full"
+                shape="inherit"
+                className="w-full h-full [border-radius:inherit]"
+                style={{
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: 'inherit',
+                }}
+              />
+              <div
+                className="absolute inset-0 bg-slate-900/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none"
+                style={{ borderRadius: 'inherit' }}
+              >
+                <Edit3 className="w-4 h-4 drop-shadow-md text-white" />
+              </div>
             </div>
 
             <div>
@@ -372,7 +404,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 style={{ width: `${targetProgressPercent}%` }}
               />
             </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-500 font-semibold">
+            <div className="flex justify-between items-center text-[10px] text-slate-600 font-bold">
               <span>0.00</span>
               <span>เป้าหมาย {userProfile.targetGpa.toFixed(2)}</span>
             </div>
@@ -389,7 +421,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <h3 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
             <span>ภาพรวมสถิติ</span>
           </h3>
-          <span className="text-xs text-slate-500 font-bold">เทอม {currentSemester === 'term1' ? '1' : '2'}</span>
+          <span className="text-xs text-slate-600 font-bold">เทอม {currentSemester === 'term1' ? '1' : '2'}</span>
         </div>
 
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
@@ -500,7 +532,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ภารกิจประจำวัน
             </span>
           </div>
-          <span className="text-xs text-slate-500 font-bold">อัปเดตตามข้อมูลจริง</span>
+          <span className="text-xs text-slate-600 font-bold">อัปเดตตามข้อมูลจริง</span>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -738,7 +770,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               </div>
               <h3 className="text-xl font-black text-slate-900 truncate">
                 {topFocusItem.subject.name}
-                <span className="text-xs font-bold text-slate-500 ml-2">
+                <span className="text-xs font-bold text-slate-600 ml-2">
                   ({topFocusItem.subject.code})
                 </span>
               </h3>
@@ -778,7 +810,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
                 <h4 className="font-black text-slate-900 text-sm">ภาพรวมคะแนน</h4>
               </div>
-              <span className="text-xs text-slate-500 font-bold">3 วิชาล่าสุด</span>
+              <span className="text-xs text-slate-600 font-bold">3 วิชาล่าสุด</span>
             </div>
 
             <div className="space-y-2.5">
@@ -828,7 +860,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               })}
 
               {activeSemesterSummary.subjectSummaries.length === 0 && (
-                <div className="text-center py-6 text-slate-500 text-xs font-semibold">
+                <div className="text-center py-6 text-slate-600 text-xs font-bold">
                   ยังไม่มีรายวิชาในเทอมนี้
                 </div>
               )}
@@ -855,7 +887,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
                 <h4 className="font-black text-slate-900 text-sm">งานใกล้ส่ง</h4>
               </div>
-              <span className="text-xs text-slate-500 font-bold">
+              <span className="text-xs text-slate-600 font-bold">
                 ค้าง {pendingTasks.length} งาน
               </span>
             </div>
@@ -897,7 +929,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               })}
 
               {topPendingTasks.length === 0 && (
-                <div className="text-center py-6 text-slate-500 text-xs font-semibold space-y-1">
+                <div className="text-center py-6 text-slate-600 text-xs font-bold space-y-1">
                   <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto" />
                   <p>ไม่มีงานค้างส่งในขณะนี้ 🎉</p>
                 </div>
@@ -925,7 +957,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                 </div>
                 <h4 className="font-black text-slate-900 text-sm">การสอบที่ใกล้ที่สุด</h4>
               </div>
-              <span className="text-xs text-slate-500 font-bold">
+              <span className="text-xs text-slate-600 font-bold">
                 รวม {currentSemesterExams.length} การสอบ
               </span>
             </div>
@@ -965,7 +997,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               })}
 
               {upcomingExams.length === 0 && (
-                <div className="text-center py-6 text-slate-500 text-xs font-semibold">
+                <div className="text-center py-6 text-slate-600 text-xs font-bold">
                   ไม่มีตารางสอบเร็ว ๆ นี้
                 </div>
               )}

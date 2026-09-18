@@ -38,6 +38,15 @@ import {
   DEFAULT_GRADE_THRESHOLDS,
   gradeToMinScore,
 } from '../utils/gradeCalculations';
+import {
+  safeLocalStorageSetItem,
+  safeLocalStorageGetItem,
+  runStorageMigrationAndCleanup,
+  sanitizeUserProfile,
+  sanitizeSavedProfiles,
+  sanitizePortfolioItems,
+  isBase64Image,
+} from '../utils/storageUtils';
 
 interface GradeContextType {
   // Auth & Onboarding State
@@ -48,6 +57,7 @@ interface GradeContextType {
   register: (profileData: Partial<UserProfile>) => void;
   logout: () => void;
   updateUserProfile: (profile: Partial<UserProfile>) => void;
+  updateAvatar: (avatar: string) => void;
   updateTargetGpa: (target: NumericGrade) => void;
 
   // Profile Management
@@ -210,17 +220,20 @@ const STORAGE_KEYS = {
 };
 
 export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  // Run background migration once at mount to strip any legacy Base64 from localStorage
+  useEffect(() => {
+    runStorageMigrationAndCleanup();
+  }, []);
+
   // Auth state - check if previously logged in; default to false if explicitly not logged in or first visit
   const [isLoggedIn, setIsLoggedIn] = useState<boolean>(() => {
-    const saved = localStorage.getItem(STORAGE_KEYS.AUTH_LOGGED_IN);
-    // If not set yet, we allow opening straight to app or welcome.
-    // Let's set to true if user already has custom data or explicitly logged in
+    const saved = safeLocalStorageGetItem(STORAGE_KEYS.AUTH_LOGGED_IN);
     return saved === 'true';
   });
 
   const [userProfile, setUserProfileState] = useState<UserProfile>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.USER_PROFILE);
+      const saved = safeLocalStorageGetItem(STORAGE_KEYS.USER_PROFILE);
       if (saved) {
         const parsed = JSON.parse(saved);
         // Clear out any old legacy demo person data
@@ -228,7 +241,8 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         if (parsed.nickname === 'น้ำหวาน') parsed.nickname = '';
         if (parsed.schoolName === 'โรงเรียนพิชัย') parsed.schoolName = '';
         if (parsed.email === 'std27017@phichai.ac.th') parsed.email = '';
-        return { ...DEFAULT_USER_PROFILE, ...parsed };
+        const sanitized = sanitizeUserProfile(parsed);
+        return { ...DEFAULT_USER_PROFILE, ...(sanitized || {}) };
       }
       return DEFAULT_USER_PROFILE;
     } catch {
@@ -238,11 +252,12 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const [savedProfiles, setSavedProfiles] = useState<UserProfile[]>(() => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEYS.SAVED_PROFILES);
+      const saved = safeLocalStorageGetItem(STORAGE_KEYS.SAVED_PROFILES);
       if (saved) {
         const parsed = JSON.parse(saved);
         if (Array.isArray(parsed) && parsed.length > 0) {
-          return parsed.map((p) => {
+          const sanitizedList = sanitizeSavedProfiles(parsed);
+          return sanitizedList.map((p) => {
             const clean = { ...p };
             if (clean.fullName === 'ชญาภา สุขสมบูรณ์') clean.fullName = '';
             if (clean.nickname === 'น้ำหวาน') clean.nickname = '';
@@ -388,76 +403,110 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
-  // Save changes to LocalStorage
+  // Save changes to LocalStorage safely
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.AUTH_LOGGED_IN, String(isLoggedIn));
+    safeLocalStorageSetItem(STORAGE_KEYS.AUTH_LOGGED_IN, String(isLoggedIn));
   }, [isLoggedIn]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(userProfile));
+    const clean = sanitizeUserProfile(userProfile) || userProfile;
+    safeLocalStorageSetItem(STORAGE_KEYS.USER_PROFILE, JSON.stringify(clean));
   }, [userProfile]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SAVED_PROFILES, JSON.stringify(savedProfiles));
+    const cleanList = sanitizeSavedProfiles(savedProfiles);
+    safeLocalStorageSetItem(STORAGE_KEYS.SAVED_PROFILES, JSON.stringify(cleanList));
   }, [savedProfiles]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SEMESTER, currentSemester);
+    safeLocalStorageSetItem(STORAGE_KEYS.SEMESTER, currentSemester);
   }, [currentSemester]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.YEAR, JSON.stringify(academicYear));
+    safeLocalStorageSetItem(STORAGE_KEYS.YEAR, JSON.stringify(academicYear));
   }, [academicYear]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects));
+    safeLocalStorageSetItem(STORAGE_KEYS.SUBJECTS, JSON.stringify(subjects));
   }, [subjects]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
+    safeLocalStorageSetItem(STORAGE_KEYS.TASKS, JSON.stringify(tasks));
   }, [tasks]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.EXAMS, JSON.stringify(exams));
+    safeLocalStorageSetItem(STORAGE_KEYS.EXAMS, JSON.stringify(exams));
   }, [exams]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.THRESHOLDS, JSON.stringify(gradeThresholds));
+    safeLocalStorageSetItem(STORAGE_KEYS.THRESHOLDS, JSON.stringify(gradeThresholds));
   }, [gradeThresholds]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.FUTURE_CHECKLIST, JSON.stringify(futureChecklist));
+    safeLocalStorageSetItem(STORAGE_KEYS.FUTURE_CHECKLIST, JSON.stringify(futureChecklist));
   }, [futureChecklist]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.PORTFOLIO, JSON.stringify(portfolioItems));
+    const cleanPortfolio = sanitizePortfolioItems(portfolioItems);
+    safeLocalStorageSetItem(STORAGE_KEYS.PORTFOLIO, JSON.stringify(cleanPortfolio));
   }, [portfolioItems]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.FUTURE_TODOS, JSON.stringify(futureTodos));
+    safeLocalStorageSetItem(STORAGE_KEYS.FUTURE_TODOS, JSON.stringify(futureTodos));
   }, [futureTodos]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.READ_NOTIFS, JSON.stringify(readNotifIds));
+    safeLocalStorageSetItem(STORAGE_KEYS.READ_NOTIFS, JSON.stringify(readNotifIds));
   }, [readNotifIds]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.SUBJECT_CATEGORIES, JSON.stringify(subjectCategories));
+    safeLocalStorageSetItem(STORAGE_KEYS.SUBJECT_CATEGORIES, JSON.stringify(subjectCategories));
   }, [subjectCategories]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.STUDY_SESSIONS, JSON.stringify(studySessions));
+    safeLocalStorageSetItem(STORAGE_KEYS.STUDY_SESSIONS, JSON.stringify(studySessions));
   }, [studySessions]);
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEYS.STUDY_GOAL, JSON.stringify(studyGoal));
+    safeLocalStorageSetItem(STORAGE_KEYS.STUDY_GOAL, JSON.stringify(studyGoal));
   }, [studyGoal]);
 
   // Auth Functions
   const login = (email: string, password?: string) => {
     setIsLoggedIn(true);
-    if (email && email !== userProfile.email) {
-      setUserProfileState((prev) => ({ ...prev, email }));
+    const trimmedEmail = email ? email.trim() : '';
+    if (!trimmedEmail) return true;
+
+    const normalizedEmail = trimmedEmail.toLowerCase();
+    const existing = savedProfiles.find(
+      (p) => p.email && p.email.trim().toLowerCase() === normalizedEmail
+    );
+
+    if (existing) {
+      setUserProfileState(existing);
+      setAcademicYearState({
+        year: existing.academicYear || 2568,
+        studentName: existing.fullName || '',
+        studentClass: existing.studentClass || '',
+        schoolName: existing.schoolName || '',
+      });
+    } else {
+      // New account for this email: create clean fresh profile, never inherit other account's avatar
+      const newAccountProfile: UserProfile = {
+        ...DEFAULT_USER_PROFILE,
+        id: `user_${Date.now()}`,
+        email: trimmedEmail,
+        avatar: '🌸',
+        registeredAt: new Date().toISOString().split('T')[0],
+      };
+      setUserProfileState(newAccountProfile);
+      setSavedProfiles((prev) => [...prev, newAccountProfile]);
+      setAcademicYearState({
+        year: newAccountProfile.academicYear || 2568,
+        studentName: newAccountProfile.fullName || '',
+        studentClass: newAccountProfile.studentClass || '',
+        schoolName: newAccountProfile.schoolName || '',
+      });
     }
     return true;
   };
@@ -481,6 +530,21 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       registeredAt: new Date().toISOString().split('T')[0],
     };
     setUserProfileState(newProfile);
+    setSavedProfiles((list) => {
+      const idx = list.findIndex(
+        (p) =>
+          p.id === newProfile.id ||
+          (Boolean(p.email) &&
+            Boolean(newProfile.email) &&
+            p.email.trim().toLowerCase() === newProfile.email.trim().toLowerCase())
+      );
+      if (idx >= 0) {
+        const next = [...list];
+        next[idx] = newProfile;
+        return next;
+      }
+      return [...list, newProfile];
+    });
     setAcademicYearState({
       year: newProfile.academicYear || 2568,
       studentName: newProfile.fullName || '',
@@ -496,10 +560,29 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   const updateUserProfile = (partial: Partial<UserProfile>) => {
     setUserProfileState((prev) => {
-      const updated = { ...prev, ...partial };
+      const cleanPartial = { ...partial };
+
+      // Prevent Base64 from entering profile state
+      if (cleanPartial.avatar && isBase64Image(cleanPartial.avatar)) {
+        cleanPartial.avatar =
+          cleanPartial.avatarUrl && !isBase64Image(cleanPartial.avatarUrl)
+            ? cleanPartial.avatarUrl
+            : '🌸';
+      }
+      if (cleanPartial.avatarUrl && isBase64Image(cleanPartial.avatarUrl)) {
+        delete cleanPartial.avatarUrl;
+      }
+
+      const updated = { ...prev, ...cleanPartial };
       // Sync into savedProfiles
       setSavedProfiles((list) => {
-        const idx = list.findIndex((p) => p.id === updated.id);
+        const idx = list.findIndex(
+          (p) =>
+            p.id === updated.id ||
+            (Boolean(p.email) &&
+              Boolean(updated.email) &&
+              p.email.trim().toLowerCase() === updated.email.trim().toLowerCase())
+        );
         if (idx >= 0) {
           const next = [...list];
           next[idx] = updated;
@@ -518,6 +601,23 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }));
       }
       return updated;
+    });
+  };
+
+  const updateAvatar = (avatar: string) => {
+    if (isBase64Image(avatar)) {
+      console.warn('[MyGrade] Base64 avatar rejected to prevent QuotaExceededError');
+      return;
+    }
+    const isUrl =
+      avatar.startsWith('/uploads/') ||
+      avatar.startsWith('/api/') ||
+      avatar.startsWith('http://') ||
+      avatar.startsWith('https://');
+
+    updateUserProfile({
+      avatar,
+      avatarUrl: isUrl ? avatar : undefined,
     });
   };
 
@@ -1268,6 +1368,7 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         register,
         logout,
         updateUserProfile,
+        updateAvatar,
         updateTargetGpa,
         savedProfiles,
         switchProfile,

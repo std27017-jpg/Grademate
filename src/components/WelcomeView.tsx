@@ -108,82 +108,128 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenRegister, onOpen
         <div className="grid grid-cols-2 sm:grid-cols-2 gap-3 text-left pt-2">
           {/* Card 1 */}
           <div
-            className="p-4 sm:p-5 rounded-3xl border border-white/80 transition-all duration-300 hover:-translate-y-1"
+            className="p-4 sm:p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1"
             style={{
-              background: 'rgba(255, 255, 255, 0.72)',
+              background: 'var(--theme-glass, rgba(255, 255, 255, 0.86))',
               backdropFilter: 'blur(20px) saturate(180%)',
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-              boxShadow: '0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.08), 0 1px 3px rgba(0,0,0,0.02)',
+              borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+              boxShadow: 'var(--theme-glow, 0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.10))',
             }}
           >
             <div
-              className="w-10 h-10 rounded-2xl flex items-center justify-center text-white mb-2.5 shadow-sm"
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-transform hover:scale-105 shrink-0"
               style={{
-                backgroundColor: 'var(--app-primary, #db2777)',
-                boxShadow: '0 4px 12px rgba(var(--app-primary-rgb, 219, 39, 119), 0.35)',
+                backgroundColor: 'rgba(99, 102, 241, 0.16)',
+                border: '1.5px solid rgba(99, 102, 241, 0.35)',
+                boxShadow: '0 6px 18px 0 rgba(99, 102, 241, 0.20)',
+                backdropFilter: 'blur(10px)',
               }}
             >
-              <Target className="w-5 h-5" />
+              <Target className="w-6 h-6 text-indigo-600 drop-shadow-xs" style={{ strokeWidth: 2.2 }} />
             </div>
-            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">คำนวณเกรดตามจริง</h3>
-            <p className="text-[11px] sm:text-xs text-slate-600 mt-1 font-medium leading-normal">
+            <h3 className="font-black text-xs sm:text-sm" style={{ color: 'var(--theme-text-primary, #0f172a)' }}>
+              คำนวณเกรดตามจริง
+            </h3>
+            <p className="text-[11px] sm:text-xs mt-1 font-semibold leading-normal" style={{ color: 'var(--theme-text-secondary, #334155)' }}>
               แยกเก็บระหว่างภาคและปลายภาค วิเคราะห์คะแนนที่ต้องทำได้
             </p>
           </div>
 
           {/* Card 2 */}
           <div
-            className="p-4 sm:p-5 rounded-3xl border border-white/80 transition-all duration-300 hover:-translate-y-1"
+            className="p-4 sm:p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1"
             style={{
-              background: 'rgba(255, 255, 255, 0.72)',
+              background: 'var(--theme-glass, rgba(255, 255, 255, 0.86))',
               backdropFilter: 'blur(20px) saturate(180%)',
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-              boxShadow: '0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.08), 0 1px 3px rgba(0,0,0,0.02)',
+              borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+              boxShadow: 'var(--theme-glow, 0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.10))',
             }}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-purple-500 to-indigo-500 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-purple-500/30">
-              <GraduationCap className="w-5 h-5" />
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-transform hover:scale-105 shrink-0"
+              style={{
+                backgroundColor: 'rgba(124, 58, 237, 0.16)',
+                border: '1.5px solid rgba(124, 58, 237, 0.35)',
+                boxShadow: '0 6px 18px 0 rgba(124, 58, 237, 0.20)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <GraduationCap className="w-6 h-6 text-purple-600 drop-shadow-xs" style={{ strokeWidth: 2.2 }} />
             </div>
-            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">เป้าหมายมหาวิทยาลัย</h3>
-            <p className="text-[11px] sm:text-xs text-slate-600 mt-1 font-medium leading-normal">
+            <h3 className="font-black text-xs sm:text-sm" style={{ color: 'var(--theme-text-primary, #0f172a)' }}>
+              เป้าหมายมหาวิทยาลัย
+            </h3>
+            <p className="text-[11px] sm:text-xs mt-1 font-semibold leading-normal" style={{ color: 'var(--theme-text-secondary, #334155)' }}>
               บันทึกคณะและอาชีพที่อยากเป็น เพื่อดูเกรดเป้าหมายที่แท้จริง
             </p>
           </div>
 
-          {/* Card 3 */}
+          {/* Card 3: Portfolio แฟ้มผลงาน with Theme-Aware Glass Circular Container */}
           <div
-            className="p-4 sm:p-5 rounded-3xl border border-white/80 transition-all duration-300 hover:-translate-y-1"
+            className="p-4 sm:p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1 relative"
             style={{
-              background: 'rgba(255, 255, 255, 0.72)',
+              background: 'var(--theme-glass, rgba(255, 255, 255, 0.86))',
               backdropFilter: 'blur(20px) saturate(180%)',
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-              boxShadow: '0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.08), 0 1px 3px rgba(0,0,0,0.02)',
+              borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+              boxShadow: 'var(--theme-glow, 0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.10))',
             }}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-pink-500 to-rose-500 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-rose-500/30">
-              <FolderHeart className="w-5 h-5" />
+            <div
+              id="portfolio-welcome-icon-container"
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-transform hover:scale-110 shrink-0"
+              style={{
+                backgroundColor: 'var(--theme-accent-soft, rgba(var(--app-primary-rgb, 219, 39, 119), 0.15))',
+                border: '1.5px solid var(--theme-accent-border, rgba(var(--app-primary-rgb, 219, 39, 119), 0.38))',
+                boxShadow: '0 6px 20px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.24), inset 0 1px 2px rgba(255, 255, 255, 0.45)',
+                backdropFilter: 'blur(12px)',
+                WebkitBackdropFilter: 'blur(12px)',
+              }}
+            >
+              <FolderHeart
+                className="w-6 h-6 drop-shadow-xs"
+                style={{
+                  color: 'var(--theme-icon, var(--theme-primary, #db2777))',
+                  strokeWidth: 2.3,
+                }}
+              />
             </div>
-            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">Portfolio แฟ้มผลงาน</h3>
-            <p className="text-[11px] sm:text-xs text-slate-600 mt-1 font-medium leading-normal">
+            <h3 className="font-black text-xs sm:text-sm" style={{ color: 'var(--theme-text-primary, #0f172a)' }}>
+              Portfolio แฟ้มผลงาน
+            </h3>
+            <p className="text-[11px] sm:text-xs mt-1 font-semibold leading-normal" style={{ color: 'var(--theme-text-secondary, #334155)' }}>
               เก็บเกียรติบัตร กิจกรรม และโครงงานพร้อมส่ง TCAS รอบพอร์ต
             </p>
           </div>
 
           {/* Card 4 */}
           <div
-            className="p-4 sm:p-5 rounded-3xl border border-white/80 transition-all duration-300 hover:-translate-y-1"
+            className="p-4 sm:p-5 rounded-3xl border transition-all duration-300 hover:-translate-y-1"
             style={{
-              background: 'rgba(255, 255, 255, 0.72)',
+              background: 'var(--theme-glass, rgba(255, 255, 255, 0.86))',
               backdropFilter: 'blur(20px) saturate(180%)',
               WebkitBackdropFilter: 'blur(20px) saturate(180%)',
-              boxShadow: '0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.08), 0 1px 3px rgba(0,0,0,0.02)',
+              borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+              boxShadow: 'var(--theme-glow, 0 10px 30px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.10))',
             }}
           >
-            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-teal-500 text-white flex items-center justify-center mb-2.5 shadow-sm shadow-teal-500/30">
-              <Calendar className="w-5 h-5" />
+            <div
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-3 transition-transform hover:scale-105 shrink-0"
+              style={{
+                backgroundColor: 'rgba(14, 165, 233, 0.16)',
+                border: '1.5px solid rgba(14, 165, 233, 0.35)',
+                boxShadow: '0 6px 18px 0 rgba(14, 165, 233, 0.20)',
+                backdropFilter: 'blur(10px)',
+              }}
+            >
+              <Calendar className="w-6 h-6 text-sky-600 drop-shadow-xs" style={{ strokeWidth: 2.2 }} />
             </div>
-            <h3 className="font-extrabold text-xs sm:text-sm text-slate-900">งาน & นับถอยหลังสอบ</h3>
-            <p className="text-[11px] sm:text-xs text-slate-600 mt-1 font-medium leading-normal">
+            <h3 className="font-black text-xs sm:text-sm" style={{ color: 'var(--theme-text-primary, #0f172a)' }}>
+              งาน & นับถอยหลังสอบ
+            </h3>
+            <p className="text-[11px] sm:text-xs mt-1 font-semibold leading-normal" style={{ color: 'var(--theme-text-secondary, #334155)' }}>
               แจ้งเตือนกำหนดส่งการบ้าน และนับถอยหลังวันสอบกลาง/ปลายภาค
             </p>
           </div>

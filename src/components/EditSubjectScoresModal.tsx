@@ -310,7 +310,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
         </div>
 
         {/* Live Score Summary Banner */}
-        <div className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md space-y-3">
+        <div data-dark-context="true" className="p-4 rounded-2xl bg-gradient-to-r from-slate-900 via-indigo-950 to-slate-900 text-white shadow-md space-y-3">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div>
               <span className="text-xs font-semibold text-indigo-300 uppercase tracking-wider">

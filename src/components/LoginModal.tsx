@@ -54,12 +54,13 @@ export const LoginModal: React.FC<LoginModalProps> = ({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-md animate-in fade-in duration-200">
       <div
-        className="rounded-3xl max-w-md w-full p-6 sm:p-7 border border-white/80 shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto box-border"
+        className="rounded-3xl max-w-md w-full p-6 sm:p-7 border shadow-2xl relative my-auto max-h-[92vh] overflow-y-auto box-border"
         style={{
-          background: 'rgba(255, 255, 255, 0.88)',
+          background: 'var(--theme-glass, rgba(255, 255, 255, 0.88))',
           backdropFilter: 'blur(28px) saturate(180%)',
           WebkitBackdropFilter: 'blur(28px) saturate(180%)',
-          boxShadow: '0 24px 60px -12px rgba(var(--app-primary-rgb, 219, 39, 119), 0.25), 0 0 0 1px rgba(255, 255, 255, 0.9)',
+          borderColor: 'var(--theme-glass-border, rgba(255, 255, 255, 0.85))',
+          boxShadow: 'var(--theme-glow, 0 24px 60px -12px rgba(var(--app-primary-rgb, 219, 39, 119), 0.25))',
         }}
       >
         {/* Close Button */}
@@ -74,18 +75,28 @@ export const LoginModal: React.FC<LoginModalProps> = ({
         {/* Header */}
         <div className="mb-6 text-center">
           <div
-            className="inline-flex items-center justify-center w-14 h-14 rounded-2xl text-white shadow-md mb-3 transition-transform hover:scale-105"
+            id="login-header-icon-container"
+            className="inline-flex items-center justify-center w-16 h-16 rounded-full mb-3 transition-transform hover:scale-105"
             style={{
-              background: 'linear-gradient(135deg, var(--app-primary, #db2777) 0%, var(--app-primary-gradient-end, #c084fc) 100%)',
-              boxShadow: '0 8px 20px rgba(var(--app-primary-rgb, 219, 39, 119), 0.35)',
+              backgroundColor: 'var(--theme-accent-soft, rgba(var(--app-primary-rgb, 219, 39, 119), 0.16))',
+              border: '1.5px solid var(--theme-accent-border, rgba(var(--app-primary-rgb, 219, 39, 119), 0.40))',
+              boxShadow: '0 8px 24px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.24), inset 0 1px 2px rgba(255, 255, 255, 0.45)',
+              backdropFilter: 'blur(12px)',
+              WebkitBackdropFilter: 'blur(12px)',
             }}
           >
-            <GraduationCap className="w-7 h-7 drop-shadow" />
+            <GraduationCap
+              className="w-8 h-8 drop-shadow-xs"
+              style={{
+                color: 'var(--theme-icon, var(--theme-primary, #db2777))',
+                strokeWidth: 2.3,
+              }}
+            />
           </div>
-          <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+          <h2 className="text-xl sm:text-2xl font-black tracking-tight" style={{ color: 'var(--theme-text-primary, #0f172a)' }}>
             เข้าสู่ระบบ MyGrade 🫧
           </h2>
-          <p className="text-xs sm:text-sm text-slate-600 font-semibold mt-1">
+          <p className="text-xs sm:text-sm font-semibold mt-1" style={{ color: 'var(--theme-text-secondary, #334155)' }}>
             ยินดีต้อนรับกลับมา! พร้อมจัดการเกรดและเป้าหมายวันนี้
           </p>
         </div>

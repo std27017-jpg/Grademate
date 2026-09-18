@@ -146,11 +146,12 @@ export const Navbar: React.FC<NavbarProps> = ({
                   setActiveTab('profile');
                 }
               }}
-              className="w-9 h-9 rounded-full overflow-hidden flex items-center justify-center border-2 border-pink-200 bg-pink-50 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0 ml-0.5"
+              className="w-9 h-9 rounded-xl overflow-hidden flex items-center justify-center border border-pink-200/90 bg-pink-50/50 active:scale-95 transition-all cursor-pointer shadow-2xs shrink-0 ml-0.5"
+              style={{ borderRadius: '12px', overflow: 'hidden' }}
               title="แก้ไขโปรไฟล์นักเรียน"
               aria-label="แก้ไขโปรไฟล์นักเรียน"
             >
-              <AvatarDisplay avatar={userProfile.avatar || '🌸'} size="sm" />
+              <AvatarDisplay avatar={userProfile.avatar || '🌸'} avatarUrl={userProfile.avatarUrl} size="full" shape="inherit" className="w-full h-full [border-radius:inherit]" />
             </button>
           </div>
         </div>
@@ -288,8 +289,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="flex items-center gap-1.5 px-2.5 py-1 text-xs font-bold text-slate-800 hover:text-pink-600 bg-pink-50/70 hover:bg-pink-100/70 border border-pink-200 rounded-full transition-all cursor-pointer shadow-2xs active:scale-95 shrink-0"
                 title="จัดการและสลับโปรไฟล์นักเรียน"
               >
-                <div className="w-6 h-6 rounded-full overflow-hidden flex items-center justify-center shrink-0">
-                  <AvatarDisplay avatar={userProfile.avatar || '🌸'} size="sm" />
+                <div
+                  className="w-6 h-6 rounded-lg overflow-hidden flex items-center justify-center shrink-0"
+                  style={{ borderRadius: '6px', overflow: 'hidden' }}
+                >
+                  <AvatarDisplay avatar={userProfile.avatar || '🌸'} avatarUrl={userProfile.avatarUrl} size="full" shape="inherit" className="w-full h-full [border-radius:inherit]" />
                 </div>
                 <span className="hidden sm:inline truncate max-w-[100px]">
                   {userProfile.nickname || userProfile.fullName.split(' ')[0] || 'โปรไฟล์'}
@@ -364,8 +368,11 @@ export const Navbar: React.FC<NavbarProps> = ({
                 className="p-3 bg-gradient-to-br from-pink-50/80 to-purple-50/80 rounded-2xl border border-pink-200/80 flex items-center justify-between gap-3 cursor-pointer hover:border-pink-300 transition-all shadow-2xs"
               >
                 <div className="flex items-center gap-2.5 min-w-0">
-                  <div className="w-10 h-10 rounded-full overflow-hidden flex items-center justify-center border border-pink-200 bg-white shadow-2xs shrink-0">
-                    <AvatarDisplay avatar={userProfile.avatar || '🌸'} size="md" />
+                  <div
+                    className="w-10 h-10 rounded-xl overflow-hidden flex items-center justify-center border border-pink-200/80 bg-pink-50/50 shadow-2xs shrink-0"
+                    style={{ borderRadius: '12px', overflow: 'hidden' }}
+                  >
+                    <AvatarDisplay avatar={userProfile.avatar || '🌸'} avatarUrl={userProfile.avatarUrl} size="full" shape="inherit" className="w-full h-full [border-radius:inherit]" />
                   </div>
                   <div className="min-w-0">
                     <div className="font-black text-slate-900 text-xs truncate">

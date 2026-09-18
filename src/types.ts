@@ -38,10 +38,13 @@ export interface UserProfile {
   schoolName: string;
   academicYear: number;
   avatar: string; // Avatar emoji or image url
+  avatarUrl?: string; // Stored image URL
   targetGpa: NumericGrade; // 4, 3.5, 3, 2.5, 2, 1.5, 1, 0
   dreamCareer: string;
   dreamUniversities: DreamUniversity[];
   registeredAt?: string;
+  themeColor?: string;
+  themePattern?: string;
 }
 
 export type FutureChecklistCategory =
