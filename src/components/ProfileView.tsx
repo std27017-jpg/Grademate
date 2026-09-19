@@ -36,8 +36,13 @@ import { GradeLevel, NumericGrade, UserProfile } from '../types';
 import { AvatarDisplay } from './AvatarDisplay';
 import { EditProfileModal } from './EditProfileModal';
 import { uploadImageToStorage, validateImageFile } from '../utils/fileStorage';
+import { NavTab } from './Navbar';
 
-export const ProfileView: React.FC = () => {
+interface ProfileViewProps {
+  onNavigate?: (tab: NavTab) => void;
+}
+
+export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
   const {
     userProfile,
     updateUserProfile,
@@ -853,6 +858,42 @@ export const ProfileView: React.FC = () => {
             <RotateCcw className="w-3.5 h-3.5" />
             <span>รีเซ็ตข้อมูลเริ่มต้น</span>
           </button>
+        </div>
+      </div>
+
+      {/* About Application & Developers */}
+      <div className="glass-card rounded-3xl p-5 sm:p-6 border border-white/80 shadow-xs space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2.5">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center text-white shadow-xs"
+              style={{ backgroundColor: themeColor }}
+            >
+              <Users className="w-4 h-4" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <span>ผู้พัฒนา MyGrade (Developers)</span>
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full glass-secondary border border-white/60 app-theme-text">
+                  5 คน
+                </span>
+              </h3>
+              <p className="text-[11px] text-slate-500 font-medium">
+                คณะผู้จัดทำโครงการ, คุณครูที่ปรึกษา และข้อมูลรายวิชาวิทยาการคำนวณ
+              </p>
+            </div>
+          </div>
+
+          {onNavigate && (
+            <button
+              type="button"
+              onClick={() => onNavigate('developers')}
+              className="px-4 py-2 rounded-full app-theme-btn text-white text-xs font-bold transition-all flex items-center gap-1.5 cursor-pointer shadow-xs active:scale-95"
+            >
+              <span>ดูข้อมูลผู้พัฒนา</span>
+              <Sparkles className="w-3.5 h-3.5" />
+            </button>
+          )}
         </div>
       </div>
 

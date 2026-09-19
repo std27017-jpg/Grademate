@@ -5,7 +5,7 @@
  * and background cleanup/migration of legacy Base64 images to prevent QuotaExceededError.
  */
 
-import { UserProfile, PortfolioItem } from '../types';
+import { UserProfile, PortfolioItem, Developer } from '../types';
 
 export const STORAGE_KEYS = {
   AUTH_LOGGED_IN: 'mygrade_is_logged_in',
@@ -24,6 +24,7 @@ export const STORAGE_KEYS = {
   SUBJECT_CATEGORIES: 'mygrade_subject_categories',
   STUDY_SESSIONS: 'mygrade_study_sessions',
   STUDY_GOAL: 'mygrade_study_goal',
+  DEVELOPER_PHOTOS: 'mygrade_developer_photos',
 } as const;
 
 /**
@@ -90,6 +91,21 @@ export function sanitizePortfolioItems(items: unknown): PortfolioItem[] {
     }
     return clone as PortfolioItem;
   });
+}
+
+/**
+ * Sanitizes developer photos map (id -> photoUrl), ensuring zero Base64 strings.
+ */
+export function sanitizeDeveloperPhotos(photos: unknown): Record<number, string> {
+  if (!photos || typeof photos !== 'object') return {};
+  const cleaned: Record<number, string> = {};
+  for (const [key, val] of Object.entries(photos as Record<string, unknown>)) {
+    const idNum = Number(key);
+    if (!isNaN(idNum) && typeof val === 'string' && val.trim() && !isBase64Image(val)) {
+      cleaned[idNum] = val.trim();
+    }
+  }
+  return cleaned;
 }
 
 /**
@@ -192,6 +208,14 @@ export function safeLocalStorageSetItem(key: string, value: string): boolean {
       try {
         const parsed = JSON.parse(value);
         const sanitized = sanitizePortfolioItems(parsed);
+        value = JSON.stringify(sanitized);
+      } catch {
+        // Proceed
+      }
+    } else if (key === STORAGE_KEYS.DEVELOPER_PHOTOS && isBase64Image(value)) {
+      try {
+        const parsed = JSON.parse(value);
+        const sanitized = sanitizeDeveloperPhotos(parsed);
         value = JSON.stringify(sanitized);
       } catch {
         // Proceed

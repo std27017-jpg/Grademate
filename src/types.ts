@@ -263,3 +263,13 @@ export interface SemesterSummary {
     gapToTarget: number;
   }[];
 }
+
+export interface Developer {
+  id: number;
+  name: string;
+  studentNo: number;
+  role: string;
+  emoji: string;
+  initials: string;
+  photoUrl?: string;
+}

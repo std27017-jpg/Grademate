@@ -11,6 +11,7 @@ import { FuturePlannerView } from './components/FuturePlannerView';
 import { AnalyticsView } from './components/AnalyticsView';
 import { ProfileView } from './components/ProfileView';
 import { ComparisonView } from './components/ComparisonView';
+import { DevelopersView } from './components/DevelopersView';
 import { SubjectModal } from './components/SubjectModal';
 import { SettingsModal } from './components/SettingsModal';
 import { EditProfileModal } from './components/EditProfileModal';
@@ -132,12 +133,16 @@ function MainAppContent() {
 
         {activeTab === 'analytics' && <AnalyticsView />}
 
-        {activeTab === 'profile' && <ProfileView />}
+        {activeTab === 'profile' && <ProfileView onNavigate={(tab) => setActiveTab(tab)} />}
 
         {activeTab === 'comparison' && (
           <ComparisonView
             onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
           />
+        )}
+
+        {activeTab === 'developers' && (
+          <DevelopersView onNavigate={(tab) => setActiveTab(tab)} />
         )}
       </main>
 
@@ -164,6 +169,7 @@ function MainAppContent() {
       <SettingsModal
         isOpen={isSettingsModalOpen}
         onClose={() => setIsSettingsModalOpen(false)}
+        onNavigate={(tab) => setActiveTab(tab)}
       />
 
       <ThemeModal

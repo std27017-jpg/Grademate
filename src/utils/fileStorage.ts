@@ -45,13 +45,15 @@ export function validateImageFile(file: File): { ok: boolean; error?: string } {
 }
 
 /**
- * Compress and crop an image File into a square 400x400 JPEG Blob using HTML5 Canvas.
+ * Compress and crop an image File into a JPEG/PNG Blob using HTML5 Canvas.
  * Non-blocking, preserves aspect ratio with center-crop.
+ * Supports square (1:1), portrait (4:5 / 3:4), or custom aspect ratio.
  */
 export async function compressAndCropImageToBlob(
   file: File,
   maxDimension = 400,
-  quality = 0.85
+  quality = 0.85,
+  aspectRatio: 'square' | 'portrait' | 'original' = 'square'
 ): Promise<{ blob: Blob; mimeType: string }> {
   return new Promise((resolve, reject) => {
     const objectUrl = URL.createObjectURL(file);
@@ -77,16 +79,57 @@ export async function compressAndCropImageToBlob(
           return;
         }
 
-        // Center square crop
-        const minDim = Math.min(srcWidth, srcHeight);
-        const cropX = (srcWidth - minDim) / 2;
-        const cropY = (srcHeight - minDim) / 2;
+        let cropX = 0;
+        let cropY = 0;
+        let cropWidth = srcWidth;
+        let cropHeight = srcHeight;
+        let targetWidth = maxDimension;
+        let targetHeight = maxDimension;
 
-        const targetDim = Math.min(maxDimension, minDim);
+        if (aspectRatio === 'square') {
+          const minDim = Math.min(srcWidth, srcHeight);
+          cropX = (srcWidth - minDim) / 2;
+          cropY = (srcHeight - minDim) / 2;
+          cropWidth = minDim;
+          cropHeight = minDim;
+          const targetDim = Math.min(maxDimension, minDim);
+          targetWidth = targetDim;
+          targetHeight = targetDim;
+        } else if (aspectRatio === 'portrait') {
+          // 4:5 aspect ratio (width: 4, height: 5)
+          const targetRatio = 4 / 5;
+          const currentRatio = srcWidth / srcHeight;
+
+          if (currentRatio > targetRatio) {
+            // Image is wider than 4:5 -> crop sides
+            cropWidth = srcHeight * targetRatio;
+            cropHeight = srcHeight;
+            cropX = (srcWidth - cropWidth) / 2;
+            cropY = 0;
+          } else {
+            // Image is taller than 4:5 -> crop top/bottom
+            cropWidth = srcWidth;
+            cropHeight = srcWidth / targetRatio;
+            cropX = 0;
+            cropY = (srcHeight - cropHeight) / 2;
+          }
+
+          targetWidth = Math.min(maxDimension, Math.round(cropWidth));
+          targetHeight = Math.round(targetWidth / targetRatio);
+        } else {
+          // original aspect ratio, scaled to maxDimension
+          if (srcWidth > srcHeight) {
+            targetWidth = Math.min(maxDimension, srcWidth);
+            targetHeight = Math.round((srcHeight / srcWidth) * targetWidth);
+          } else {
+            targetHeight = Math.min(maxDimension, srcHeight);
+            targetWidth = Math.round((srcWidth / srcHeight) * targetHeight);
+          }
+        }
 
         const canvas = document.createElement('canvas');
-        canvas.width = targetDim;
-        canvas.height = targetDim;
+        canvas.width = targetWidth;
+        canvas.height = targetHeight;
 
         const ctx = canvas.getContext('2d');
         if (!ctx) {
@@ -101,12 +144,12 @@ export async function compressAndCropImageToBlob(
           img,
           cropX,
           cropY,
-          minDim,
-          minDim,
+          cropWidth,
+          cropHeight,
           0,
           0,
-          targetDim,
-          targetDim
+          targetWidth,
+          targetHeight
         );
 
         // Convert to Blob
@@ -198,6 +241,24 @@ export async function getBlobFromIndexedDB(key: string): Promise<Blob | null> {
 }
 
 /**
+ * Deletes a Blob from IndexedDB
+ */
+export async function deleteBlobFromIndexedDB(key: string): Promise<void> {
+  try {
+    const db = await openIndexedDB();
+    return new Promise((resolve) => {
+      const tx = db.transaction(IDB_STORE_NAME, 'readwrite');
+      const store = tx.objectStore(IDB_STORE_NAME);
+      const req = store.delete(key);
+      req.onsuccess = () => resolve();
+      req.onerror = () => resolve();
+    });
+  } catch {
+    // Non-fatal
+  }
+}
+
+/**
  * Convert a Blob to Base64 specifically for sending over the wire in HTTP POST payload.
  * (NOT for saving to localStorage!)
  */
@@ -222,7 +283,12 @@ function blobToBase64(blob: Blob): Promise<string> {
  * NEVER returns or stores Base64 in localStorage!
  */
 export async function uploadImageToStorage(
-  file: File
+  file: File,
+  options?: {
+    aspectRatio?: 'square' | 'portrait' | 'original';
+    maxDimension?: number;
+    prefix?: string;
+  }
 ): Promise<{ url: string; avatarUrl: string; fileName: string }> {
   // 1. Validation
   const validation = validateImageFile(file);
@@ -230,11 +296,15 @@ export async function uploadImageToStorage(
     throw new Error(validation.error || 'ไฟล์รูปไม่ถูกต้อง');
   }
 
+  const aspectRatio = options?.aspectRatio || 'square';
+  const maxDim = options?.maxDimension || 500;
+  const prefix = options?.prefix || 'avatar';
+
   // 2. Crop & Compress
-  const { blob } = await compressAndCropImageToBlob(file, 400, 0.85);
+  const { blob } = await compressAndCropImageToBlob(file, maxDim, 0.85, aspectRatio);
 
   let finalUrl = '';
-  let finalFileName = `avatar_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
+  let finalFileName = `${prefix}_${Date.now()}_${Math.random().toString(36).slice(2, 8)}.jpg`;
 
   // 3. Upload to backend /api/upload
   try {

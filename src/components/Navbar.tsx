@@ -14,7 +14,8 @@ export type NavTab =
   | 'future'
   | 'analytics'
   | 'profile'
-  | 'comparison';
+  | 'comparison'
+  | 'developers';
 
 interface NavbarProps {
   activeTab: NavTab;
@@ -52,6 +53,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'future', label: 'อนาคต & เป้าหมาย', iconName: 'goals' },
     { id: 'analytics', label: 'วิเคราะห์', iconName: 'analytics' },
     { id: 'profile', label: 'โปรไฟล์', iconName: 'profile' },
+    { id: 'developers', label: 'ผู้พัฒนา', iconName: 'users' },
   ];
 
   // Mobile Bottom Navigation 5 essential tabs (Modern Teen Mobile App)
@@ -74,6 +76,7 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'analytics', label: 'วิเคราะห์สถิติผลการเรียน', iconName: 'analytics', desc: 'กราฟ GPA และเกรดรวม' },
     { id: 'comparison', label: 'เปรียบเทียบผลการเรียน', iconName: 'scale', desc: 'เปรียบเทียบข้ามเทอม' },
     { id: 'profile', label: 'ข้อมูลนักเรียน & ประวัติ', iconName: 'profile', desc: 'สายการเรียนและโรงเรียน' },
+    { id: 'developers', label: 'ผู้พัฒนา MyGrade', iconName: 'users', desc: 'คณะผู้จัดทำ 5 คน และครูที่ปรึกษา' },
   ];
 
   const handleSelectTab = (tab: NavTab) => {

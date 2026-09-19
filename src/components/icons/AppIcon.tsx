@@ -35,6 +35,8 @@ import {
   Search,
   AlertTriangle,
   HelpCircle,
+  Users,
+  Code2,
   LucideProps,
 } from 'lucide-react';
 
@@ -78,7 +80,9 @@ export type IconName =
   | 'scale'
   | 'search'
   | 'alert'
-  | 'help';
+  | 'help'
+  | 'users'
+  | 'code';
 
 export type IconSize = 'xs' | 'sm' | 'md' | 'lg' | 'xl' | number;
 
@@ -139,6 +143,8 @@ const iconComponentMap: Record<IconName, React.ComponentType<LucideProps>> = {
   search: Search,
   alert: AlertTriangle,
   help: HelpCircle,
+  users: Users,
+  code: Code2,
 };
 
 /**

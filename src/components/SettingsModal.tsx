@@ -17,13 +17,15 @@ import { useGrade } from '../context/GradeContext';
 import { useTheme } from '../context/ThemeContext';
 import { NUMERIC_GRADES, GRADE_META_LIST } from '../utils/gradeCalculations';
 import { CustomGradeScale, NumericGrade } from '../types';
+import { NavTab } from './Navbar';
 
 interface SettingsModalProps {
   isOpen: boolean;
   onClose: () => void;
+  onNavigate?: (tab: NavTab) => void;
 }
 
-export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose }) => {
+export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose, onNavigate }) => {
   const {
     academicYear,
     setAcademicYear,
@@ -442,6 +444,26 @@ export const SettingsModal: React.FC<SettingsModalProps> = ({ isOpen, onClose })
             </div>
           </div>
         )}
+        {/* Link to Developers Page */}
+        <div className="pt-3 border-t border-slate-100 flex items-center justify-between">
+          <div className="flex items-center gap-2 text-xs text-slate-500">
+            <span>👩‍💻</span>
+            <span className="font-semibold">MyGrade Team</span>
+          </div>
+          {onNavigate && (
+            <button
+              type="button"
+              onClick={() => {
+                onClose();
+                onNavigate('developers');
+              }}
+              className="text-xs font-bold text-pink-600 hover:text-pink-700 hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>ผู้พัฒนา Application</span>
+              <span>→</span>
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
