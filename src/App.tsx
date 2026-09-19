@@ -206,10 +206,10 @@ function MainAppContent() {
 
 export default function App() {
   return (
-    <ThemeProvider>
-      <GradeProvider>
+    <GradeProvider>
+      <ThemeProvider>
         <MainAppContent />
-      </GradeProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </GradeProvider>
   );
 }

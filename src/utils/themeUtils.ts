@@ -303,10 +303,10 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     '--theme-secondary': gradientEnd,
     '--theme-background': palette.bgStart,
     '--theme-background-gradient': `linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%)`,
-    '--theme-glass': palette.isDark ? 'rgba(30, 41, 59, 0.82)' : 'rgba(255, 255, 255, 0.82)',
-    '--theme-glass-secondary': palette.isDark ? 'rgba(30, 41, 59, 0.72)' : 'rgba(255, 255, 255, 0.72)',
-    '--theme-glass-strong': palette.isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.92)',
-    '--theme-glass-border': palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)',
+    '--theme-glass': palette.isDark ? 'rgba(30, 41, 59, 0.76)' : 'rgba(255, 255, 255, 0.74)',
+    '--theme-glass-secondary': palette.isDark ? 'rgba(30, 41, 59, 0.62)' : 'rgba(255, 255, 255, 0.62)',
+    '--theme-glass-strong': palette.isDark ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.86)',
+    '--theme-glass-border': palette.isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.82)',
     '--theme-glass-border-accent': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.45' : '0.35'})`,
     '--glass-input-bg': palette.isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.88)',
     '--glass-input-border': palette.isDark ? 'rgba(255, 255, 255, 0.22)' : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`,
@@ -336,6 +336,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     '--app-blob-2': palette.blob2,
     '--app-blob-3': palette.blob3 || palette.blob1,
     '--app-pattern-uri': patternUri,
+    '--theme-pattern-uri': patternUri,
   };
 
   if (typeof document !== 'undefined') {
@@ -381,10 +382,10 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       --theme-secondary: ${gradientEnd};
       --theme-background: ${palette.bgStart};
       --theme-background-gradient: linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%);
-      --theme-glass: ${palette.isDark ? 'rgba(30, 41, 59, 0.82)' : 'rgba(255, 255, 255, 0.82)'};
-      --theme-glass-secondary: ${palette.isDark ? 'rgba(30, 41, 59, 0.72)' : 'rgba(255, 255, 255, 0.72)'};
-      --theme-glass-strong: ${palette.isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.92)'};
-      --theme-glass-border: ${palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)'};
+      --theme-glass: ${palette.isDark ? 'rgba(30, 41, 59, 0.76)' : 'rgba(255, 255, 255, 0.74)'};
+      --theme-glass-secondary: ${palette.isDark ? 'rgba(30, 41, 59, 0.62)' : 'rgba(255, 255, 255, 0.62)'};
+      --theme-glass-strong: ${palette.isDark ? 'rgba(15, 23, 42, 0.88)' : 'rgba(255, 255, 255, 0.86)'};
+      --theme-glass-border: ${palette.isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.82)'};
       --theme-glass-border-accent: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.45' : '0.35'});
       --glass-input-bg: ${palette.isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.88)'};
       --glass-input-border: ${palette.isDark ? 'rgba(255, 255, 255, 0.22)' : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`};
@@ -413,6 +414,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       --app-blob-2: ${palette.blob2};
       --app-blob-3: ${palette.blob3 || palette.blob1};
       --app-pattern-uri: ${patternUri};
+      --theme-pattern-uri: ${patternUri};
 
       /* Typography Color System (WCAG AA Compliant) */
       --text-primary: ${palette.isDark ? '#f8fafc' : '#0f172a'};
@@ -512,10 +514,10 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
 
     /* Convert standard flat white cards to translucent liquid glass with readable text */
     .bg-white:not([data-opaque="true"]):not(select):not(option):not(input):not(textarea) {
-      background-color: ${palette.isDark ? 'rgba(30, 41, 59, 0.88)' : 'rgba(255, 255, 255, 0.84)'} !important;
+      background-color: ${palette.isDark ? 'rgba(30, 41, 59, 0.78)' : 'rgba(255, 255, 255, 0.76)'} !important;
       backdrop-filter: blur(16px) saturate(170%);
       -webkit-backdrop-filter: blur(16px) saturate(170%);
-      border-color: ${palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)'};
+      border-color: ${palette.isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.82)'};
       box-shadow: 0 8px 30px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.24' : '0.08'});
       color: var(--text-primary);
     }
@@ -740,3 +742,27 @@ export function saveThemePattern(patternId: ThemePatternId) {
     // fallback
   }
 }
+
+// Curated list of distinct vibrant/pastel/neon/dark theme colors for Random Theme Generator
+export const RANDOM_THEME_COLORS = [
+  '#db2777', // Sweet Sakura Pink
+  '#ec4899', // Hot Strawberry Pink
+  '#f43f5e', // Vibrant Rose
+  '#7c3aed', // Lavender Purple
+  '#8b5cf6', // Soft Violet
+  '#6366f1', // Galaxy Indigo
+  '#0284c7', // Crystal Ocean Blue
+  '#0ea5e9', // Bright Sky Blue
+  '#06b6d4', // Neon Cyan
+  '#0d9488', // Aqua Turquoise
+  '#059669', // Emerald Mint Green
+  '#10b981', // Vivid Mint
+  '#84cc16', // Fresh Lime
+  '#d97706', // Honey Butter Gold
+  '#ea580c', // Sunset Coral Orange
+  '#ef4444', // Candy Red
+  '#1e293b', // Midnight Dark Slate
+  '#0f172a', // Cosmos Black Deep
+  '#1e1b4b', // Deep Royal Navy Dark
+];
+

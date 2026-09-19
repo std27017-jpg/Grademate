@@ -9,10 +9,10 @@
   --theme-text-primary: #0f172a;
   --theme-text-secondary: #334155;
   --theme-text-muted: #475569;
-  --theme-glass: rgba(255, 255, 255, 0.82);
-  --theme-glass-secondary: rgba(255, 255, 255, 0.72);
-  --theme-glass-strong: rgba(255, 255, 255, 0.92);
-  --theme-glass-border: rgba(255, 255, 255, 0.85);
+  --theme-glass: rgba(255, 255, 255, 0.74);
+  --theme-glass-secondary: rgba(255, 255, 255, 0.62);
+  --theme-glass-strong: rgba(255, 255, 255, 0.86);
+  --theme-glass-border: rgba(255, 255, 255, 0.82);
   --glass-input-bg: rgba(255, 255, 255, 0.88);
   --glass-input-border: rgba(203, 213, 225, 0.8);
   --glass-shadow: 0 12px 36px 0 rgba(219, 39, 119, 0.16);
@@ -30,7 +30,7 @@
   /* Liquid Glass Card Backgrounds - Opacities engineered for text readability */
   --glass-bg-primary: var(--theme-glass);
   --glass-bg-secondary: var(--theme-glass-secondary);
-  --glass-bg-soft: rgba(255, 255, 255, 0.65);
+  --glass-bg-soft: rgba(255, 255, 255, 0.52);
   --glass-bg-floating: var(--theme-glass-strong);
   --glass-border: var(--theme-glass-border);
 }
