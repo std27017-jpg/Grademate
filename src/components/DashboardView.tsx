@@ -57,6 +57,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     currentSemester,
     academicYear,
     activeSemesterSummary,
+    subjects,
     tasks,
     exams,
     userProfile,
@@ -801,7 +802,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
       {/* ========================================================================= */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
         {/* 1. ภาพรวมคะแนน (Top 3 subjects) */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4">
+        <div className="glass-card rounded-3xl p-5 border border-white/80 shadow-md flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -820,7 +821,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                   <div
                     key={sub.id}
                     onClick={() => handleOpenSubjectPlan(sub)}
-                    className="p-3 rounded-2xl bg-slate-50 hover:bg-pink-50/40 border border-slate-200 transition-all cursor-pointer group space-y-2"
+                    className="p-3 rounded-2xl glass-secondary hover:bg-white/80 border border-white/60 transition-all cursor-pointer group space-y-2"
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2 min-w-0">
@@ -832,7 +833,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           {sub.name}
                         </span>
                       </div>
-                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-white border border-slate-300 text-slate-900 shadow-2xs">
+                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-white/90 border border-slate-300 text-slate-900 shadow-2xs">
                         เกรด {subSummary.estimatedGrade}
                       </span>
                     </div>
@@ -845,7 +846,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                           {subSummary.currentPercentage.toFixed(0)}%
                         </span>
                       </div>
-                      <div className="w-full h-2 bg-slate-200 rounded-full overflow-hidden">
+                      <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
                         <div
                           className="h-full rounded-full transition-all duration-500 ease-out"
                           style={{
@@ -861,7 +862,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
               {activeSemesterSummary.subjectSummaries.length === 0 && (
                 <div className="text-center py-6 text-slate-600 text-xs font-bold">
-                  ยังไม่มีรายวิชาในเทอมนี้
+                  ยังไม่มีข้อมูลรายวิชาในเทอมนี้
                 </div>
               )}
             </div>
@@ -870,7 +871,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigate('subjects')}
-            className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 active:scale-95"
+            className="w-full py-2.5 rounded-2xl glass-secondary hover:bg-white/90 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 border border-white/70 active:scale-95"
           >
             <span>ดูวิชาทั้งหมด ({totalSubjects})</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -878,7 +879,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* 2. งานใกล้ส่ง (Max 3 items with quick check) */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4">
+        <div className="glass-card rounded-3xl p-5 border border-white/80 shadow-md flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -894,16 +895,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             <div className="space-y-2">
               {topPendingTasks.map((task) => {
-                const sub = activeSemesterSummary.subjectSummaries.find(
-                  (s) => s.subject.id === task.subjectId
-                )?.subject;
+                const sub = subjects.find((s) => s.id === task.subjectId);
                 const days = getDaysRemaining(task.dueDate);
                 const isUrgent = days <= 2 && days >= 0;
 
                 return (
                   <div
                     key={task.id}
-                    className="p-3 rounded-2xl bg-slate-50 hover:bg-purple-50/40 border border-slate-200 transition-all flex items-center gap-2.5"
+                    className="p-3 rounded-2xl glass-secondary hover:bg-white/80 border border-white/60 transition-all flex items-center gap-2.5"
                   >
                     <button
                       type="button"
@@ -916,7 +915,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
                     <div className="min-w-0 flex-1">
                       <p className="text-xs font-black text-slate-900 truncate">{task.title}</p>
                       <p className="text-[11px] text-slate-600 font-semibold truncate">
-                        {sub?.name || 'รายวิชา'} • ส่ง {formatShortThaiDate(task.dueDate)}
+                        {sub?.name || 'ไม่พบข้อมูลวิชา'} • ส่ง {formatShortThaiDate(task.dueDate)}
                       </p>
                     </div>
                     {isUrgent && (
@@ -940,7 +939,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigate('tasks')}
-            className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 active:scale-95"
+            className="w-full py-2.5 rounded-2xl glass-secondary hover:bg-white/90 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 border border-white/70 active:scale-95"
           >
             <span>ดูงานทั้งหมด ({currentSemesterTasks.length})</span>
             <ArrowRight className="w-3.5 h-3.5" />
@@ -948,7 +947,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         </div>
 
         {/* 3. การสอบที่ใกล้ที่สุด */}
-        <div className="bg-white rounded-3xl p-5 border border-slate-200/90 shadow-2xs flex flex-col justify-between space-y-4">
+        <div className="glass-card rounded-3xl p-5 border border-white/80 shadow-md flex flex-col justify-between space-y-4">
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
@@ -964,32 +963,35 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
             <div className="space-y-2">
               {upcomingExams.map((exam) => {
+                const sub = subjects.find((s) => s.id === exam.subjectId);
+                const subName = sub?.name || 'ไม่พบข้อมูลวิชาของการสอบนี้';
+                const examTitle = exam.examType === 'midterm' ? 'สอบกลางภาค' : 'สอบปลายภาค';
                 const days = getDaysRemaining(exam.examDate);
                 const isPast = days < 0;
 
                 return (
                   <div
                     key={exam.id}
-                    className="p-3 rounded-2xl bg-slate-50 border border-slate-200 space-y-1.5"
+                    className="p-3 rounded-2xl glass-secondary border border-white/60 space-y-1.5"
                   >
                     <div className="flex items-center justify-between">
                       <span className="text-xs font-black text-slate-900 truncate max-w-[150px]">
-                        {exam.subjectName}
+                        {subName}
                       </span>
                       <span
                         className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
                           isPast
-                            ? 'bg-slate-200 text-slate-700'
+                            ? 'bg-slate-200/90 text-slate-700'
                             : days <= 3
-                            ? 'bg-rose-100 text-rose-800'
-                            : 'bg-indigo-100 text-indigo-800'
+                            ? 'bg-rose-100/90 text-rose-800'
+                            : 'bg-indigo-100/90 text-indigo-800'
                         }`}
                       >
                         {isPast ? 'สอบแล้ว' : days === 0 ? 'สอบวันนี้' : `อีก ${days} วัน`}
                       </span>
                     </div>
                     <div className="flex items-center justify-between text-[11px] text-slate-600 font-semibold">
-                      <span>{exam.title}</span>
+                      <span>{examTitle}</span>
                       <span className="font-bold text-slate-800">{formatShortThaiDate(exam.examDate)}</span>
                     </div>
                   </div>
@@ -1007,7 +1009,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           <button
             type="button"
             onClick={() => onNavigate('exams')}
-            className="w-full py-2.5 rounded-2xl bg-slate-100 hover:bg-slate-200 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 active:scale-95"
+            className="w-full py-2.5 rounded-2xl glass-secondary hover:bg-white/90 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 border border-white/70 active:scale-95"
           >
             <span>ดูตารางสอบทั้งหมด</span>
             <ArrowRight className="w-3.5 h-3.5" />

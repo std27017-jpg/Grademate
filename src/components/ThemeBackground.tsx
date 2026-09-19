@@ -63,7 +63,7 @@ export const ThemeBackground: React.FC<ThemeBackgroundProps> = ({ children, clas
                 : themePattern === 'doodle'
                 ? '72px 72px'
                 : '60px 60px',
-            opacity: 0.24,
+            opacity: 0.38,
           }}
           aria-hidden="true"
         />

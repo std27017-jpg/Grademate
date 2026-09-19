@@ -281,7 +281,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-sm animate-fade-in">
-      <div className="bg-white w-full max-w-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-slate-100 space-y-4 sm:space-y-5 max-h-[92vh] overflow-y-auto">
+      <div className="glass-card w-full max-w-2xl rounded-2xl sm:rounded-3xl p-4 sm:p-7 shadow-2xl border border-white/80 space-y-4 sm:space-y-5 max-h-[92vh] overflow-y-auto">
         {/* Modal Header */}
         <div className="flex items-start justify-between border-b border-slate-100 pb-4">
           <div className="space-y-1">
@@ -428,7 +428,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
                 return (
                   <div
                     key={period.key}
-                    className="p-4 rounded-2xl border border-slate-200 hover:border-indigo-200 bg-slate-50/40 space-y-3 transition-all"
+                    className="p-4 rounded-2xl border border-white/60 hover:border-indigo-200 glass-secondary space-y-3 transition-all"
                   >
                     <div className="flex items-center justify-between">
                       <h4 className="font-bold text-slate-900 text-xs sm:text-sm">
@@ -454,7 +454,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
                             handleQuickChange(period.key, 'score', e.target.value)
                           }
                           placeholder="0"
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-base font-black text-slate-900 bg-white"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-base font-black text-slate-900 glass-input"
                         />
                       </div>
 
@@ -472,7 +472,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
                             handleQuickChange(period.key, 'maxScore', e.target.value)
                           }
                           placeholder={period.defaultWeight.toString()}
-                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-base font-semibold text-slate-700 bg-white"
+                          className="w-full px-3 py-2 rounded-xl border border-slate-300 focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100 text-base font-semibold text-slate-700 glass-input"
                         />
                       </div>
                     </div>
@@ -699,7 +699,7 @@ export const EditSubjectScoresModal: React.FC<EditSubjectScoresModalProps> = ({
             <button
               type="button"
               onClick={handleSave}
-              className="px-5 py-2.5 bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold rounded-xl shadow-md shadow-indigo-500/20 transition-all flex items-center gap-1.5 cursor-pointer"
+              className="px-5 py-2.5 app-theme-btn text-white text-xs font-bold rounded-xl shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Save className="w-4 h-4" />
               <span>บันทึกคะแนน</span>

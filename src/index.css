@@ -1,22 +1,38 @@
 @import "tailwindcss";
 
 :root {
+  /* Central Theme Variables Controlled by ThemeContext */
+  --theme-bg: #fdf2f8;
+  --theme-bg-secondary: #faf5ff;
+  --theme-primary: #db2777;
+  --theme-primary-soft: rgba(219, 39, 119, 0.14);
+  --theme-text-primary: #0f172a;
+  --theme-text-secondary: #334155;
+  --theme-text-muted: #475569;
+  --theme-glass: rgba(255, 255, 255, 0.82);
+  --theme-glass-secondary: rgba(255, 255, 255, 0.72);
+  --theme-glass-strong: rgba(255, 255, 255, 0.92);
+  --theme-glass-border: rgba(255, 255, 255, 0.85);
+  --glass-input-bg: rgba(255, 255, 255, 0.88);
+  --glass-input-border: rgba(203, 213, 225, 0.8);
+  --glass-shadow: 0 12px 36px 0 rgba(219, 39, 119, 0.16);
+
   /* Typography Color System (High Contrast & Clear Readability) */
-  --text-primary: #0f172a;    /* Deep Slate 900 for titles, values, primary labels */
-  --text-secondary: #334155;  /* Slate 700 for subtitles, descriptions, content */
-  --text-muted: #475569;      /* Slate 600 for subtle notes & timestamps (contrast > 4.5:1) */
-  --text-on-accent: #ffffff;  /* Pure white strictly for solid dark buttons & badges */
-  --text-link: #db2777;       /* Dynamic Theme Primary link */
+  --text-primary: var(--theme-text-primary);
+  --text-secondary: var(--theme-text-secondary);
+  --text-muted: var(--theme-text-muted);
+  --text-on-accent: #ffffff;
+  --text-link: var(--theme-primary);
   --text-success: #047857;    /* Deep Emerald 700 */
   --text-warning: #b45309;    /* Deep Amber 700 */
   --text-danger: #be123c;     /* Deep Rose 700 */
 
   /* Liquid Glass Card Backgrounds - Opacities engineered for text readability */
-  --glass-bg-primary: rgba(255, 255, 255, 0.86);
-  --glass-bg-secondary: rgba(255, 255, 255, 0.78);
+  --glass-bg-primary: var(--theme-glass);
+  --glass-bg-secondary: var(--theme-glass-secondary);
   --glass-bg-soft: rgba(255, 255, 255, 0.65);
-  --glass-bg-floating: rgba(255, 255, 255, 0.92);
-  --glass-border: rgba(255, 255, 255, 0.85);
+  --glass-bg-floating: var(--theme-glass-strong);
+  --glass-border: var(--theme-glass-border);
 }
 
 @layer base {
@@ -39,19 +55,56 @@
   body {
     font-family: 'Prompt', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
-    color: var(--text-primary);
-    background-color: #fdf2f8;
+    color: var(--theme-text-primary);
+    background-color: var(--theme-bg);
   }
 
-  /* Universal high-contrast inputs and placeholders */
-  input, select, textarea {
-    color: var(--text-primary);
+  /* Universal theme-driven high-contrast inputs and placeholders */
+  input:not([type="checkbox"]):not([type="radio"]),
+  select,
+  textarea {
+    background-color: var(--glass-input-bg);
+    border-color: var(--glass-input-border);
+    color: var(--theme-text-primary);
+    transition: border-color 0.2s ease, box-shadow 0.2s ease, background-color 0.2s ease;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):focus,
+  select:focus,
+  textarea:focus {
+    outline: none;
+    border-color: var(--theme-primary);
+    box-shadow: 0 0 0 3px var(--theme-primary-soft);
   }
 
   input::placeholder, textarea::placeholder {
-    color: #64748b !important; /* Slate 500 - clear, distinct readability */
-    opacity: 1 !important;
+    color: var(--theme-text-muted);
+    opacity: 0.85;
   }
+}
+
+/* Core Liquid Glass Classes */
+.glass-card {
+  background: var(--theme-glass) !important;
+  backdrop-filter: blur(16px) saturate(180%);
+  -webkit-backdrop-filter: blur(16px) saturate(180%);
+  border: 1px solid var(--theme-glass-border) !important;
+  box-shadow: var(--glass-shadow);
+}
+
+.glass-secondary {
+  background: var(--theme-glass-secondary) !important;
+  backdrop-filter: blur(12px) saturate(160%);
+  -webkit-backdrop-filter: blur(12px) saturate(160%);
+  border: 1px solid var(--theme-glass-border) !important;
+}
+
+.glass-input {
+  background-color: var(--glass-input-bg) !important;
+  border: 1.5px solid var(--glass-input-border) !important;
+  color: var(--theme-text-primary) !important;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 /* Typography Utility Classes */

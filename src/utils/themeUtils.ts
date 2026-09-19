@@ -296,19 +296,27 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
   const patternUri = getPatternSvgDataUri(patternId, primary);
 
   const themeVars = {
+    '--theme-bg': palette.bgStart,
+    '--theme-bg-secondary': palette.bgMid,
     '--theme-primary': primary,
+    '--theme-primary-soft': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'})`,
     '--theme-secondary': gradientEnd,
     '--theme-background': palette.bgStart,
     '--theme-background-gradient': `linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%)`,
-    '--theme-glass': palette.isDark ? 'rgba(30, 41, 59, 0.86)' : 'rgba(255, 255, 255, 0.86)',
-    '--theme-glass-secondary': palette.isDark ? 'rgba(30, 41, 59, 0.76)' : 'rgba(255, 255, 255, 0.76)',
+    '--theme-glass': palette.isDark ? 'rgba(30, 41, 59, 0.82)' : 'rgba(255, 255, 255, 0.82)',
+    '--theme-glass-secondary': palette.isDark ? 'rgba(30, 41, 59, 0.72)' : 'rgba(255, 255, 255, 0.72)',
+    '--theme-glass-strong': palette.isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.92)',
     '--theme-glass-border': palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)',
     '--theme-glass-border-accent': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.45' : '0.35'})`,
+    '--glass-input-bg': palette.isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.88)',
+    '--glass-input-border': palette.isDark ? 'rgba(255, 255, 255, 0.22)' : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`,
+    '--glass-shadow': `0 12px 36px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.16'})`,
     '--theme-glow': `0 12px 36px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.18'})`,
     '--theme-button': `linear-gradient(135deg, ${primary} 0%, ${gradientEnd} 100%)`,
     '--theme-button-text': '#ffffff',
     '--theme-text-primary': palette.isDark ? '#f8fafc' : '#0f172a',
     '--theme-text-secondary': palette.isDark ? '#cbd5e1' : '#334155',
+    '--theme-text-muted': palette.isDark ? '#94a3b8' : '#475569',
     '--theme-icon': palette.isDark ? (gradientEnd || '#818cf8') : primary,
     '--theme-progress': primary,
     '--theme-accent-soft': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'})`,
@@ -366,19 +374,27 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
 
   styleEl.textContent = `
     :root {
+      --theme-bg: ${palette.bgStart};
+      --theme-bg-secondary: ${palette.bgMid};
       --theme-primary: ${primary};
+      --theme-primary-soft: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'});
       --theme-secondary: ${gradientEnd};
       --theme-background: ${palette.bgStart};
       --theme-background-gradient: linear-gradient(135deg, ${palette.bgStart} 0%, ${palette.bgMid} 50%, ${palette.bgEnd} 100%);
-      --theme-glass: ${palette.isDark ? 'rgba(30, 41, 59, 0.86)' : 'rgba(255, 255, 255, 0.86)'};
-      --theme-glass-secondary: ${palette.isDark ? 'rgba(30, 41, 59, 0.76)' : 'rgba(255, 255, 255, 0.76)'};
+      --theme-glass: ${palette.isDark ? 'rgba(30, 41, 59, 0.82)' : 'rgba(255, 255, 255, 0.82)'};
+      --theme-glass-secondary: ${palette.isDark ? 'rgba(30, 41, 59, 0.72)' : 'rgba(255, 255, 255, 0.72)'};
+      --theme-glass-strong: ${palette.isDark ? 'rgba(15, 23, 42, 0.92)' : 'rgba(255, 255, 255, 0.92)'};
       --theme-glass-border: ${palette.isDark ? 'rgba(255, 255, 255, 0.16)' : 'rgba(255, 255, 255, 0.85)'};
       --theme-glass-border-accent: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.45' : '0.35'});
+      --glass-input-bg: ${palette.isDark ? 'rgba(30, 41, 59, 0.85)' : 'rgba(255, 255, 255, 0.88)'};
+      --glass-input-border: ${palette.isDark ? 'rgba(255, 255, 255, 0.22)' : `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.35)`};
+      --glass-shadow: 0 12px 36px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.16'});
       --theme-glow: 0 12px 36px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.28' : '0.18'});
       --theme-button: linear-gradient(135deg, ${primary} 0%, ${gradientEnd} 100%);
       --theme-button-text: #ffffff;
       --theme-text-primary: ${palette.isDark ? '#f8fafc' : '#0f172a'};
       --theme-text-secondary: ${palette.isDark ? '#cbd5e1' : '#334155'};
+      --theme-text-muted: ${palette.isDark ? '#94a3b8' : '#475569'};
       --theme-icon: ${palette.isDark ? (gradientEnd || '#818cf8') : primary};
       --theme-progress: ${primary};
       --theme-accent-soft: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'});
@@ -440,20 +456,21 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     }
 
     /* Core Liquid Glass Classes */
+    .glass-card,
     .glass-primary {
-      background: var(--glass-bg-primary) !important;
-      backdrop-filter: blur(20px) saturate(180%) !important;
-      -webkit-backdrop-filter: blur(20px) saturate(180%) !important;
-      border: 1px solid var(--glass-border) !important;
-      box-shadow: var(--glass-shadow-lg) !important;
+      background: var(--theme-glass) !important;
+      backdrop-filter: blur(16px) saturate(180%) !important;
+      -webkit-backdrop-filter: blur(16px) saturate(180%) !important;
+      border: 1px solid var(--theme-glass-border) !important;
+      box-shadow: var(--glass-shadow) !important;
       color: var(--text-primary);
     }
 
     .glass-secondary {
-      background: var(--glass-bg-secondary) !important;
-      backdrop-filter: blur(16px) saturate(160%) !important;
-      -webkit-backdrop-filter: blur(16px) saturate(160%) !important;
-      border: 1px solid var(--glass-border) !important;
+      background: var(--theme-glass-secondary) !important;
+      backdrop-filter: blur(14px) saturate(160%) !important;
+      -webkit-backdrop-filter: blur(14px) saturate(160%) !important;
+      border: 1px solid var(--theme-glass-border) !important;
       box-shadow: var(--glass-shadow) !important;
       color: var(--text-primary);
     }
@@ -477,14 +494,14 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
 
     /* Liquid Glass Inputs - Maximum Text Readability */
     .glass-input {
-      background: rgba(255, 255, 255, 0.92) !important;
+      background: var(--glass-input-bg) !important;
       backdrop-filter: blur(12px) !important;
       -webkit-backdrop-filter: blur(12px) !important;
-      border: 1.5px solid rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.30) !important;
+      border: 1.5px solid var(--glass-input-border) !important;
       color: var(--text-primary) !important;
     }
     .glass-input:focus {
-      background: #ffffff !important;
+      background: ${palette.isDark ? 'rgba(30, 41, 59, 0.95)' : '#ffffff'} !important;
       border-color: var(--app-primary) !important;
       box-shadow: 0 0 0 3px rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, 0.22) !important;
     }

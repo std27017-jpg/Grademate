@@ -37,7 +37,7 @@ export const QuickColorModal: React.FC<QuickColorModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-4 animate-fade-in">
-      <div className="bg-white rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-slate-100 overflow-hidden flex flex-col max-h-[90vh]">
+      <div className="glass-card rounded-2xl sm:rounded-3xl max-w-md w-full shadow-2xl border border-white/80 overflow-hidden flex flex-col max-h-[90vh]">
         {/* Header */}
         <div className="px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 flex items-center justify-between">
           <div className="flex items-center gap-2.5">
@@ -59,7 +59,7 @@ export const QuickColorModal: React.FC<QuickColorModalProps> = ({
           <button
             type="button"
             onClick={onClose}
-            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-slate-100 transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-600 rounded-xl hover:bg-white/60 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -75,18 +75,18 @@ export const QuickColorModal: React.FC<QuickColorModalProps> = ({
         </div>
 
         {/* Footer */}
-        <div className="px-5 py-3.5 border-t border-slate-100 bg-slate-50 flex items-center justify-end gap-2">
+        <div className="px-5 py-3.5 border-t border-slate-100 glass-secondary flex items-center justify-end gap-2">
           <button
             type="button"
             onClick={onClose}
-            className="px-4 py-2 rounded-xl text-slate-600 hover:bg-slate-200 text-xs font-bold transition-colors cursor-pointer"
+            className="px-4 py-2 rounded-xl text-slate-600 hover:bg-white/60 text-xs font-bold transition-colors cursor-pointer"
           >
             ยกเลิก
           </button>
           <button
             type="button"
             onClick={handleSave}
-            className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
+            className="px-5 py-2 rounded-xl app-theme-btn text-white text-xs font-bold transition-colors shadow-xs flex items-center gap-1.5 cursor-pointer"
           >
             <Check className="w-4 h-4" />
             <span>บันทึกสีนี้</span>

@@ -239,7 +239,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
       return (
         <div
           key={sub.id}
-          className="bg-white rounded-3xl p-5 border border-slate-200/80 hover:border-slate-300 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between space-y-4 group"
+          className="glass-card rounded-3xl p-5 border border-white/80 hover:border-indigo-200 shadow-md hover:shadow-lg transition-all flex flex-col justify-between space-y-4 group"
         >
           <div className="space-y-3.5">
             {/* Top Bar: Icon + Code + Options */}
@@ -269,10 +269,10 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     {sub.name}
                   </h4>
                   <div className="flex items-center gap-1.5 mt-0.5 flex-wrap">
-                    <span className="text-xs font-semibold text-slate-400 block truncate">
+                    <span className="text-xs font-semibold text-slate-500 block truncate">
                       {sub.code} • {sub.credits} นก.
                     </span>
-                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                    <span className="text-[10px] font-bold px-2 py-0.5 rounded-full glass-secondary text-slate-700">
                       {subCat.icon} {subCat.name}
                     </span>
                   </div>
@@ -287,7 +287,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     e.stopPropagation();
                     setColorModalSubject(sub);
                   }}
-                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-pink-600 rounded-full hover:bg-pink-50 transition-colors cursor-pointer"
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-pink-600 rounded-full hover:bg-white/60 transition-colors cursor-pointer"
                   title="ปรับสีวิชา (พาสเทล/วงล้อสี)"
                 >
                   <Palette className="w-3.5 h-3.5" />
@@ -298,7 +298,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     e.stopPropagation();
                     onOpenEditSubject(sub);
                   }}
-                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                  className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-indigo-600 rounded-full hover:bg-white/60 transition-colors cursor-pointer"
                   title="แก้ไขข้อมูลวิชา"
                 >
                   <Edit2 className="w-3.5 h-3.5" />
@@ -318,17 +318,17 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             </div>
 
             {/* Level 1 & Level 2 Information: Score + Grade + Target */}
-            <div className="p-3.5 bg-slate-50/80 rounded-2xl border border-slate-200/60 space-y-2.5">
+            <div className="p-3.5 glass-secondary rounded-2xl border border-white/60 space-y-2.5">
               <div className="flex items-center justify-between">
                 <div>
-                  <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนน</span>
+                  <span className="text-[10px] text-slate-500 font-bold uppercase block">คะแนน</span>
                   <span className="text-2xl font-black text-slate-900 tracking-tight">
                     {subSummary.earnedScore}{' '}
-                    <span className="text-xs font-normal text-slate-400">/ 100</span>
+                    <span className="text-xs font-normal text-slate-500">/ 100</span>
                   </span>
                 </div>
                 <div className="text-right flex items-center gap-1.5">
-                  <span className="inline-block px-3 py-1 rounded-full bg-white border border-slate-200 font-extrabold text-xs text-slate-800 shadow-2xs">
+                  <span className="inline-block px-3 py-1 rounded-full bg-white/90 border border-white/60 font-extrabold text-xs text-slate-800 shadow-2xs">
                     เกรด {subSummary.estimatedGrade}
                   </span>
                   <span className="inline-block px-2.5 py-1 rounded-full bg-amber-50 text-amber-800 border border-amber-200/70 font-bold text-xs">
@@ -343,7 +343,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   <span>ความคืบหน้า</span>
                   <span>{progress.toFixed(0)}%</span>
                 </div>
-                <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
+                <div className="w-full h-2 bg-slate-200/60 rounded-full overflow-hidden">
                   <div
                     className="h-full rounded-full transition-all duration-500 ease-out"
                     style={{
@@ -365,7 +365,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                 startStudyForSubject(sub.id);
                 if (onNavigateToStudy) onNavigateToStudy();
               }}
-              className="w-full py-2.5 px-3 rounded-full bg-pink-50 hover:bg-pink-100 text-pink-700 border border-pink-200 text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              className="w-full py-2.5 px-3 rounded-xl bg-pink-50/80 hover:bg-pink-100 text-pink-700 border border-pink-200 text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
               title="เริ่มจับเวลาอ่านหนังสือวิชานี้"
             >
               <Timer className="w-3.5 h-3.5 text-pink-600" />
@@ -375,7 +375,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <button
               type="button"
               onClick={() => handleSelectSubject(sub)}
-              className="w-full py-2.5 px-3 rounded-full bg-slate-900 hover:bg-slate-800 text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              className="w-full py-2.5 px-3 rounded-xl app-theme-btn text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
             >
               <span>ดูคะแนน</span>
               <ArrowRight className="w-3.5 h-3.5" />
@@ -388,7 +388,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     return (
       <div className="space-y-6 pb-8">
         {/* Header bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 sm:p-6 rounded-3xl border border-white/80 shadow-md">
           <div>
             <div className="flex items-center gap-2">
               <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
@@ -397,11 +397,11 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 วิชาของฉัน
               </h2>
-              <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-indigo-50 text-indigo-700 border border-indigo-200/80">
+              <span className="text-xs font-bold px-3 py-0.5 rounded-full glass-secondary text-indigo-700 border border-white/60">
                 {activeSemesterSummary.subjectSummaries.length} วิชา
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-500 mt-1">
+            <p className="text-xs sm:text-sm text-slate-600 mt-1">
               คลิกที่การ์ดเพื่อดูรายละเอียดคะแนน งาน หรือกด "จับเวลาอ่าน" เพื่อเริ่มบันทึกเวลาเรียน
             </p>
           </div>
@@ -411,7 +411,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <button
               type="button"
               onClick={onOpenAddSubject}
-              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className="px-4 py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มวิชาใหม่</span>
@@ -421,7 +421,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
 
         {/* Overview Stats Bar: วิชาทั้งหมด, คะแนนเฉลี่ย, เกรด (GPA), วิชาที่ควรโฟกัส */}
         <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="bg-white p-4 rounded-2xl border border-indigo-200/90 shadow-2xs">
+          <div className="glass-card p-4 rounded-2xl border border-indigo-200/80 shadow-xs">
             <span className="text-xs font-bold text-slate-600 block">📚 วิชาทั้งหมด</span>
             <div className="text-2xl font-black text-slate-900 mt-1">
               {activeSemesterSummary.subjectSummaries.length}{' '}
@@ -432,7 +432,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             </span>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-pink-200/90 shadow-2xs">
+          <div className="glass-card p-4 rounded-2xl border border-pink-200/80 shadow-xs">
             <span className="text-xs font-bold text-slate-600 block">📊 คะแนนเฉลี่ย</span>
             <div className="text-2xl font-black text-slate-900 mt-1">
               {activeSemesterSummary.overallPercentage.toFixed(1)}%
@@ -442,7 +442,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             </span>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-purple-200/90 shadow-2xs">
+          <div className="glass-card p-4 rounded-2xl border border-purple-200/80 shadow-xs">
             <span className="text-xs font-bold text-slate-600 block">🏆 เกรดเฉลี่ย (GPA)</span>
             <div className="text-2xl font-black text-slate-900 mt-1">
               {activeSemesterSummary.gpa.toFixed(2)}
@@ -452,7 +452,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             </span>
           </div>
 
-          <div className="bg-white p-4 rounded-2xl border border-amber-200/90 shadow-2xs">
+          <div className="glass-card p-4 rounded-2xl border border-amber-200/80 shadow-xs">
             <span className="text-xs font-bold text-slate-600 block">🔥 วิชาที่ควรโฟกัส</span>
             <div className="text-sm font-black text-slate-900 truncate mt-1">
               {activeSemesterSummary.focusAdvice[0]?.subject?.name || 'พร้อมทุกวิชา ✨'}
@@ -466,7 +466,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         </div>
 
         {/* Category Filters & View Toggle Bar */}
-        <div className="bg-white rounded-2xl p-3 border border-slate-200/80 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="glass-card rounded-2xl p-3 border border-white/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
           {/* Category Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none pb-1 md:pb-0">
             <button
@@ -475,7 +475,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer ${
                 selectedCategory === 'all'
                   ? 'bg-slate-900 text-white shadow-xs'
-                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                  : 'glass-secondary text-slate-600 hover:text-slate-900'
               }`}
             >
               ทั้งหมด ({activeSemesterSummary.subjectSummaries.length})
@@ -492,8 +492,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   onClick={() => setSelectedCategory(cat.name)}
                   className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap cursor-pointer flex items-center gap-1.5 ${
                     selectedCategory.toLowerCase() === cat.name.toLowerCase()
-                      ? 'bg-pink-600 text-white shadow-xs'
-                      : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                      ? 'app-theme-btn text-white shadow-xs'
+                      : 'glass-secondary text-slate-600 hover:text-slate-900'
                   }`}
                 >
                   <span>{cat.icon}</span>
@@ -505,7 +505,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </div>
 
           {/* Grouping View Switcher */}
-          <div className="flex items-center gap-1 shrink-0 bg-slate-100 p-1 rounded-xl self-end md:self-auto">
+          <div className="flex items-center gap-1 shrink-0 glass-secondary p-1 rounded-xl self-end md:self-auto border border-white/60">
             <button
               type="button"
               onClick={() => setViewGrouping('all')}
@@ -624,12 +624,12 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   return (
     <div className="space-y-6 pb-8">
       {/* Back button & Subject Top Bar */}
-      <div className="bg-white rounded-3xl p-5 sm:p-6 border border-slate-200/80 shadow-2xs space-y-4">
+      <div className="glass-card rounded-3xl p-5 sm:p-6 border border-white/80 shadow-md space-y-4">
         <div className="flex items-center justify-between gap-3">
           <button
             type="button"
             onClick={() => handleSelectSubject(null)}
-            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-xl transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-slate-900 glass-secondary px-3 py-1.5 rounded-xl transition-colors cursor-pointer border border-white/60"
           >
             <ArrowLeft className="w-4 h-4" />
             <span>กลับไปหน้ารวมวิชา</span>
@@ -651,7 +651,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <button
               type="button"
               onClick={() => setColorModalSubject(sub)}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-pink-50 hover:text-pink-700 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border border-transparent hover:border-pink-200"
+              className="px-3 py-1.5 rounded-xl glass-secondary hover:text-pink-700 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border border-white/60 hover:border-pink-200"
               title="ปรับสีวิชา (พาสเทล / วงล้อสี)"
             >
               <Palette className="w-3.5 h-3.5 text-pink-500" />
@@ -660,7 +660,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <button
               type="button"
               onClick={() => setEditingScoresSubject(sub)}
-              className="px-3 py-1.5 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 rounded-xl glass-secondary text-slate-700 text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer border border-white/60 hover:border-indigo-200"
             >
               <Calculator className="w-3.5 h-3.5 text-indigo-600" />
               <span className="hidden sm:inline">แก้ไขคะแนนด่วน</span>
@@ -668,7 +668,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             <button
               type="button"
               onClick={() => onOpenEditSubject(sub)}
-              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-slate-100 transition-colors cursor-pointer"
+              className="p-1.5 text-slate-400 hover:text-slate-700 rounded-lg hover:bg-white/60 transition-colors cursor-pointer"
               title="แก้ไขข้อมูลวิชา"
             >
               <Edit2 className="w-4 h-4" />
@@ -699,7 +699,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                 <h2 className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {sub.name}
                 </h2>
-                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-slate-100 text-slate-700 border border-slate-200/80">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full glass-secondary text-slate-700 border border-white/60">
                   {getCategoryForSubject(sub).icon} {getCategoryForSubject(sub).name}
                 </span>
               </div>
@@ -710,10 +710,10 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </div>
 
           <div className="flex items-center gap-3 self-start sm:self-center">
-            <div className="bg-slate-50 px-4 py-2 rounded-2xl border border-slate-200 text-right">
-              <span className="text-[10px] text-slate-400 font-bold uppercase block">คะแนนสะสม</span>
+            <div className="glass-secondary px-4 py-2 rounded-2xl border border-white/60 text-right">
+              <span className="text-[10px] text-slate-500 font-bold uppercase block">คะแนนสะสม</span>
               <span className="text-xl font-black text-slate-900">
-                {subSummary.earnedScore} <span className="text-xs text-slate-400 font-normal">/ 100</span>
+                {subSummary.earnedScore} <span className="text-xs text-slate-500 font-normal">/ 100</span>
               </span>
             </div>
             <div className="bg-slate-900 text-white px-4 py-2 rounded-2xl text-center shadow-xs">
@@ -741,8 +741,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                 onClick={() => setDetailTab(tab.id)}
                 className={`px-4 py-2 rounded-xl text-xs font-bold transition-all cursor-pointer whitespace-nowrap ${
                   isActive
-                    ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    ? 'app-theme-btn text-white shadow-xs'
+                    : 'glass-secondary text-slate-600 hover:text-slate-900'
                 }`}
               >
                 {tab.label}
@@ -757,26 +757,26 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         <div className="space-y-5 animate-in fade-in duration-200">
           {/* 4 Key Metrics */}
           <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-              <span className="text-xs font-semibold text-slate-500 block">คะแนนปัจจุบัน</span>
+            <div className="glass-card p-4 rounded-2xl border border-white/80 shadow-xs space-y-1">
+              <span className="text-xs font-semibold text-slate-600 block">คะแนนปัจจุบัน</span>
               <span className="text-2xl font-black text-slate-900">{subSummary.earnedScore}</span>
-              <span className="text-[11px] text-slate-400 block">จากทั้งหมด 100 คะแนน</span>
+              <span className="text-[11px] text-slate-500 block">จากทั้งหมด 100 คะแนน</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-              <span className="text-xs font-semibold text-slate-500 block">เกรดคาดการณ์</span>
+            <div className="glass-card p-4 rounded-2xl border border-white/80 shadow-xs space-y-1">
+              <span className="text-xs font-semibold text-slate-600 block">เกรดคาดการณ์</span>
               <span className="text-2xl font-black text-indigo-600">เกรด {subSummary.estimatedGrade}</span>
-              <span className="text-[11px] text-slate-400 block">เป้าหมายเกรด {sub.targetGrade}</span>
+              <span className="text-[11px] text-slate-500 block">เป้าหมายเกรด {sub.targetGrade}</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-              <span className="text-xs font-semibold text-slate-500 block">เป้าหมาย</span>
+            <div className="glass-card p-4 rounded-2xl border border-white/80 shadow-xs space-y-1">
+              <span className="text-xs font-semibold text-slate-600 block">เป้าหมาย</span>
               <span className="text-2xl font-black text-amber-600">{sub.targetGrade}</span>
-              <span className="text-[11px] text-slate-400 block">เกณฑ์ {sub.targetScore} คะแนนขึ้นไป</span>
+              <span className="text-[11px] text-slate-500 block">เกณฑ์ {sub.targetScore} คะแนนขึ้นไป</span>
             </div>
 
-            <div className="bg-white p-4 rounded-2xl border border-slate-200/80 shadow-2xs space-y-1">
-              <span className="text-xs font-semibold text-slate-500 block">คะแนนที่ต้องทำเพิ่ม</span>
+            <div className="glass-card p-4 rounded-2xl border border-white/80 shadow-xs space-y-1">
+              <span className="text-xs font-semibold text-slate-600 block">คะแนนที่ต้องทำเพิ่ม</span>
               <span className="text-2xl font-black text-slate-900">
                 {subSummary.targetAchieved ? '✓ บรรลุแล้ว' : `+${subSummary.pointsNeededForTarget}`}
               </span>
@@ -791,12 +791,12 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           {/* Quick Progress Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Midterm Half */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="glass-card p-5 rounded-3xl border border-white/80 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase">สัดส่วนครึ่งแรก (กลางภาค)</span>
+                <span className="text-xs font-bold text-slate-600 uppercase">สัดส่วนครึ่งแรก (กลางภาค)</span>
                 <span className="text-xs font-black text-slate-900">{midtermTotalEarned} / 50 คะแนน</span>
               </div>
-              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-2.5 bg-slate-200/60 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-blue-500 transition-all duration-300"
                   style={{ width: `${midtermPct}%` }}
@@ -808,12 +808,12 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             </div>
 
             {/* Final Half */}
-            <div className="bg-white p-5 rounded-3xl border border-slate-200/80 shadow-2xs space-y-3">
+            <div className="glass-card p-5 rounded-3xl border border-white/80 shadow-xs space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold text-slate-500 uppercase">สัดส่วนครึ่งหลัง (ปลายภาค)</span>
+                <span className="text-xs font-bold text-slate-600 uppercase">สัดส่วนครึ่งหลัง (ปลายภาค)</span>
                 <span className="text-xs font-black text-slate-900">{finalTotalEarned} / 50 คะแนน</span>
               </div>
-              <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden">
+              <div className="w-full h-2.5 bg-slate-200/60 rounded-full overflow-hidden">
                 <div
                   className="h-full rounded-full bg-indigo-500 transition-all duration-300"
                   style={{ width: `${finalPct}%` }}
@@ -844,11 +844,11 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </div>
 
           {/* ACCORDION 1: กลางภาค 50 คะแนน */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="glass-card rounded-3xl border border-white/80 shadow-xs overflow-hidden">
             <button
               type="button"
               onClick={() => setOpenMidtermAccordion((prev) => !prev)}
-              className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors cursor-pointer"
+              className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-white/40 transition-colors cursor-pointer"
             >
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -998,11 +998,11 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </div>
 
           {/* ACCORDION 2: ปลายภาค 50 คะแนน */}
-          <div className="bg-white rounded-3xl border border-slate-200/80 shadow-2xs overflow-hidden">
+          <div className="glass-card rounded-3xl border border-white/80 shadow-xs overflow-hidden">
             <button
               type="button"
               onClick={() => setOpenFinalAccordion((prev) => !prev)}
-              className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-slate-50/80 transition-colors cursor-pointer"
+              className="w-full p-5 text-left flex items-center justify-between gap-4 hover:bg-white/40 transition-colors cursor-pointer"
             >
               <div className="space-y-1 min-w-0">
                 <div className="flex items-center gap-2">
@@ -1218,7 +1218,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               const days = getDaysRemaining(exam.examDate);
 
               return (
-                <div key={exam.id} className="bg-white p-5 rounded-3xl border border-slate-200 shadow-2xs space-y-3">
+                <div key={exam.id} className="glass-card p-5 rounded-3xl border border-white/80 shadow-xs space-y-3">
                   <div className="flex items-center justify-between">
                     <span className="text-sm font-black text-slate-900">
                       {exam.examType === 'midterm' ? '📅 การสอบกลางภาค' : '📅 การสอบปลายภาค'}
@@ -1228,7 +1228,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     </span>
                   </div>
 
-                  <div className="text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 bg-slate-50 rounded-2xl">
+                  <div className="text-xs text-slate-600 grid grid-cols-1 sm:grid-cols-2 gap-2 p-3 glass-secondary rounded-2xl border border-white/60">
                     <span>วันที่: {formatShortThaiDate(exam.examDate)}</span>
                     <span>เวลา: {exam.startTime} - {exam.endTime} น.</span>
                     <span>ห้องสอบ: {exam.room || 'ไม่ระบุ'}</span>
@@ -1261,7 +1261,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
             })}
 
             {subjectExams.length === 0 && (
-              <div className="p-8 text-center bg-white rounded-3xl border border-slate-200 text-slate-400 text-xs">
+              <div className="p-8 text-center glass-card rounded-3xl border border-white/80 text-slate-400 text-xs">
                 ยังไม่มีการสอบสำหรับวิชานี้
               </div>
             )}
@@ -1272,7 +1272,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
       {/* Add / Edit Sub-Score Item Modal */}
       {itemModal.isOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
+          <div className="glass-card w-full max-w-md rounded-2xl sm:rounded-3xl shadow-xl border border-white/80 p-4 sm:p-6 space-y-4 max-h-[90vh] overflow-y-auto">
             <h3 className="text-lg font-black text-slate-900">
               {itemModal.editingItem ? 'แก้ไขรายการคะแนนย่อย' : 'เพิ่มรายการคะแนนย่อย'}
             </h3>
@@ -1287,7 +1287,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   placeholder="เช่น ใบงานที่ 1, สอบเก็บคะแนนย่อย"
                   value={itemForm.title}
                   onChange={(e) => setItemForm({ ...itemForm, title: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                 />
               </div>
 
@@ -1302,7 +1302,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     required
                     value={itemForm.score}
                     onChange={(e) => setItemForm({ ...itemForm, score: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                   />
                 </div>
                 <div>
@@ -1315,7 +1315,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                     required
                     value={itemForm.maxScore}
                     onChange={(e) => setItemForm({ ...itemForm, maxScore: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                   />
                 </div>
               </div>
@@ -1324,13 +1324,13 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                 <button
                   type="button"
                   onClick={() => setItemModal({ isOpen: false, subjectId: '', periodKey: 'preMidterm' })}
-                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-slate-100 cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold text-slate-600 hover:bg-white/60 cursor-pointer"
                 >
                   ยกเลิก
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold app-theme-btn text-white shadow-xs cursor-pointer"
                 >
                   บันทึกรายการ
                 </button>

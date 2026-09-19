@@ -22,6 +22,7 @@ import { getSubjectColor } from '../utils/colorUtils';
 export const TasksView: React.FC = () => {
   const {
     currentSemester,
+    subjects,
     activeSemesterSummary,
     tasks,
     addTask,
@@ -86,7 +87,8 @@ export const TasksView: React.FC = () => {
   };
 
   const openAddModal = () => {
-    const firstSubId = activeSemesterSummary.subjectSummaries[0]?.subject.id || '';
+    const currentSubjects = subjects.filter((s) => s.semesterId === currentSemester);
+    const firstSubId = currentSubjects[0]?.id || subjects[0]?.id || '';
     setEditingTask(null);
     setFormState({
       subjectId: firstSubId,
@@ -176,7 +178,7 @@ export const TasksView: React.FC = () => {
   return (
     <div className="space-y-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 sm:p-6 rounded-3xl border border-slate-200/80 shadow-2xs">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 sm:p-6 rounded-3xl border border-white/80 shadow-md">
         <div>
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs">
@@ -185,11 +187,11 @@ export const TasksView: React.FC = () => {
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               การบ้าน & งานที่มอบหมาย
             </h2>
-            <span className="text-xs font-bold px-3 py-0.5 rounded-full bg-sky-50 text-sky-700 border border-sky-200/80">
+            <span className="text-xs font-bold px-3 py-0.5 rounded-full glass-secondary text-sky-700 border border-white/60">
               ค้าง {pendingCount} งาน
             </span>
           </div>
-          <p className="text-xs sm:text-sm text-slate-500 mt-1">
+          <p className="text-xs sm:text-sm text-slate-600 mt-1">
             ติดตามกำหนดส่งงาน พร้อมบันทึกคะแนนเข้าสู่ผลการเรียนอัตโนมัติ
           </p>
         </div>
@@ -199,7 +201,7 @@ export const TasksView: React.FC = () => {
           <button
             type="button"
             onClick={openAddModal}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-full text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-4 py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มงานใหม่</span>
@@ -216,8 +218,8 @@ export const TasksView: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
             activeFilter === 'all'
-              ? 'bg-indigo-50/80 border-indigo-300 shadow-xs'
-              : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+              ? 'glass-card border-indigo-300 shadow-xs'
+              : 'glass-card border-white/80 hover:border-indigo-200 shadow-2xs'
           }`}
         >
           <span className="text-xs font-bold text-slate-600 block">📝 งานทั้งหมด</span>
@@ -234,8 +236,8 @@ export const TasksView: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
             activeFilter === 'urgent'
-              ? 'bg-amber-50/80 border-amber-300 shadow-xs'
-              : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+              ? 'glass-card border-amber-300 shadow-xs'
+              : 'glass-card border-white/80 hover:border-amber-200 shadow-2xs'
           }`}
         >
           <span className="text-xs font-bold text-slate-600 block">⏰ ใกล้ครบกำหนด</span>
@@ -254,8 +256,8 @@ export const TasksView: React.FC = () => {
           }}
           className={`p-4 rounded-2xl border transition-all cursor-pointer ${
             activeFilter === 'completed'
-              ? 'bg-emerald-50/80 border-emerald-300 shadow-xs'
-              : 'bg-white border-slate-200 hover:border-slate-300 shadow-2xs'
+              ? 'glass-card border-emerald-300 shadow-xs'
+              : 'glass-card border-white/80 hover:border-emerald-200 shadow-2xs'
           }`}
         >
           <span className="text-xs font-bold text-slate-600 block">✓ เสร็จแล้ว</span>
@@ -267,7 +269,7 @@ export const TasksView: React.FC = () => {
       </div>
 
       {/* FILTER BAR: Capsule [ทั้งหมด] [วันนี้] [ใกล้ส่ง] [เสร็จแล้ว] */}
-      <div className="flex items-center justify-between gap-3 flex-wrap bg-white p-2 sm:p-2.5 rounded-2xl sm:rounded-full border border-slate-200/80 shadow-2xs">
+      <div className="flex items-center justify-between gap-3 flex-wrap glass-card p-2 sm:p-2.5 rounded-2xl sm:rounded-full border border-white/80 shadow-xs">
         <div className="flex items-center gap-1.5 overflow-x-auto scrollbar-none w-full sm:w-auto">
           {[
             { id: 'all' as const, label: 'ทั้งหมด', count: semesterTasks.length },
@@ -287,13 +289,13 @@ export const TasksView: React.FC = () => {
                 className={`px-4 py-1.5 rounded-full text-xs font-bold transition-all cursor-pointer whitespace-nowrap flex items-center gap-1.5 active:scale-95 ${
                   isActive
                     ? 'bg-slate-900 text-white shadow-xs'
-                    : 'text-slate-600 hover:text-slate-900 hover:bg-slate-100'
+                    : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                 }`}
               >
                 <span>{f.label}</span>
                 <span
                   className={`text-[10px] px-1.5 py-0.2 rounded-full ${
-                    isActive ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-500'
+                    isActive ? 'bg-white/20 text-white' : 'glass-secondary text-slate-600'
                   }`}
                 >
                   {f.count}
@@ -308,14 +310,16 @@ export const TasksView: React.FC = () => {
           <select
             value={selectedSubjectId}
             onChange={(e) => setSelectedSubjectId(e.target.value)}
-            className="text-xs font-semibold px-3 py-1.5 bg-slate-50 border border-slate-200 rounded-full text-slate-700 focus:outline-none cursor-pointer"
+            className="text-xs font-semibold px-3 py-1.5 glass-secondary border border-white/80 rounded-full text-slate-700 focus:outline-none cursor-pointer"
           >
             <option value="all">ทุกวิชา</option>
-            {activeSemesterSummary.subjectSummaries.map((s) => (
-              <option key={s.subject.id} value={s.subject.id}>
-                {s.subject.name}
-              </option>
-            ))}
+            {subjects
+              .filter((s) => s.semesterId === currentSemester)
+              .map((s) => (
+                <option key={s.id} value={s.id}>
+                  {s.name}
+                </option>
+              ))}
           </select>
         </div>
       </div>
@@ -324,19 +328,17 @@ export const TasksView: React.FC = () => {
       <div className="space-y-3">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3.5">
           {displayedTasks.map((task) => {
-            const sub = activeSemesterSummary.subjectSummaries.find(
-              (s) => s.subject.id === task.subjectId
-            )?.subject;
+            const sub = subjects.find((s) => s.id === task.subjectId);
             const days = getDaysRemaining(task.dueDate);
             const done = isCompleted(task);
 
             return (
               <div
                 key={task.id}
-                className={`p-4 sm:p-4.5 rounded-3xl border transition-all flex flex-col justify-between space-y-3.5 ${
+                className={`p-4 sm:p-4.5 rounded-3xl border transition-all flex flex-col justify-between space-y-3.5 glass-card ${
                   done
-                    ? 'bg-slate-50/60 border-slate-200/60 opacity-60'
-                    : 'bg-white border-slate-200/80 shadow-2xs hover:shadow-xs'
+                    ? 'opacity-65 border-white/50'
+                    : 'border-white/80 shadow-md hover:shadow-lg'
                 }`}
               >
                 <div className="space-y-2.5">
@@ -380,7 +382,7 @@ export const TasksView: React.FC = () => {
                       <button
                         type="button"
                         onClick={() => openEditModal(task)}
-                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 rounded-full hover:bg-slate-100 transition-colors cursor-pointer"
+                        className="w-7 h-7 flex items-center justify-center text-slate-400 hover:text-slate-700 rounded-full hover:bg-white/60 transition-colors cursor-pointer"
                         title="แก้ไขงาน"
                       >
                         <Edit2 className="w-3.5 h-3.5" />
@@ -397,14 +399,14 @@ export const TasksView: React.FC = () => {
                   </div>
 
                   {task.notes && (
-                    <p className="text-xs text-slate-500 bg-slate-50 p-2.5 rounded-2xl line-clamp-2">
+                    <p className="text-xs text-slate-600 glass-secondary p-2.5 rounded-2xl line-clamp-2 border border-white/50">
                       {task.notes}
                     </p>
                   )}
                 </div>
 
                 {/* Bottom Card Footer: 📅 วันกำหนดส่ง + Capsule Status */}
-                <div className="flex items-center justify-between pt-2 border-t border-slate-100 text-xs">
+                <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 text-xs">
                   <div className="flex items-center gap-1.5 text-slate-600 font-medium">
                     <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                     <span className="text-[11px]">
@@ -439,7 +441,7 @@ export const TasksView: React.FC = () => {
 
         {/* Empty state */}
         {displayedTasks.length === 0 && (
-          <div className="bg-white rounded-3xl p-10 text-center border border-slate-200/80 space-y-2 col-span-full">
+          <div className="glass-card rounded-3xl p-10 text-center border border-white/80 space-y-2 col-span-full">
             <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto opacity-80" />
             <p className="text-sm font-bold text-slate-800">ไม่มีรายการงานในหมวดหมู่นี้</p>
             <p className="text-xs text-slate-500">คุณสามารถกดปุ่ม "+ เพิ่มงานใหม่" เพื่อบันทึกงานชิ้นต่อไป</p>
@@ -449,8 +451,8 @@ export const TasksView: React.FC = () => {
 
       {/* Task Modal (Add/Edit) */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-xs animate-in fade-in">
-          <div className="bg-white w-full max-w-md rounded-2xl sm:rounded-3xl shadow-xl p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto box-border">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/50 backdrop-blur-sm animate-in fade-in">
+          <div className="glass-card w-full max-w-md rounded-2xl sm:rounded-3xl shadow-2xl p-4 sm:p-6 space-y-4 max-h-[92vh] overflow-y-auto box-border border border-white/80">
             <h3 className="text-lg font-black text-slate-900">
               {editingTask ? 'แก้ไขข้อมูลงาน' : 'เพิ่มงานใหม่'}
             </h3>
@@ -466,7 +468,7 @@ export const TasksView: React.FC = () => {
                   placeholder="เช่น รายงานชีววิทยา, การบ้านเลขข้อ 1-10"
                   value={formState.title}
                   onChange={(e) => setFormState({ ...formState, title: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                 />
               </div>
 
@@ -477,13 +479,18 @@ export const TasksView: React.FC = () => {
                 <select
                   value={formState.subjectId}
                   onChange={(e) => setFormState({ ...formState, subjectId: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                 >
-                  {activeSemesterSummary.subjectSummaries.map((s) => (
-                    <option key={s.subject.id} value={s.subject.id}>
-                      {s.subject.name} ({s.subject.code})
-                    </option>
-                  ))}
+                  {subjects
+                    .filter((s) => s.semesterId === currentSemester)
+                    .map((s) => (
+                      <option key={s.id} value={s.id}>
+                        {s.name} ({s.code})
+                      </option>
+                    ))}
+                  {subjects.filter((s) => s.semesterId === currentSemester).length === 0 && (
+                    <option value="">ไม่มีวิชาในภาคเรียนนี้</option>
+                  )}
                 </select>
               </div>
 
@@ -497,7 +504,7 @@ export const TasksView: React.FC = () => {
                     required
                     value={formState.dueDate}
                     onChange={(e) => setFormState({ ...formState, dueDate: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                   />
                 </div>
                 <div>
@@ -510,7 +517,7 @@ export const TasksView: React.FC = () => {
                     required
                     value={formState.maxScore}
                     onChange={(e) => setFormState({ ...formState, maxScore: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                   />
                 </div>
               </div>
@@ -524,7 +531,7 @@ export const TasksView: React.FC = () => {
                   placeholder="เช่น ทำลงในสมุด, ส่งทาง Google Classroom"
                   value={formState.notes}
                   onChange={(e) => setFormState({ ...formState, notes: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium"
+                  className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                 />
               </div>
 
@@ -538,7 +545,7 @@ export const TasksView: React.FC = () => {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-indigo-600 text-white shadow-xs cursor-pointer"
+                  className="px-4 py-2 rounded-xl text-xs font-bold app-theme-btn text-white shadow-xs cursor-pointer active:scale-95"
                 >
                   บันทึก
                 </button>

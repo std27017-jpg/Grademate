@@ -221,14 +221,14 @@ export const Navbar: React.FC<NavbarProps> = ({
                     onClick={() => setActiveTab(item.id)}
                     className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all duration-200 cursor-pointer active:scale-95 ${
                       isActive
-                        ? 'bg-white text-pink-600 shadow-xs font-black'
+                        ? 'bg-white app-theme-text shadow-xs font-black'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-white/60'
                     }`}
                   >
                     <AppIcon
                       name={item.iconName}
                       size={15}
-                      className={isActive ? 'text-pink-500' : 'text-slate-400'}
+                      className={isActive ? 'app-theme-text' : 'text-slate-400'}
                     />
                     <span>{item.label}</span>
                   </button>
@@ -314,7 +314,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 onClick={() => setActiveTab(item.id)}
                 className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold whitespace-nowrap transition-all cursor-pointer active:scale-95 ${
                   isActive
-                    ? 'bg-pink-600 text-white shadow-xs'
+                    ? 'app-theme-btn text-white shadow-xs'
                     : 'text-slate-600 hover:bg-slate-100'
                 }`}
               >
