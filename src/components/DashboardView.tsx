@@ -533,7 +533,15 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
               ภารกิจประจำวัน
             </span>
           </div>
-          <span className="text-xs text-slate-600 font-bold">อัปเดตตามข้อมูลจริง</span>
+          <button
+            type="button"
+            onClick={() => onNavigate('calendar')}
+            className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-xl transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer"
+            title="เปิดดูปฏิทินของฉัน"
+          >
+            <Calendar className="w-3.5 h-3.5" />
+            <span>เปิดปฏิทิน</span>
+          </button>
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">

@@ -30,6 +30,9 @@ import {
   hslToRgb,
   rgbToHsl,
   getThemeBackgroundPalette,
+  applyThemeColorToDOM,
+  saveThemeColor,
+  saveThemePattern,
 } from '../utils/themeUtils';
 import { THEME_PATTERNS, ThemePatternId, getPatternSvgDataUri } from '../utils/themePatterns';
 
@@ -64,10 +67,14 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
   // Wheel canvas ref
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const isDraggingRef = useRef(false);
+  const initialColorRef = useRef(themeColor);
+  const initialPatternRef = useRef(themePattern);
 
   // Sync with current themeColor and themePattern when modal opens
   useEffect(() => {
     if (isOpen) {
+      initialColorRef.current = themeColor;
+      initialPatternRef.current = themePattern;
       setActiveColor(themeColor);
       setActivePattern(themePattern);
       setHexInput(themeColor);
@@ -79,7 +86,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
         setLightness(hsl.l);
       }
     }
-  }, [isOpen, themeColor, themePattern]);
+  }, [isOpen]);
 
   // Color wheel drawing
   const drawWheel = () => {
@@ -273,6 +280,8 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     const res = randomTheme();
     setActiveColor(res.color);
     setActivePattern(res.pattern);
+    setThemeColor(res.color);
+    setThemePattern(res.pattern);
     setHexInput(res.color);
     setIsValidHex(true);
     const rgb = hexToRgb(res.color);
@@ -286,6 +295,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
   const handleRandomPattern = () => {
     const newPat = randomPattern();
     setActivePattern(newPat);
+    setThemePattern(newPat);
   };
 
   // Copy hex
@@ -295,10 +305,21 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  // Cancel & Revert to initial
+  const handleCancel = () => {
+    setThemeColor(initialColorRef.current);
+    setThemePattern(initialPatternRef.current);
+    applyThemeColorToDOM(initialColorRef.current, initialPatternRef.current);
+    onClose();
+  };
+
   // Apply & Close
   const handleApply = () => {
     setThemeColor(activeColor);
     setThemePattern(activePattern);
+    applyThemeColorToDOM(activeColor, activePattern);
+    saveThemeColor(activeColor);
+    saveThemePattern(activePattern);
     try {
       confetti({
         particleCount: 50,
@@ -316,6 +337,9 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
     resetThemeColor();
     setActiveColor(DEFAULT_THEME_COLOR);
     setActivePattern(DEFAULT_THEME_PATTERN);
+    setThemeColor(DEFAULT_THEME_COLOR);
+    setThemePattern(DEFAULT_THEME_PATTERN);
+    applyThemeColorToDOM(DEFAULT_THEME_COLOR, DEFAULT_THEME_PATTERN);
     setHexInput(DEFAULT_THEME_COLOR);
     setIsValidHex(true);
     setLightness(50);
@@ -407,7 +431,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
             <button
               id="theme-close-btn"
               type="button"
-              onClick={onClose}
+              onClick={handleCancel}
               className="p-2 rounded-full transition-colors cursor-pointer hover:bg-black/5 dark:hover:bg-white/10"
               title="ปิดหน้าต่าง"
             >
@@ -1032,7 +1056,7 @@ export const ThemeModal: React.FC<ThemeModalProps> = ({ isOpen, onClose }) => {
             <button
               id="theme-cancel-btn"
               type="button"
-              onClick={onClose}
+              onClick={handleCancel}
               className="px-4 py-2 rounded-2xl text-xs font-bold transition-colors cursor-pointer opacity-80 hover:opacity-100"
             >
               ยกเลิก

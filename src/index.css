@@ -50,13 +50,14 @@
     overflow-x: hidden;
     margin: 0;
     padding: 0;
+    background-color: transparent;
   }
 
   body {
     font-family: 'Prompt', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     -webkit-tap-highlight-color: transparent;
     color: var(--theme-text-primary);
-    background-color: var(--theme-bg);
+    background-color: transparent;
   }
 
   /* Universal theme-driven high-contrast inputs and placeholders */
@@ -84,6 +85,24 @@
 }
 
 /* Core Liquid Glass Classes */
+.app-background {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+}
+
+.pattern-layer {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+}
+
+.app-content {
+  position: relative;
+  z-index: 10;
+}
+
 .glass-card {
   background: var(--theme-glass) !important;
   backdrop-filter: blur(16px) saturate(180%);

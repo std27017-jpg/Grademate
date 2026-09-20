@@ -336,24 +336,24 @@ export function getPatternSvgDataUri(patternId: ThemePatternId, strokeColorHex: 
 
   // For dark themes: elevate luminosity so the pattern glows softly against the dark background
   let strokeHex = strokeColorHex;
-  let strokeOp = '0.50';
-  let fillOp = '0.22';
-  let altStrokeOp = '0.35';
+  let strokeOp = '0.65';
+  let fillOp = '0.30';
+  let altStrokeOp = '0.45';
 
   if (isDark) {
     // Lighten and glow for dark background
     strokeHex = `rgb(${Math.min(255, rgb.r + 110)}, ${Math.min(255, rgb.g + 110)}, ${Math.min(255, rgb.b + 130)})`;
-    strokeOp = '0.62';
-    fillOp = '0.28';
-    altStrokeOp = '0.45';
+    strokeOp = '0.72';
+    fillOp = '0.36';
+    altStrokeOp = '0.52';
   } else {
     // For light theme, ensure rich vivid stroke
-    strokeOp = '0.52';
-    fillOp = '0.24';
-    altStrokeOp = '0.36';
+    strokeOp = '0.68';
+    fillOp = '0.32';
+    altStrokeOp = '0.48';
   }
 
-  const stroke = encodeURIComponent(strokeHex);
+  const stroke = strokeHex;
   let svg = '';
 
   switch (patternId) {

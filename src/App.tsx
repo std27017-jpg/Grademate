@@ -3,6 +3,7 @@ import { GradeProvider, useGrade } from './context/GradeContext';
 import { ThemeProvider, useTheme } from './context/ThemeContext';
 import { Navbar, NavTab } from './components/Navbar';
 import { DashboardView } from './components/DashboardView';
+import { CalendarView } from './components/CalendarView';
 import { SubjectsView } from './components/SubjectsView';
 import { StudyView } from './components/StudyView';
 import { TasksView } from './components/TasksView';
@@ -27,6 +28,14 @@ function MainAppContent() {
   const { isLoggedIn } = useGrade();
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [selectedSubjectForDetail, setSelectedSubjectForDetail] = useState<Subject | null>(null);
+  const [calendarTargetDate, setCalendarTargetDate] = useState<string | null>(null);
+
+  const handleNavigateToCalendar = (date?: string) => {
+    if (date) {
+      setCalendarTargetDate(date);
+    }
+    setActiveTab('calendar');
+  };
 
   // Modals
   const [isSubjectModalOpen, setIsSubjectModalOpen] = useState(false);
@@ -49,138 +58,113 @@ function MainAppContent() {
     setIsSubjectModalOpen(true);
   };
 
-  // If user is not logged in, show cute WelcomeView
-  if (!isLoggedIn) {
-    return (
-      <>
+  return (
+    <ThemeBackground className="text-slate-900 selection:bg-pink-500 selection:text-white">
+      {!isLoggedIn ? (
         <WelcomeView
           onOpenRegister={() => setIsRegisterModalOpen(true)}
           onOpenLogin={() => setIsLoginModalOpen(true)}
         />
-
-        <RegisterModal
-          isOpen={isRegisterModalOpen}
-          onClose={() => setIsRegisterModalOpen(false)}
-          onSwitchToLogin={() => {
-            setIsRegisterModalOpen(false);
-            setIsLoginModalOpen(true);
-          }}
-        />
-
-        <LoginModal
-          isOpen={isLoginModalOpen}
-          onClose={() => setIsLoginModalOpen(false)}
-          onSwitchToRegister={() => {
-            setIsLoginModalOpen(false);
-            setIsRegisterModalOpen(true);
-          }}
-        />
-      </>
-    );
-  }
-
-  return (
-    <ThemeBackground className="text-slate-900 selection:bg-pink-500 selection:text-white">
-      {/* Top and Mobile Navigation */}
-      <Navbar
-        activeTab={activeTab}
-        setActiveTab={(tab) => {
-          setActiveTab(tab);
-          if (tab !== 'subjects') {
-            setSelectedSubjectForDetail(null);
-          }
-        }}
-        onOpenSettings={() => setIsSettingsModalOpen(true)}
-        onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
-        onOpenThemeModal={openThemeModal}
-        onOpenNotifications={() => setIsNotificationsOpen(true)}
-      />
-
-      {/* Main Content Area */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-28 md:pb-12 box-border">
-        {activeTab === 'dashboard' && (
-          <DashboardView
-            onNavigate={(tab) => setActiveTab(tab)}
-            onOpenAddScore={() => setActiveTab('subjects')}
-            onOpenAddTask={() => setActiveTab('tasks')}
-            onOpenAddExam={() => setActiveTab('exams')}
-            onOpenAddSubject={handleOpenAddSubject}
-            onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
-            onSelectSubjectDetail={(sub) => {
-              setSelectedSubjectForDetail(sub);
-              setActiveTab('subjects');
+      ) : (
+        <>
+          {/* Top and Mobile Navigation */}
+          <Navbar
+            activeTab={activeTab}
+            setActiveTab={(tab) => {
+              setActiveTab(tab);
+              if (tab !== 'subjects') {
+                setSelectedSubjectForDetail(null);
+              }
             }}
-          />
-        )}
-
-        {activeTab === 'subjects' && (
-          <SubjectsView
-            onOpenAddSubject={handleOpenAddSubject}
-            onOpenEditSubject={handleOpenEditSubject}
-            selectedSubjectId={selectedSubjectForDetail?.id || null}
-            onSelectSubject={setSelectedSubjectForDetail}
-            onNavigateToStudy={() => setActiveTab('study')}
-          />
-        )}
-
-        {activeTab === 'study' && <StudyView />}
-
-        {activeTab === 'tasks' && <TasksView />}
-
-        {activeTab === 'exams' && <ExamsView />}
-
-        {activeTab === 'future' && <FuturePlannerView />}
-
-        {activeTab === 'analytics' && <AnalyticsView />}
-
-        {activeTab === 'profile' && <ProfileView onNavigate={(tab) => setActiveTab(tab)} />}
-
-        {activeTab === 'comparison' && (
-          <ComparisonView
+            onOpenSettings={() => setIsSettingsModalOpen(true)}
             onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
+            onOpenThemeModal={openThemeModal}
+            onOpenNotifications={() => setIsNotificationsOpen(true)}
           />
-        )}
 
-        {activeTab === 'developers' && (
-          <DevelopersView onNavigate={(tab) => setActiveTab(tab)} />
-        )}
-      </main>
+          {/* Main Content Area */}
+          <main className="flex-1 max-w-7xl w-full mx-auto px-3 sm:px-6 lg:px-8 pt-3 sm:pt-6 pb-28 md:pb-12 box-border">
+            {activeTab === 'dashboard' && (
+              <DashboardView
+                onNavigate={(tab) => {
+                  if (tab === 'calendar') {
+                    handleNavigateToCalendar();
+                  } else {
+                    setActiveTab(tab);
+                  }
+                }}
+                onOpenAddScore={() => setActiveTab('subjects')}
+                onOpenAddTask={() => setActiveTab('tasks')}
+                onOpenAddExam={() => setActiveTab('exams')}
+                onOpenAddSubject={handleOpenAddSubject}
+                onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
+                onSelectSubjectDetail={(sub) => {
+                  setSelectedSubjectForDetail(sub);
+                  setActiveTab('subjects');
+                }}
+              />
+            )}
 
-      {/* Subtle Footer */}
-      <footer className="border-t border-slate-200/80 bg-white/70 py-6 text-center text-xs text-slate-500 mb-16 md:mb-0">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>🌸 MyGrade • ผู้ช่วยวางแผนคะแนนและอนาคตของนักเรียนมัธยม</span>
-          <span>คำนวณตามจริง 100 คะแนน • บันทึก Portfolio • ติดตามงาน & ตารางสอบ</span>
-        </div>
-      </footer>
+            {activeTab === 'calendar' && (
+              <CalendarView
+                initialDate={calendarTargetDate}
+                onNavigateToExams={() => setActiveTab('exams')}
+                onNavigateToTasks={() => setActiveTab('tasks')}
+                onNavigateToStudy={() => setActiveTab('study')}
+              />
+            )}
 
-      {/* Modals */}
-      <SubjectModal
-        isOpen={isSubjectModalOpen}
-        onClose={() => setIsSubjectModalOpen(false)}
-        editingSubject={editingSubject}
-      />
+            {activeTab === 'subjects' && (
+              <SubjectsView
+                onOpenAddSubject={handleOpenAddSubject}
+                onOpenEditSubject={handleOpenEditSubject}
+                selectedSubjectId={selectedSubjectForDetail?.id || null}
+                onSelectSubject={setSelectedSubjectForDetail}
+                onNavigateToStudy={() => setActiveTab('study')}
+              />
+            )}
 
-      <EditProfileModal
-        isOpen={isEditProfileModalOpen}
-        onClose={() => setIsEditProfileModalOpen(false)}
-      />
+            {activeTab === 'study' && <StudyView />}
 
-      <SettingsModal
-        isOpen={isSettingsModalOpen}
-        onClose={() => setIsSettingsModalOpen(false)}
-        onNavigate={(tab) => setActiveTab(tab)}
-      />
+            {activeTab === 'tasks' && (
+              <TasksView onNavigateToCalendar={handleNavigateToCalendar} />
+            )}
 
+            {activeTab === 'exams' && (
+              <ExamsView onNavigateToCalendar={handleNavigateToCalendar} />
+            )}
+
+            {activeTab === 'future' && <FuturePlannerView />}
+
+            {activeTab === 'analytics' && <AnalyticsView />}
+
+            {activeTab === 'profile' && <ProfileView onNavigate={(tab) => setActiveTab(tab)} />}
+
+            {activeTab === 'comparison' && (
+              <ComparisonView
+                onOpenEditProfile={() => setIsEditProfileModalOpen(true)}
+              />
+            )}
+
+            {activeTab === 'developers' && (
+              <DevelopersView onNavigate={(tab) => setActiveTab(tab)} />
+            )}
+          </main>
+
+          {/* Subtle Footer */}
+          <footer className="border-t border-slate-200/80 bg-white/70 py-6 text-center text-xs text-slate-500 mb-16 md:mb-0">
+            <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+              <span>🌸 MyGrade • ผู้ช่วยวางแผนคะแนนและอนาคตของนักเรียนมัธยม</span>
+              <span>คำนวณตามจริง 100 คะแนน • บันทึก Portfolio • ติดตามงาน & ตารางสอบ</span>
+            </div>
+          </footer>
+        </>
+      )}
+
+      {/* Theme Modal - Always available at root */}
       <ThemeModal
         isOpen={isThemeModalOpen}
         onClose={closeThemeModal}
-      />
-
-      <NotificationCenterModal
-        isOpen={isNotificationsOpen}
-        onClose={() => setIsNotificationsOpen(false)}
-        onNavigateTab={(tab) => setActiveTab(tab)}
       />
 
       <RegisterModal
@@ -200,6 +184,30 @@ function MainAppContent() {
           setIsRegisterModalOpen(true);
         }}
       />
+
+      {isLoggedIn && (
+        <>
+          <SubjectModal
+            isOpen={isSubjectModalOpen}
+            onClose={() => setIsSubjectModalOpen(false)}
+            editingSubject={editingSubject}
+          />
+          <EditProfileModal
+            isOpen={isEditProfileModalOpen}
+            onClose={() => setIsEditProfileModalOpen(false)}
+          />
+          <SettingsModal
+            isOpen={isSettingsModalOpen}
+            onClose={() => setIsSettingsModalOpen(false)}
+            onNavigate={(tab) => setActiveTab(tab)}
+          />
+          <NotificationCenterModal
+            isOpen={isNotificationsOpen}
+            onClose={() => setIsNotificationsOpen(false)}
+            onNavigateTab={(tab) => setActiveTab(tab)}
+          />
+        </>
+      )}
     </ThemeBackground>
   );
 }

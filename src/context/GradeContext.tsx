@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   SemesterId,
   Subject,
@@ -18,7 +18,16 @@ import {
   SubjectCategory,
   StudySession,
   StudyGoal,
+  PersonalEvent,
+  SubjectSummaryFile,
 } from '../types';
+import {
+  fetchSummaryFiles,
+  uploadSummaryFile as apiUploadSummaryFile,
+  updateSummaryFile as apiUpdateSummaryFile,
+  deleteSummaryFile as apiDeleteSummaryFile,
+} from '../utils/summaryStorage';
+
 import {
   DEFAULT_ACADEMIC_YEAR,
   DEFAULT_SUBJECTS,
@@ -171,6 +180,31 @@ interface GradeContextType {
   getCategoryForSubject: (subject: Subject) => SubjectCategory;
   inferSubjectCategory: (name: string, currentCategory?: string) => string;
 
+  // Personal Events (Academic & Personal Calendar)
+  personalEvents: PersonalEvent[];
+  addPersonalEvent: (event: Omit<PersonalEvent, 'id' | 'createdAt'>) => PersonalEvent;
+  updatePersonalEvent: (event: PersonalEvent) => void;
+  deletePersonalEvent: (id: string) => void;
+
+  // 📚 Subject Summary Files (ไฟล์สรุปวิชา)
+  summaryFiles: SubjectSummaryFile[];
+  summaryFilesLoading: boolean;
+  refreshSummaryFiles: () => Promise<void>;
+  uploadSummaryFile: (
+    file: File,
+    subjectId: string,
+    fileName?: string,
+    description?: string,
+    onProgress?: (percent: number) => void
+  ) => Promise<SubjectSummaryFile>;
+  updateSummaryFile: (
+    fileId: string,
+    updates: { fileName?: string; description?: string; replacementFile?: File }
+  ) => Promise<SubjectSummaryFile>;
+  deleteSummaryFile: (fileId: string) => Promise<void>;
+  getSubjectSummaryFiles: (subjectId: string) => SubjectSummaryFile[];
+  getSubjectSummaryFileCount: (subjectId: string) => number;
+
   // Backup & Reset
   resetToDefault: () => void;
   exportJSON: () => string;
@@ -211,6 +245,7 @@ const STORAGE_KEYS = {
   SUBJECT_CATEGORIES: 'mygrade_subject_categories',
   STUDY_SESSIONS: 'mygrade_study_sessions',
   STUDY_GOAL: 'mygrade_study_goal',
+  PERSONAL_EVENTS: 'mygrade_personal_events',
   // Legacy fallback keys to ensure no data loss
   LEGACY_SEMESTER: 'grademate_active_semester',
   LEGACY_YEAR: 'grademate_academic_year',
@@ -403,6 +438,15 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     }
   });
 
+  const [personalEvents, setPersonalEvents] = useState<PersonalEvent[]>(() => {
+    try {
+      const saved = safeLocalStorageGetItem(STORAGE_KEYS.PERSONAL_EVENTS);
+      return saved ? JSON.parse(saved) : [];
+    } catch {
+      return [];
+    }
+  });
+
   // Save changes to LocalStorage safely
   useEffect(() => {
     safeLocalStorageSetItem(STORAGE_KEYS.AUTH_LOGGED_IN, String(isLoggedIn));
@@ -470,6 +514,10 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   useEffect(() => {
     safeLocalStorageSetItem(STORAGE_KEYS.STUDY_GOAL, JSON.stringify(studyGoal));
   }, [studyGoal]);
+
+  useEffect(() => {
+    safeLocalStorageSetItem(STORAGE_KEYS.PERSONAL_EVENTS, JSON.stringify(personalEvents));
+  }, [personalEvents]);
 
   // Auth Functions
   const login = (email: string, password?: string) => {
@@ -1046,6 +1094,25 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     };
   };
 
+  // Personal Events Handlers
+  const addPersonalEvent = (event: Omit<PersonalEvent, 'id' | 'createdAt'>): PersonalEvent => {
+    const newEvent: PersonalEvent = {
+      ...event,
+      id: `pe_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`,
+      createdAt: new Date().toISOString(),
+    };
+    setPersonalEvents((prev) => [newEvent, ...prev]);
+    return newEvent;
+  };
+
+  const updatePersonalEvent = (updated: PersonalEvent) => {
+    setPersonalEvents((prev) => prev.map((e) => (e.id === updated.id ? updated : e)));
+  };
+
+  const deletePersonalEvent = (id: string) => {
+    setPersonalEvents((prev) => prev.filter((e) => e.id !== id));
+  };
+
   // Reset to default
   const resetToDefault = () => {
     setSubjects(DEFAULT_SUBJECTS);
@@ -1059,6 +1126,7 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setSubjectCategories(DEFAULT_SUBJECT_CATEGORIES);
     setStudySessions(DEFAULT_STUDY_SESSIONS);
     setStudyGoal(DEFAULT_STUDY_GOAL);
+    setPersonalEvents([]);
     setGradeThresholds(DEFAULT_GRADE_THRESHOLDS);
     setCurrentSemesterState('term1');
     setReadNotifIds([]);
@@ -1080,6 +1148,7 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       subjectCategories,
       studySessions,
       studyGoal,
+      personalEvents,
       exportedAt: new Date().toISOString(),
     };
     return JSON.stringify(data, null, 2);
@@ -1088,19 +1157,20 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
   const importJSON = (jsonStr: string) => {
     try {
       const data = JSON.parse(jsonStr);
-      if (data.userProfile) setUserProfileState(data.userProfile);
       if (data.subjects) setSubjects(data.subjects);
       if (data.tasks) setTasks(data.tasks);
       if (data.exams) setExams(data.exams);
+      if (data.userProfile) setUserProfileState(data.userProfile);
       if (data.academicYear) setAcademicYear(data.academicYear);
-      if (data.gradeThresholds) setGradeThresholds(data.gradeThresholds);
       if (data.currentSemester) setCurrentSemesterState(data.currentSemester);
+      if (data.gradeThresholds) setGradeThresholds(data.gradeThresholds);
       if (data.futureChecklist) setFutureChecklist(data.futureChecklist);
       if (data.portfolioItems) setPortfolioItems(data.portfolioItems);
       if (data.futureTodos) setFutureTodos(data.futureTodos);
       if (data.subjectCategories) setSubjectCategories(data.subjectCategories);
       if (data.studySessions) setStudySessions(data.studySessions);
       if (data.studyGoal) setStudyGoal(data.studyGoal);
+      if (data.personalEvents && Array.isArray(data.personalEvents)) setPersonalEvents(data.personalEvents);
       return true;
     } catch (e) {
       console.error('Failed to import JSON', e);
@@ -1358,6 +1428,124 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
     setReadNotifIds(allIds);
   };
 
+  // =========================================================================
+  // 📚 Subject Summary Files (ไฟล์สรุปวิชา)
+  // =========================================================================
+  const [summaryFiles, setSummaryFiles] = useState<SubjectSummaryFile[]>([]);
+  const [summaryFilesLoading, setSummaryFilesLoading] = useState<boolean>(true);
+
+  // Load summary files whenever the current user changes
+  useEffect(() => {
+    let isMounted = true;
+    const activeUserId = userProfile?.id;
+    if (!activeUserId) {
+      setSummaryFiles([]);
+      setSummaryFilesLoading(false);
+      return;
+    }
+
+    setSummaryFilesLoading(true);
+    fetchSummaryFiles(activeUserId)
+      .then((files) => {
+        if (isMounted) {
+          setSummaryFiles(files);
+          setSummaryFilesLoading(false);
+        }
+      })
+      .catch((err) => {
+        console.warn('Failed to load summary files:', err);
+        if (isMounted) setSummaryFilesLoading(false);
+      });
+
+    return () => {
+      isMounted = false;
+    };
+  }, [userProfile?.id]);
+
+  const refreshSummaryFiles = useCallback(async () => {
+    if (!userProfile?.id) return;
+    setSummaryFilesLoading(true);
+    try {
+      const files = await fetchSummaryFiles(userProfile.id);
+      setSummaryFiles(files);
+    } catch (err) {
+      console.warn('Error refreshing summary files:', err);
+    } finally {
+      setSummaryFilesLoading(false);
+    }
+  }, [userProfile?.id]);
+
+  const handleUploadSummaryFile = useCallback(
+    async (
+      file: File,
+      subjectId: string,
+      fileName?: string,
+      description?: string,
+      onProgress?: (percent: number) => void
+    ) => {
+      if (!userProfile?.id) {
+        throw new Error('กรุณาเข้าสู่ระบบก่อนอัปโหลดไฟล์สรุป');
+      }
+      const newRecord = await apiUploadSummaryFile(
+        file,
+        {
+          userId: userProfile.id,
+          subjectId,
+          fileName,
+          description,
+        },
+        onProgress
+      );
+      setSummaryFiles((prev) => [newRecord, ...prev.filter((f) => f.id !== newRecord.id)]);
+      return newRecord;
+    },
+    [userProfile?.id]
+  );
+
+  const handleUpdateSummaryFile = useCallback(
+    async (
+      fileId: string,
+      updates: { fileName?: string; description?: string; replacementFile?: File }
+    ) => {
+      if (!userProfile?.id) {
+        throw new Error('กรุณาเข้าสู่ระบบก่อนแก้ไขข้อมูลไฟล์');
+      }
+      const updated = await apiUpdateSummaryFile({
+        id: fileId,
+        userId: userProfile.id,
+        ...updates,
+      });
+      setSummaryFiles((prev) => prev.map((f) => (f.id === fileId ? updated : f)));
+      return updated;
+    },
+    [userProfile?.id]
+  );
+
+  const handleDeleteSummaryFile = useCallback(
+    async (fileId: string) => {
+      if (!userProfile?.id) {
+        throw new Error('กรุณาเข้าสู่ระบบก่อนลบไฟล์');
+      }
+      await apiDeleteSummaryFile(fileId, userProfile.id);
+      setSummaryFiles((prev) => prev.filter((f) => f.id !== fileId));
+    },
+    [userProfile?.id]
+  );
+
+  const getSubjectSummaryFiles = useCallback(
+    (subjectId: string) => {
+      return summaryFiles.filter((f) => f.subjectId === subjectId);
+    },
+    [summaryFiles]
+  );
+
+  const getSubjectSummaryFileCount = useCallback(
+    (subjectId: string) => {
+      return summaryFiles.filter((f) => f.subjectId === subjectId).length;
+    },
+    [summaryFiles]
+  );
+
   return (
     <GradeContext.Provider
       value={{
@@ -1444,6 +1632,20 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         topStudyCategory,
         getCategoryForSubject,
         inferSubjectCategory,
+        // Personal Events
+        personalEvents,
+        addPersonalEvent,
+        updatePersonalEvent,
+        deletePersonalEvent,
+        // 📚 Subject Summary Files (ไฟล์สรุปวิชา)
+        summaryFiles,
+        summaryFilesLoading,
+        refreshSummaryFiles,
+        uploadSummaryFile: handleUploadSummaryFile,
+        updateSummaryFile: handleUpdateSummaryFile,
+        deleteSummaryFile: handleDeleteSummaryFile,
+        getSubjectSummaryFiles,
+        getSubjectSummaryFileCount,
         resetToDefault,
         exportJSON,
         importJSON,

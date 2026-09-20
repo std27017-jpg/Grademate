@@ -1,4 +1,4 @@
-import { ThemePatternId, getPatternSvgDataUri } from './themePatterns';
+import { ThemePatternId, getPatternSvgDataUri, THEME_PATTERNS } from './themePatterns';
 
 export interface ThemeColorPreset {
   id: string;
@@ -294,6 +294,8 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
   const hover = rgbToHex(hoverRgb.r, hoverRgb.g, hoverRgb.b);
   const palette = getThemeBackgroundPalette(rgb);
   const patternUri = getPatternSvgDataUri(patternId, primary);
+  const patternMeta = THEME_PATTERNS.find((p) => p.id === patternId);
+  const tileSize = patternMeta?.tileSize || '56px 56px';
 
   const themeVars = {
     '--theme-bg': palette.bgStart,
@@ -337,6 +339,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     '--app-blob-3': palette.blob3 || palette.blob1,
     '--app-pattern-uri': patternUri,
     '--theme-pattern-uri': patternUri,
+    '--theme-pattern-size': tileSize,
   };
 
   if (typeof document !== 'undefined') {
@@ -350,13 +353,15 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       document.body.removeAttribute('data-theme-dark');
     }
 
+    root.setAttribute('data-theme-pattern', patternId);
+    document.body.setAttribute('data-theme-pattern', patternId);
+
     Object.entries(themeVars).forEach(([key, value]) => {
       root.style.setProperty(key, value);
     });
 
-    // Ensure body styling matches
-    document.body.style.backgroundColor = palette.bgStart;
-    document.body.style.backgroundImage = themeVars['--theme-background-gradient'];
+    // Ensure body styling does not block pattern
+    document.body.style.backgroundColor = 'transparent';
     document.body.style.color = palette.isDark ? '#f8fafc' : '#0f172a';
   }
 
@@ -520,6 +525,27 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       border-color: ${palette.isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(255, 255, 255, 0.82)'};
       box-shadow: 0 8px 30px 0 rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.24' : '0.08'});
       color: var(--text-primary);
+    }
+
+    /* Convert flat slate/gray panels into liquid glass so patterns are visible underneath */
+    .bg-slate-50:not([data-opaque="true"]):not(select):not(option):not(input):not(textarea),
+    .bg-slate-100:not([data-opaque="true"]):not(select):not(option):not(input):not(textarea),
+    .bg-gray-50:not([data-opaque="true"]):not(select):not(option):not(input):not(textarea),
+    .bg-gray-100:not([data-opaque="true"]):not(select):not(option):not(input):not(textarea) {
+      background-color: ${palette.isDark ? 'rgba(15, 23, 42, 0.65)' : 'rgba(255, 255, 255, 0.62)'} !important;
+      backdrop-filter: blur(14px) saturate(160%);
+      -webkit-backdrop-filter: blur(14px) saturate(160%);
+    }
+
+    .pattern-layer {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background-repeat: repeat;
+      background-size: ${tileSize};
+      background-image: ${patternUri};
+      transition: opacity 0.3s ease;
     }
 
     /* Dark theme specific overrides to eliminate harsh white surfaces and black text on dark bg */

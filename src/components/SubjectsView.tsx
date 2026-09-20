@@ -41,6 +41,7 @@ import { SemesterToggle } from './SemesterToggle';
 import { EditSubjectScoresModal } from './EditSubjectScoresModal';
 import { QuickColorModal } from './QuickColorModal';
 import { getSubjectColor, getContrastTextColor } from '../utils/colorUtils';
+import { SubjectSummaryFilesView } from './SubjectSummaryFilesView';
 
 interface SubjectsViewProps {
   onOpenAddSubject: () => void;
@@ -71,6 +72,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     subjectCategories,
     startStudyForSubject,
     getCategoryForSubject,
+    getSubjectSummaryFileCount,
   } = useGrade();
 
   // Internal state for selected subject if not controlled externally
@@ -95,8 +97,8 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
   // Quick subject color modal (pastel & wheel)
   const [colorModalSubject, setColorModalSubject] = useState<Subject | null>(null);
 
-  // Active tab inside selected subject detail: 'overview' | 'scores' | 'tasks' | 'exams'
-  const [detailTab, setDetailTab] = useState<'overview' | 'scores' | 'tasks' | 'exams'>('overview');
+  // Active tab inside selected subject detail: 'overview' | 'scores' | 'tasks' | 'exams' | 'summaries'
+  const [detailTab, setDetailTab] = useState<'overview' | 'scores' | 'tasks' | 'exams' | 'summaries'>('overview');
 
   // Accordion open/close state for Midterm (50) and Final (50) in scores tab
   const [openMidtermAccordion, setOpenMidtermAccordion] = useState(false);
@@ -353,32 +355,77 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
                   />
                 </div>
               </div>
+
+              {/* Summary Files Count Badge */}
+              <div className="pt-1 flex items-center justify-between border-t border-white/60">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleSelectSubject(sub);
+                    setDetailTab('summaries');
+                  }}
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-pink-50/90 hover:bg-pink-100 text-pink-700 text-[11px] font-bold border border-pink-200/70 transition-all cursor-pointer shadow-2xs"
+                  title="เปิดคลังไฟล์สรุปของวิชานี้"
+                >
+                  <span>📚</span>
+                  <span>
+                    {getSubjectSummaryFileCount(sub.id) > 0
+                      ? `ไฟล์สรุป ${getSubjectSummaryFileCount(sub.id)} ไฟล์`
+                      : 'ยังไม่มีไฟล์'}
+                  </span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    startStudyForSubject(sub.id);
+                    if (onNavigateToStudy) onNavigateToStudy();
+                  }}
+                  className="inline-flex items-center gap-1 text-[11px] text-slate-500 hover:text-pink-600 font-semibold p-1 transition-colors cursor-pointer"
+                  title="เริ่มจับเวลาอ่านวิชานี้"
+                >
+                  <Timer className="w-3 h-3 text-pink-500" />
+                  <span>จับเวลา</span>
+                </button>
+              </div>
             </div>
           </div>
 
-          {/* Action Buttons: [ จับเวลาอ่าน ⏱️ ] and [ ดูคะแนน → ] */}
-          <div className="grid grid-cols-2 gap-2 pt-1">
+          {/* Action Buttons: [คะแนน] [งาน] [ไฟล์สรุป] */}
+          <div className="grid grid-cols-3 gap-1.5 pt-1">
             <button
               type="button"
-              onClick={(e) => {
-                e.stopPropagation();
-                startStudyForSubject(sub.id);
-                if (onNavigateToStudy) onNavigateToStudy();
+              onClick={() => {
+                handleSelectSubject(sub);
+                setDetailTab('scores');
               }}
-              className="w-full py-2.5 px-3 rounded-xl bg-pink-50/80 hover:bg-pink-100 text-pink-700 border border-pink-200 text-xs font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
-              title="เริ่มจับเวลาอ่านหนังสือวิชานี้"
+              className="w-full py-2 px-1 rounded-xl bg-indigo-50/80 hover:bg-indigo-100 text-indigo-700 border border-indigo-200/70 text-[11px] font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
             >
-              <Timer className="w-3.5 h-3.5 text-pink-600" />
-              <span>จับเวลาอ่าน</span>
+              <span>คะแนน</span>
             </button>
 
             <button
               type="button"
-              onClick={() => handleSelectSubject(sub)}
-              className="w-full py-2.5 px-3 rounded-xl app-theme-btn text-white text-xs font-bold transition-all shadow-xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+              onClick={() => {
+                handleSelectSubject(sub);
+                setDetailTab('tasks');
+              }}
+              className="w-full py-2 px-1 rounded-xl bg-slate-100/90 hover:bg-slate-200 text-slate-700 border border-slate-200/70 text-[11px] font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
             >
-              <span>ดูคะแนน</span>
-              <ArrowRight className="w-3.5 h-3.5" />
+              <span>งาน</span>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                handleSelectSubject(sub);
+                setDetailTab('summaries');
+              }}
+              className="w-full py-2 px-1 rounded-xl bg-pink-50/90 hover:bg-pink-100 text-pink-700 border border-pink-200/80 text-[11px] font-bold transition-all shadow-2xs flex items-center justify-center gap-1 cursor-pointer active:scale-95"
+            >
+              <span>📚 ไฟล์สรุป</span>
             </button>
           </div>
         </div>

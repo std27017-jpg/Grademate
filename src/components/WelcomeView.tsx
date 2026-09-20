@@ -15,8 +15,6 @@ import {
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useTheme } from '../context/ThemeContext';
-import { ThemeBackground } from './ThemeBackground';
-
 interface WelcomeViewProps {
   onOpenRegister: () => void;
   onOpenLogin: () => void;
@@ -27,7 +25,7 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenRegister, onOpen
   const { openThemeModal } = useTheme();
 
   return (
-    <ThemeBackground className="min-h-screen flex flex-col justify-between p-3.5 sm:p-6 lg:p-8">
+    <div className="min-h-screen flex flex-col justify-between p-3.5 sm:p-6 lg:p-8">
       {/* Top Floating Glass Header */}
       <header className="max-w-5xl mx-auto w-full flex items-center justify-between py-2.5 px-4 sm:px-6 rounded-3xl border border-white/80 shadow-md backdrop-blur-xl bg-white/70">
         <div className="flex items-center gap-2.5">
@@ -287,6 +285,6 @@ export const WelcomeView: React.FC<WelcomeViewProps> = ({ onOpenRegister, onOpen
       <footer className="max-w-4xl mx-auto w-full text-center py-4 text-xs text-slate-500 font-semibold">
         MyGrade • Liquid Glass Edition สำหรับนักเรียนมัธยม
       </footer>
-    </ThemeBackground>
+    </div>
   );
 };

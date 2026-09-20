@@ -19,7 +19,11 @@ import { SemesterToggle } from './SemesterToggle';
 import { formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
 import { getSubjectColor } from '../utils/colorUtils';
 
-export const TasksView: React.FC = () => {
+interface TasksViewProps {
+  onNavigateToCalendar?: (date?: string) => void;
+}
+
+export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) => {
   const {
     currentSemester,
     subjects,
@@ -48,6 +52,7 @@ export const TasksView: React.FC = () => {
     title: string;
     periodKey: ScorePeriodKey;
     dueDate: string;
+    dueTime: string;
     maxScore: string;
     status: TaskStatus;
     notes: string;
@@ -56,6 +61,7 @@ export const TasksView: React.FC = () => {
     title: '',
     periodKey: 'preMidterm',
     dueDate: new Date().toISOString().split('T')[0],
+    dueTime: '18:00',
     maxScore: '10',
     status: 'todo',
     notes: '',
@@ -95,6 +101,7 @@ export const TasksView: React.FC = () => {
       title: '',
       periodKey: 'preMidterm',
       dueDate: new Date().toISOString().split('T')[0],
+      dueTime: '18:00',
       maxScore: '10',
       status: 'todo',
       notes: '',
@@ -109,6 +116,7 @@ export const TasksView: React.FC = () => {
       title: task.title,
       periodKey: task.periodKey,
       dueDate: task.dueDate,
+      dueTime: task.dueTime || '18:00',
       maxScore: task.maxScore.toString(),
       status: task.status,
       notes: task.notes || '',
@@ -127,6 +135,7 @@ export const TasksView: React.FC = () => {
         subjectId: formState.subjectId,
         periodKey: formState.periodKey,
         dueDate: formState.dueDate,
+        dueTime: formState.dueTime || undefined,
         maxScore: parseFloat(formState.maxScore) || 10,
         status: formState.status,
         notes: formState.notes.trim() || undefined,
@@ -138,6 +147,7 @@ export const TasksView: React.FC = () => {
         title: formState.title.trim(),
         periodKey: formState.periodKey,
         dueDate: formState.dueDate,
+        dueTime: formState.dueTime || undefined,
         maxScore: parseFloat(formState.maxScore) || 10,
         status: formState.status,
         notes: formState.notes.trim() || undefined,
@@ -198,6 +208,17 @@ export const TasksView: React.FC = () => {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <SemesterToggle size="sm" />
+          {onNavigateToCalendar && (
+            <button
+              type="button"
+              onClick={() => onNavigateToCalendar()}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+              title="เปิดดูปฏิทินงานและการเรียน"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>ปฏิทิน</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={openAddModal}
@@ -408,7 +429,18 @@ export const TasksView: React.FC = () => {
                 {/* Bottom Card Footer: 📅 วันกำหนดส่ง + Capsule Status */}
                 <div className="flex items-center justify-between pt-2 border-t border-slate-200/50 text-xs">
                   <div className="flex items-center gap-1.5 text-slate-600 font-medium">
-                    <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    {onNavigateToCalendar ? (
+                      <button
+                        type="button"
+                        onClick={() => onNavigateToCalendar(task.dueDate)}
+                        className="hover:text-blue-600 p-0.5 rounded-md hover:bg-blue-50 transition-colors"
+                        title="คลิกเพื่อดูในปฏิทิน"
+                      >
+                        <Calendar className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                      </button>
+                    ) : (
+                      <Calendar className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                    )}
                     <span className="text-[11px]">
                       {formatShortThaiDate(task.dueDate)} (
                       {days === 0
@@ -417,6 +449,7 @@ export const TasksView: React.FC = () => {
                         ? `เหลืออีก ${days} วัน`
                         : `เลยกำหนด ${Math.abs(days)} วัน`}
                       )
+                      {task.dueTime && ` • ${task.dueTime} น.`}
                     </span>
                   </div>
 
@@ -494,16 +527,27 @@ export const TasksView: React.FC = () => {
                 </select>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-bold text-slate-700 mb-1">
-                    กำหนดส่ง
+                    กำหนดส่ง (วันที่)
                   </label>
                   <input
                     type="date"
                     required
                     value={formState.dueDate}
                     onChange={(e) => setFormState({ ...formState, dueDate: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">
+                    เวลาส่ง (ถ้ามี)
+                  </label>
+                  <input
+                    type="time"
+                    value={formState.dueTime}
+                    onChange={(e) => setFormState({ ...formState, dueTime: e.target.value })}
                     className="w-full px-3 py-2 rounded-xl border border-slate-300 text-sm font-medium glass-input"
                   />
                 </div>

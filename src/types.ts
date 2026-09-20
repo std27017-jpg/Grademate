@@ -190,10 +190,23 @@ export interface Task {
   title: string; // e.g. 'ใบงานบทที่ 3'
   periodKey: ScorePeriodKey; // 'ก่อนกลางภาค'
   dueDate: string; // YYYY-MM-DD
+  dueTime?: string; // HH:mm (e.g. '18:00')
   maxScore: number; // e.g. 10
   obtainedScore?: number;
   status: TaskStatus;
   notes?: string;
+}
+
+export interface PersonalEvent {
+  id: string;
+  title: string;
+  date: string; // YYYY-MM-DD
+  startTime?: string; // HH:mm
+  endTime?: string; // HH:mm
+  details?: string;
+  category?: string; // 'กิจกรรม' | 'ประชุม' | 'ส่วนตัว' | 'โรงเรียน' | 'อื่น ๆ'
+  color?: string; // hex
+  createdAt: string;
 }
 
 export type StudyStatus = 'not_started' | 'reading_50' | 'reviewed_once' | 'ready_for_exam';
@@ -273,3 +286,21 @@ export interface Developer {
   initials: string;
   photoUrl?: string;
 }
+
+export type SummaryFileType = 'pdf' | 'image' | 'doc' | 'ppt' | 'xls' | 'txt' | 'other';
+
+export interface SubjectSummaryFile {
+  id: string;
+  userId: string;
+  subjectId: string;
+  fileName: string; // ชื่อที่แสดง / ผู้ใช้ตั้งเอง เช่น "สรุปเรื่องเซต"
+  originalFileName: string; // ชื่อไฟล์จริง เช่น "math_set.pdf"
+  fileType: SummaryFileType;
+  mimeType: string;
+  fileSize: number; // ขนาดไบต์
+  storageUrl: string; // URL สำหรับเปิด/ดาวน์โหลด
+  description?: string;
+  createdAt: string; // ISO format
+  updatedAt: string; // ISO format
+}
+

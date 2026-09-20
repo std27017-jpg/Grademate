@@ -22,7 +22,11 @@ import { SemesterToggle } from './SemesterToggle';
 import { formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
 import { getSubjectColor } from '../utils/colorUtils';
 
-export const ExamsView: React.FC = () => {
+interface ExamsViewProps {
+  onNavigateToCalendar?: (date?: string) => void;
+}
+
+export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) => {
   const {
     currentSemester,
     subjects,
@@ -215,6 +219,17 @@ export const ExamsView: React.FC = () => {
 
         <div className="flex items-center gap-2.5 flex-wrap">
           <SemesterToggle size="sm" />
+          {onNavigateToCalendar && (
+            <button
+              type="button"
+              onClick={() => onNavigateToCalendar()}
+              className="px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+              title="เปิดดูปฏิทินตารางสอบ"
+            >
+              <Calendar className="w-4 h-4" />
+              <span>ปฏิทิน</span>
+            </button>
+          )}
           <button
             type="button"
             onClick={openAddModal}
@@ -554,9 +569,20 @@ export const ExamsView: React.FC = () => {
                   {/* Top: 📅 Date & Countdown */}
                   <div className="flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2 text-xs font-bold text-slate-700">
-                      <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
-                        <Calendar className="w-4 h-4" />
-                      </div>
+                      {onNavigateToCalendar ? (
+                        <button
+                          type="button"
+                          onClick={() => onNavigateToCalendar(exam.examDate)}
+                          className="w-8 h-8 rounded-full bg-indigo-50 hover:bg-purple-100 text-indigo-600 hover:text-purple-700 flex items-center justify-center shrink-0 shadow-2xs transition-colors cursor-pointer"
+                          title="ดูในปฏิทิน"
+                        >
+                          <Calendar className="w-4 h-4" />
+                        </button>
+                      ) : (
+                        <div className="w-8 h-8 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shrink-0 shadow-2xs">
+                          <Calendar className="w-4 h-4" />
+                        </div>
+                      )}
                       <div>
                         <span className="text-slate-900 font-extrabold">{formatShortThaiDate(exam.examDate)}</span>
                         <span className="text-slate-500 font-normal ml-1.5 text-[11px]">{exam.startTime} - {exam.endTime} น.</span>

@@ -7,6 +7,7 @@ import { AvatarDisplay } from './AvatarDisplay';
 
 export type NavTab =
   | 'dashboard'
+  | 'calendar'
   | 'subjects'
   | 'study'
   | 'tasks'
@@ -46,6 +47,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   // Primary desktop & tablet nav items using centralized icon system
   const navItems: { id: NavTab; label: string; iconName: IconName }[] = [
     { id: 'dashboard', label: 'หน้าหลัก', iconName: 'home' },
+    { id: 'calendar', label: 'ปฏิทิน', iconName: 'calendar' },
     { id: 'subjects', label: 'วิชา', iconName: 'subjects' },
     { id: 'study', label: 'อ่านหนังสือ', iconName: 'study' },
     { id: 'tasks', label: 'งาน', iconName: 'tasks' },
@@ -56,18 +58,20 @@ export const Navbar: React.FC<NavbarProps> = ({
     { id: 'developers', label: 'ผู้พัฒนา', iconName: 'users' },
   ];
 
-  // Mobile Bottom Navigation 5 essential tabs (Modern Teen Mobile App)
+  // Mobile Bottom Navigation 5 essential tabs as required by User Specification:
+  // 🏠 หน้าหลัก, 📅 ปฏิทิน, 📚 วิชา, ✅ งาน, 👤 โปรไฟล์
   const mobileBottomTabs: { id: NavTab; label: string; iconName: IconName }[] = [
-    { id: 'dashboard', label: 'หน้าแรก', iconName: 'home' },
-    { id: 'subjects', label: 'คะแนน', iconName: 'subjects' },
+    { id: 'dashboard', label: 'หน้าหลัก', iconName: 'home' },
+    { id: 'calendar', label: 'ปฏิทิน', iconName: 'calendar' },
+    { id: 'subjects', label: 'วิชา', iconName: 'subjects' },
     { id: 'tasks', label: 'งาน', iconName: 'tasks' },
-    { id: 'study', label: 'อ่าน', iconName: 'study' },
     { id: 'profile', label: 'โปรไฟล์', iconName: 'profile' },
   ];
 
   // Drawer complete navigation items
   const drawerItems: { id: NavTab; label: string; iconName: IconName; desc: string }[] = [
     { id: 'dashboard', label: 'หน้าหลัก (Dashboard)', iconName: 'home', desc: 'สรุปผลและภาพรวมการเรียน' },
+    { id: 'calendar', label: 'ปฏิทินของฉัน (Calendar)', iconName: 'calendar', desc: 'วางแผนงาน การสอบ และเวลาอ่านหนังสือ' },
     { id: 'subjects', label: 'รายวิชา & คะแนนเก็บ', iconName: 'subjects', desc: 'บันทึกคะแนน 100 ช่อง & คำนวณเกรด' },
     { id: 'study', label: 'ตัวจับเวลาอ่านหนังสือ', iconName: 'study', desc: 'Pomodoro & สถิติเวลาอ่าน' },
     { id: 'tasks', label: 'งาน & การบ้าน', iconName: 'tasks', desc: 'ติดตามงานและกำหนดส่ง' },
@@ -341,7 +345,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           />
 
           {/* Drawer Content */}
-          <div className="relative w-full max-w-[310px] bg-white h-full shadow-2xl flex flex-col justify-between overflow-y-auto z-10 animate-slide-in-right p-4 space-y-4">
+          <div className="relative w-full max-w-[310px] bg-white/90 backdrop-blur-2xl h-full shadow-2xl flex flex-col justify-between overflow-y-auto z-10 animate-slide-in-right p-4 space-y-4 border-r border-white/60">
             <div className="space-y-4">
               {/* Drawer Top Bar */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-3">
