@@ -1,37 +1,27 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
   Trophy,
-  AlertTriangle,
-  Clock,
-  Calendar,
-  CheckCircle2,
-  ChevronRight,
+  Calendar as CalendarIcon,
   Target,
-  Plus,
   BookOpen,
-  ArrowRight,
   Sparkles,
   Edit3,
-  Check,
-  User,
   Flame,
   CheckSquare,
   Square,
-  FolderHeart,
-  Briefcase,
-  GraduationCap,
-  Lightbulb,
   Timer,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
   AlertCircle,
-  TrendingUp,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
+import { useAiQuickFill } from '../context/AiQuickFillContext';
 import { SemesterToggle } from './SemesterToggle';
 import { NavTab } from './Navbar';
 import { getDaysRemaining, formatShortThaiDate } from '../utils/gradeCalculations';
-import { Task, Subject } from '../types';
-import { getSubjectColor } from '../utils/colorUtils';
+import { Task, Subject, Exam } from '../types';
 import { AvatarDisplay } from './AvatarDisplay';
 
 interface DashboardViewProps {
@@ -61,107 +51,68 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
     tasks,
     exams,
     userProfile,
-    targetGpaAnalysis,
-    futureChecklist,
-    portfolioItems,
     todayStudyMinutes,
     studyGoal,
     studyStreakDays,
-    topSubjectToday,
-    topCategoryToday,
     updateTask,
     updateStudentName,
   } = useGrade();
+  const { openAiQuickFill } = useAiQuickFill();
 
+  // Inline name editing state
   const [isEditingNameInline, setIsEditingNameInline] = useState(false);
   const [inlineName, setInlineName] = useState(userProfile.fullName || academicYear.studentName);
 
-  // Filter tasks & exams for current semester
-  const currentSemesterTasks = tasks.filter((t) => t.semesterId === currentSemester);
-  const currentSemesterExams = exams.filter((e) => e.semesterId === currentSemester);
-
-  // Active / pending tasks (sorted by due date)
-  const pendingTasks = [...currentSemesterTasks]
-    .filter((t) => t.status !== 'submitted' && t.status !== 'graded')
-    .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime());
-
-  const topPendingTasks = pendingTasks.slice(0, 3);
-
-  // Urgent tasks (due in <= 2 days or overdue)
-  const urgentTasks = pendingTasks.filter((t) => {
-    const days = getDaysRemaining(t.dueDate);
-    return days <= 2;
-  });
-
-  // Upcoming exams (sorted by date, max 2)
-  const upcomingExams = [...currentSemesterExams]
-    .sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime())
-    .slice(0, 2);
-
-  // Top focus recommendation from activeSemesterSummary
-  const topFocusItem = activeSemesterSummary.focusAdvice[0];
-
-  // Quick stats calculations
-  const totalSubjects = activeSemesterSummary.subjectSummaries.length;
-  const achievedTargets = activeSemesterSummary.subjectSummaries.filter(
-    (s) => s.targetAchieved
-  ).length;
-
-  // Future checklist & portfolio stats
-  const totalChecklist = futureChecklist.length;
-  const completedChecklist = futureChecklist.filter((i) => i.isCompleted).length;
-  const readinessPercent =
-    totalChecklist > 0 ? Math.round((completedChecklist / totalChecklist) * 100) : 0;
-  const inPortfolioCount = portfolioItems.filter((i) => i.inPortfolio).length;
-
-  // Calculate target progress percentage (Current GPA / Target GPA)
-  const targetProgressPercent = Math.min(
-    100,
-    Math.round(((activeSemesterSummary.gpa || 0) / (userProfile.targetGpa || 4.0)) * 100)
+  // Current semester tasks & exams
+  const currentSemesterTasks = useMemo(
+    () => tasks.filter((t) => t.semesterId === currentSemester),
+    [tasks, currentSemester]
+  );
+  const currentSemesterExams = useMemo(
+    () => exams.filter((e) => e.semesterId === currentSemester),
+    [exams, currentSemester]
   );
 
-  // Dynamic Teen Motivational Message based on actual student status
-  const getTeenMotivationalMessage = () => {
-    if (todayStudyMinutes >= studyGoal.dailyTargetMinutes && studyGoal.dailyTargetMinutes > 0) {
-      return {
-        text: 'เก่งมาก! วันนี้ทำครบตามเป้าหมายแล้ว 🎉',
-        tone: 'success',
-      };
-    }
-    if (activeSemesterSummary.gpa >= userProfile.targetGpa && activeSemesterSummary.gpa > 0) {
-      return {
-        text: 'สุดยอดมาก! เกรดเฉลี่ยปัจจุบันถึงเป้าหมายแล้ว 🏆',
-        tone: 'success',
-      };
-    }
-    const gpaGap = Number((userProfile.targetGpa - activeSemesterSummary.gpa).toFixed(2));
-    if (gpaGap > 0 && gpaGap <= 0.35) {
-      return {
-        text: `อีกนิดเดียวก็ถึงเกรดเป้าหมายแล้ว! (ขาดอีกเพียง ${gpaGap.toFixed(2)}) ✨`,
-        tone: 'accent',
-      };
-    }
-    if (urgentTasks.length > 0) {
-      return {
-        text: `วันนี้มีงานใกล้ครบกำหนด ${urgentTasks.length} งานนะ อย่าลืมส่งให้ทัน 📝`,
-        tone: 'urgent',
-      };
-    }
-    if (todayStudyMinutes < studyGoal.dailyTargetMinutes) {
-      return {
-        text: 'มาอ่านหนังสืออีกนิดเพื่อพิชิตเป้าหมายวันนี้กัน 📚',
-        tone: 'info',
-      };
-    }
-    return {
-      text: 'ตั้งใจเรียนและบันทึกคะแนนเก็บอย่างสม่ำเสมอนะคะ 💖',
-      tone: 'info',
-    };
-  };
+  // Pending tasks sorted by due date
+  const pendingTasks = useMemo(
+    () =>
+      [...currentSemesterTasks]
+        .filter((t) => t.status !== 'submitted' && t.status !== 'graded')
+        .sort((a, b) => new Date(a.dueDate).getTime() - new Date(b.dueDate).getTime()),
+    [currentSemesterTasks]
+  );
 
-  const motivational = getTeenMotivationalMessage();
+  // Most urgent task
+  const mostUrgentTask = pendingTasks[0] || null;
+  const mostUrgentTaskDays = mostUrgentTask ? getDaysRemaining(mostUrgentTask.dueDate) : null;
+  const mostUrgentTaskSubject = mostUrgentTask
+    ? subjects.find((s) => s.id === mostUrgentTask.subjectId)
+    : null;
 
-  const handleTaskCheckToggle = (task: Task) => {
+  // Next closest exam
+  const closestExam = useMemo(() => {
+    const futureExams = [...currentSemesterExams]
+      .filter((e) => getDaysRemaining(e.examDate) >= 0)
+      .sort((a, b) => new Date(a.examDate).getTime() - new Date(b.examDate).getTime());
+    return futureExams[0] || currentSemesterExams[0] || null;
+  }, [currentSemesterExams]);
+
+  const closestExamDays = closestExam ? getDaysRemaining(closestExam.examDate) : null;
+  const closestExamSubject = closestExam
+    ? subjects.find((s) => s.id === closestExam.subjectId)
+    : null;
+
+  // Focus / reading subject
+  const topFocusSubject = activeSemesterSummary.focusAdvice[0]?.subject || subjects[0] || null;
+
+  // GPA calculations
+  const hasTargetGpa = typeof userProfile?.targetGpa === 'number' && userProfile.targetGpa > 0;
+  const currentGpa = activeSemesterSummary.gpa || 0;
+  const targetGpa = hasTargetGpa ? userProfile.targetGpa : 0;
+
+  // Task check toggle with celebration
+  const handleTaskCheckToggle = (task: Task, e: React.MouseEvent) => {
+    e.stopPropagation();
     const isDone = task.status === 'submitted' || task.status === 'graded';
     updateTask({
       ...task,
@@ -172,858 +123,464 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
         confetti({
           particleCount: 35,
           spread: 50,
-          origin: { y: 0.8 },
+          origin: { y: 0.75 },
         });
-      } catch (e) {
+      } catch (err) {
         // Fallback
       }
     }
   };
 
-  const handleOpenSubjectPlan = (subject: Subject) => {
-    if (onSelectSubjectDetail) {
-      onSelectSubjectDetail(subject);
-    } else {
-      onNavigate('subjects');
-    }
-  };
-
   return (
-    <div className="space-y-6 pb-12 text-left">
+    <div className="max-w-xl mx-auto space-y-4 pb-8 text-left">
       {/* ========================================================================= */}
-      {/* SECTION 1: HEADER & USER PROFILE WITH LIQUID GLASS BANNER                 */}
+      {/* 1. HEADER: สวัสดี 👋 ชื่อผู้ใช้ + AI & Semester Switcher                   */}
       {/* ========================================================================= */}
       <div
-        className="rounded-3xl p-5 sm:p-6 border border-white/80 shadow-lg flex flex-col md:flex-row md:items-center justify-between gap-4 transition-all"
+        className="rounded-2xl p-4 border border-white/80 shadow-md flex items-center justify-between gap-3"
         style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.85) 0%, rgba(255, 255, 255, 0.65) 100%)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          boxShadow: '0 12px 36px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.12), 0 2px 8px 0 rgba(0,0,0,0.03)',
+          background:
+            'linear-gradient(135deg, rgba(255, 255, 255, 0.90) 0%, rgba(255, 255, 255, 0.75) 100%)',
+          backdropFilter: 'blur(20px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+          boxShadow: '0 8px 24px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.10)',
         }}
       >
-        <div className="space-y-2">
-          <div className="flex items-center gap-3 flex-wrap">
-            <div
-              onClick={() => {
-                if (onOpenEditProfile) {
-                  onOpenEditProfile();
-                } else {
-                  onNavigate('profile');
-                }
-              }}
-              className="w-14 h-14 sm:w-16 sm:h-16 rounded-[18px] backdrop-blur-md border border-white/80 ring-1 ring-pink-500/20 shadow-sm flex items-center justify-center select-none shrink-0 overflow-hidden cursor-pointer hover:border-pink-400 hover:ring-pink-500/40 hover:shadow-md transition-all active:scale-95 group relative"
-              style={{
-                borderRadius: '18px',
-                overflow: 'hidden',
-              }}
-              title="ดูและแก้ไขรูปโปรไฟล์"
-            >
-              <AvatarDisplay
-                avatar={userProfile.avatar || '🌸'}
-                avatarUrl={userProfile.avatarUrl}
-                size="full"
-                shape="inherit"
-                className="w-full h-full [border-radius:inherit]"
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  borderRadius: 'inherit',
-                }}
-              />
-              <div
-                className="absolute inset-0 bg-slate-900/35 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white pointer-events-none"
-                style={{ borderRadius: 'inherit' }}
-              >
-                <Edit3 className="w-4 h-4 drop-shadow-md text-white" />
-              </div>
+        <div className="flex items-center gap-3 min-w-0">
+          {/* Avatar / Profile shortcut */}
+          <div
+            onClick={() => {
+              if (onOpenEditProfile) onOpenEditProfile();
+              else onNavigate('profile');
+            }}
+            className="w-12 h-12 rounded-xl backdrop-blur-md border border-white/90 ring-1 ring-pink-500/25 shadow-xs flex items-center justify-center shrink-0 overflow-hidden cursor-pointer active:scale-95 transition-transform group relative"
+            title="แก้ไขโปรไฟล์"
+          >
+            <AvatarDisplay
+              avatar={userProfile.avatar || '🌸'}
+              avatarUrl={userProfile.avatarUrl}
+              size="full"
+              shape="inherit"
+              className="w-full h-full"
+            />
+            <div className="absolute inset-0 bg-slate-900/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+              <Edit3 className="w-3.5 h-3.5 text-white" />
+            </div>
+          </div>
+
+          {/* Greeting & Name */}
+          <div className="min-w-0">
+            <div className="flex items-center gap-1.5 flex-wrap">
+              <span className="text-sm sm:text-base font-black text-slate-800">สวัสดี 👋</span>
+              {isEditingNameInline ? (
+                <form
+                  onSubmit={(e) => {
+                    e.preventDefault();
+                    if (inlineName.trim()) updateStudentName(inlineName.trim());
+                    setIsEditingNameInline(false);
+                  }}
+                  className="inline-flex items-center gap-1"
+                >
+                  <input
+                    type="text"
+                    value={inlineName}
+                    onChange={(e) => setInlineName(e.target.value)}
+                    autoFocus
+                    className="px-2 py-0.5 rounded-lg bg-white text-slate-900 font-bold text-xs sm:text-sm border-2 border-pink-400 focus:outline-none w-28"
+                  />
+                  <button
+                    type="submit"
+                    className="px-2 py-0.5 rounded-lg bg-pink-600 text-white text-[10px] font-bold shadow-xs cursor-pointer"
+                  >
+                    บันทึก
+                  </button>
+                </form>
+              ) : (
+                <div className="inline-flex items-center gap-1">
+                  <h2 className="text-base sm:text-lg font-black text-slate-900 tracking-tight truncate max-w-[140px] sm:max-w-[180px]">
+                    {userProfile.fullName || academicYear.studentName || 'เพื่อนนักเรียน'}
+                  </h2>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setInlineName(userProfile.fullName || academicYear.studentName);
+                      setIsEditingNameInline(true);
+                    }}
+                    className="p-1 text-slate-400 hover:text-pink-600 rounded-md transition-colors cursor-pointer"
+                    title="แก้ไขชื่อ"
+                  >
+                    <Edit3 className="w-3 h-3" />
+                  </button>
+                </div>
+              )}
             </div>
 
-            <div>
-              <div className="flex items-center gap-2 flex-wrap">
-                {isEditingNameInline ? (
-                  <form
-                    onSubmit={(e) => {
-                      e.preventDefault();
-                      if (inlineName.trim()) {
-                        updateStudentName(inlineName.trim());
-                      }
-                      setIsEditingNameInline(false);
-                    }}
-                    className="flex items-center gap-2 flex-wrap"
+            <p className="text-[11px] text-slate-500 font-medium truncate">
+              {userProfile.studentClass
+                ? `ชั้น ${userProfile.studentClass}`
+                : userProfile.gradeLevel
+                ? `ชั้น ${userProfile.gradeLevel}${userProfile.room ? `/${userProfile.room}` : ''}`
+                : 'มัธยมศึกษา'}
+              {userProfile.studentNumber ? ` เลขที่ ${userProfile.studentNumber}` : ''}
+            </p>
+          </div>
+        </div>
+
+        {/* Action buttons: AI Quick Fill & Semester Toggle */}
+        <div className="flex items-center gap-1.5 shrink-0">
+          <button
+            type="button"
+            onClick={() => openAiQuickFill({ scope: 'all' })}
+            className="px-2.5 py-1.5 sm:px-3 sm:py-1.5 rounded-xl font-black text-[11px] sm:text-xs flex items-center gap-1 cursor-pointer shadow-xs active:scale-95 transition-transform"
+            style={{
+              backgroundColor: 'var(--theme-primary, #db2777)',
+              color: 'var(--theme-primary-foreground, #ffffff)',
+            }}
+            title="AI ช่วยกรอกข้อมูลด่วน"
+          >
+            <Sparkles className="w-3 h-3 text-amber-300 animate-pulse shrink-0" />
+            <span className="whitespace-nowrap">AI กรอกด่วน</span>
+          </button>
+          <SemesterToggle size="sm" />
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 2. STATS 2x2 GRID:                                                        */}
+      {/* [ GPA ]     [ เป้าหมาย GPA ]                                              */}
+      {/* [ งาน ]     [ สอบใกล้ถึง ]                                                */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {/* [ GPA ] */}
+        <div
+          onClick={() => onNavigate('analytics')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-white/80 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between active:scale-[0.98] group"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-600">GPA</span>
+            <div
+              className="w-6 h-6 rounded-lg flex items-center justify-center font-bold text-xs"
+              style={{
+                backgroundColor: 'var(--theme-primary-soft, #fce7f3)',
+                color: 'var(--theme-primary, #db2777)',
+              }}
+            >
+              <Trophy className="w-3.5 h-3.5" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
+            {currentGpa.toFixed(2)}
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-slate-500 font-medium truncate mt-0.5">
+            {activeSemesterSummary.totalCredits} หน่วยกิต
+          </div>
+        </div>
+
+        {/* [ เป้าหมาย GPA ] */}
+        <div
+          onClick={() => onNavigate('future')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-purple-200/80 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between active:scale-[0.98] group"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] sm:text-xs font-bold text-purple-800">เป้าหมาย GPA</span>
+            <div className="w-6 h-6 rounded-lg bg-purple-100 text-purple-700 flex items-center justify-center font-bold text-xs">
+              <Target className="w-3.5 h-3.5 text-purple-600" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-purple-900 tracking-tight">
+            {hasTargetGpa ? targetGpa.toFixed(2) : '-.--'}
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-purple-700 font-bold truncate mt-0.5">
+            {hasTargetGpa
+              ? currentGpa >= targetGpa
+                ? '✓ ถึงเป้าหมายแล้ว'
+                : `ขาดอีก ${(targetGpa - currentGpa).toFixed(2)}`
+              : 'แตะเพื่อตั้งเป้า'}
+          </div>
+        </div>
+
+        {/* [ งาน ] */}
+        <div
+          onClick={() => onNavigate('tasks')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-amber-200/80 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between active:scale-[0.98] group"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] sm:text-xs font-bold text-amber-800">งาน</span>
+            <div className="w-6 h-6 rounded-lg bg-amber-100 text-amber-700 flex items-center justify-center font-bold text-xs">
+              <CheckSquare className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+          </div>
+          <div className="text-2xl sm:text-3xl font-black text-amber-900 tracking-tight">
+            {pendingTasks.length}{' '}
+            <span className="text-xs sm:text-sm font-bold text-slate-600">งาน</span>
+          </div>
+          <div className="text-[10px] sm:text-[11px] font-bold truncate mt-0.5">
+            {pendingTasks.length === 0 ? (
+              <span className="text-emerald-700">ไม่มีงานค้าง</span>
+            ) : mostUrgentTaskDays !== null && mostUrgentTaskDays <= 2 ? (
+              <span className="text-rose-600 font-black">
+                {mostUrgentTaskDays <= 0 ? 'ส่งวันนี้/เลยกำหนด' : `อีก ${mostUrgentTaskDays} วัน`}
+              </span>
+            ) : (
+              <span className="text-amber-700">กำลังดำเนินการ</span>
+            )}
+          </div>
+        </div>
+
+        {/* [ สอบใกล้ถึง ] */}
+        <div
+          onClick={() => onNavigate('exams')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-indigo-200/80 shadow-xs hover:shadow-sm transition-all cursor-pointer flex flex-col justify-between active:scale-[0.98] group"
+        >
+          <div className="flex items-center justify-between mb-1">
+            <span className="text-[11px] sm:text-xs font-bold text-indigo-800">สอบใกล้ถึง</span>
+            <div className="w-6 h-6 rounded-lg bg-indigo-100 text-indigo-700 flex items-center justify-center font-bold text-xs">
+              <CalendarIcon className="w-3.5 h-3.5 text-indigo-600" />
+            </div>
+          </div>
+          <div className="text-lg sm:text-xl font-black text-indigo-900 tracking-tight truncate">
+            {closestExamSubject?.name || 'ไม่มีสอบ'}
+          </div>
+          <div className="text-[10px] sm:text-[11px] text-indigo-700 font-bold truncate mt-0.5">
+            {closestExamDays !== null
+              ? closestExamDays === 0
+                ? 'สอบวันนี้!'
+                : closestExamDays > 0
+                ? `อีก ${closestExamDays} วัน (${formatShortThaiDate(closestExam.examDate)})`
+                : 'สอบแล้ว'
+              : 'ยังไม่มีกำหนดสอบ'}
+          </div>
+        </div>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 3. ✨ วันนี้ควรทำอะไร?                                                     */}
+      {/* • งานที่ด่วนที่สุด                                                          */}
+      {/* • สอบที่ใกล้ที่สุด                                                          */}
+      {/* • สิ่งที่ควรอ่าน                                                           */}
+      {/* ========================================================================= */}
+      <div className="glass-card rounded-2xl p-4 border border-white/80 shadow-md space-y-3">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-1.5">
+            <Sparkles className="w-4 h-4 text-pink-500" />
+            <h3 className="font-black text-slate-900 text-sm sm:text-base">
+              วันนี้ควรทำอะไร?
+            </h3>
+          </div>
+          <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-pink-100 text-pink-700">
+            3 รายการหลัก
+          </span>
+        </div>
+
+        <div className="space-y-2.5">
+          {/* • 1. งานที่ด่วนที่สุด */}
+          <div
+            onClick={() => onNavigate('tasks')}
+            className="p-3 rounded-xl bg-white/85 border border-amber-200/80 shadow-2xs hover:border-amber-300 transition-all cursor-pointer flex items-start gap-3 active:scale-[0.99] group"
+          >
+            {mostUrgentTask ? (
+              <button
+                type="button"
+                onClick={(e) => handleTaskCheckToggle(mostUrgentTask, e)}
+                className="text-slate-400 hover:text-emerald-600 mt-0.5 cursor-pointer shrink-0 transition-colors"
+                title="กดเมื่อส่งงานแล้ว"
+              >
+                <Square className="w-4 h-4" />
+              </button>
+            ) : (
+              <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+            )}
+
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-black text-slate-900 truncate">
+                  {mostUrgentTask ? mostUrgentTask.title : 'ไม่มีงานค้างส่งในขณะนี้ 🎉'}
+                </span>
+                {mostUrgentTaskDays !== null && (
+                  <span
+                    className={`text-[9px] font-black px-1.5 py-0.5 rounded-md shrink-0 ${
+                      mostUrgentTaskDays <= 0
+                        ? 'bg-rose-500 text-white'
+                        : mostUrgentTaskDays <= 2
+                        ? 'bg-amber-500 text-white'
+                        : 'bg-slate-100 text-slate-700'
+                    }`}
                   >
-                    <span className="text-xl font-black text-slate-900">สวัสดี,</span>
-                    <input
-                      type="text"
-                      value={inlineName}
-                      onChange={(e) => setInlineName(e.target.value)}
-                      autoFocus
-                      className="px-3 py-1 rounded-xl bg-white text-slate-900 font-bold text-base border-2 border-pink-400 focus:outline-none"
-                    />
-                    <button
-                      type="submit"
-                      className="px-3 py-1 rounded-xl bg-pink-600 text-white text-xs font-bold shadow-xs cursor-pointer"
-                    >
-                      บันทึก
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setIsEditingNameInline(false)}
-                      className="px-2.5 py-1 rounded-xl bg-slate-100 text-slate-700 text-xs font-bold cursor-pointer"
-                    >
-                      ยกเลิก
-                    </button>
-                  </form>
-                ) : (
-                  <div className="flex items-center gap-1.5 flex-wrap">
-                    <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-                      สวัสดี, {userProfile.fullName || academicYear.studentName || 'ยังไม่ได้กรอกข้อมูล'} 💗
-                    </h2>
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setInlineName(userProfile.fullName || academicYear.studentName);
-                        setIsEditingNameInline(true);
-                      }}
-                      className="p-1.5 text-slate-500 hover:text-pink-600 rounded-xl hover:bg-pink-100 transition-colors cursor-pointer"
-                      title="แก้ไขชื่อ"
-                    >
-                      <Edit3 className="w-4 h-4" />
-                    </button>
-                  </div>
+                    {mostUrgentTaskDays <= 0
+                      ? 'ส่งวันนี้/ด่วน'
+                      : `อีก ${mostUrgentTaskDays} วัน`}
+                  </span>
                 )}
               </div>
-
-              <p className="text-xs text-slate-600 font-semibold mt-0.5">
-                {userProfile.schoolName || academicYear.schoolName || 'ยังไม่ได้กรอกข้อมูล'} •{' '}
-                {userProfile.studentClass
-                  ? `ชั้น ${userProfile.studentClass}`
-                  : userProfile.gradeLevel
-                  ? `ชั้น ${userProfile.gradeLevel}${userProfile.room ? `/${userProfile.room}` : ''}`
-                  : 'ยังไม่ได้ระบุชั้น'}
-                {userProfile.studentNumber ? ` (เลขที่ ${userProfile.studentNumber})` : ''} • ปีการศึกษา{' '}
-                {academicYear.year}
+              <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                {mostUrgentTask
+                  ? `${mostUrgentTaskSubject?.name || 'รายวิชา'} • กำหนดส่ง ${formatShortThaiDate(
+                      mostUrgentTask.dueDate
+                    )}`
+                  : 'การบ้านและงานทุกวิชาเรียบร้อยดี'}
               </p>
             </div>
+
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0 mt-0.5" />
           </div>
 
-          {/* Teen Motivational Encouragement Banner */}
-          <div className="pt-1">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full text-xs font-black shadow-2xs border bg-white/95 text-slate-800 border-pink-200">
-              <Sparkles className="w-3.5 h-3.5 text-pink-500 shrink-0" />
-              <span>{motivational.text}</span>
+          {/* • 2. สอบที่ใกล้ที่สุด */}
+          <div
+            onClick={() => onNavigate('exams')}
+            className="p-3 rounded-xl bg-white/85 border border-indigo-200/80 shadow-2xs hover:border-indigo-300 transition-all cursor-pointer flex items-start gap-3 active:scale-[0.99] group"
+          >
+            <div className="w-4 h-4 rounded-full bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 mt-0.5">
+              <CalendarIcon className="w-2.5 h-2.5" />
             </div>
-          </div>
-        </div>
 
-        {/* Semester Switcher */}
-        <div className="flex items-center justify-start md:justify-end shrink-0">
-          <SemesterToggle size="md" />
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 2: 🎯 เกรดเป้าหมาย (HERO TARGET GPA CARD)                          */}
-      {/* ========================================================================= */}
-      <div
-        onClick={() => onNavigate('future')}
-        className="rounded-3xl p-5 sm:p-6 border border-white/85 shadow-lg hover:shadow-xl transition-all cursor-pointer relative overflow-hidden group"
-        style={{
-          background: 'linear-gradient(135deg, rgba(255, 255, 255, 0.88) 0%, rgba(255, 255, 255, 0.68) 100%)',
-          backdropFilter: 'blur(24px) saturate(180%)',
-          WebkitBackdropFilter: 'blur(24px) saturate(180%)',
-          boxShadow: '0 14px 40px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.15), 0 2px 8px 0 rgba(0,0,0,0.03)',
-        }}
-      >
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1.5 min-w-0">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-xl bg-pink-500 text-white flex items-center justify-center shadow-xs">
-                <Target className="w-4 h-4" />
-              </div>
-              <span className="text-xs font-black uppercase tracking-wider text-pink-700">
-                เกรดเป้าหมาย (Target GPA)
-              </span>
-              {activeSemesterSummary.gpa >= userProfile.targetGpa && activeSemesterSummary.gpa > 0 && (
-                <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-300">
-                  ✓ ถึงเป้าหมายแล้ว
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-black text-slate-900 truncate">
+                  {closestExam
+                    ? `สอบ: ${closestExamSubject?.name || 'รายวิชา'}`
+                    : 'ไม่มีกำหนดการสอบเร็ว ๆ นี้ 📖'}
                 </span>
-              )}
-            </div>
-
-            <div className="flex items-baseline gap-3">
-              <span className="text-4xl sm:text-5xl font-black text-slate-900 tracking-tight">
-                {userProfile.targetGpa.toFixed(2)}
-              </span>
-              <div className="text-xs sm:text-sm font-bold text-slate-600">
-                <span>เกรดปัจจุบัน: </span>
-                <strong className="text-slate-900 font-black text-base">
-                  {activeSemesterSummary.gpa.toFixed(2)}
-                </strong>
-                {targetGpaAnalysis.pointsNeededMessage && (
-                  <span className="block text-[11px] text-pink-700 font-bold mt-0.5">
-                    {targetGpaAnalysis.pointsNeededMessage}
+                {closestExamDays !== null && (
+                  <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-indigo-100 text-indigo-700 shrink-0">
+                    {closestExamDays === 0 ? 'สอบวันนี้!' : `อีก ${closestExamDays} วัน`}
                   </span>
                 )}
               </div>
+              <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                {closestExam
+                  ? `${
+                      closestExam.examType === 'midterm' ? 'สอบกลางภาค' : 'สอบปลายภาค'
+                    } • ${formatShortThaiDate(closestExam.examDate)} เวลา ${
+                      closestExam.startTime || '09:00'
+                    } น.`
+                  : 'สามารถทบทวนบทเรียนล่วงหน้าได้เลย'}
+              </p>
             </div>
 
-            {/* Target badges for Career and University */}
-            <div className="flex flex-wrap items-center gap-2 pt-1">
-              {userProfile.dreamCareer ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-purple-100 text-purple-800 border border-purple-200">
-                  <Briefcase className="w-3 h-3 text-purple-600" />
-                  <span>{userProfile.dreamCareer}</span>
-                </span>
-              ) : (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-slate-100 text-slate-600 border border-slate-200">
-                  <Briefcase className="w-3 h-3 text-slate-400" />
-                  <span>ยังไม่ได้ระบุอาชีพในฝัน</span>
-                </span>
-              )}
-
-              {userProfile.dreamUniversities?.[0]?.faculty ? (
-                <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-[11px] font-bold bg-indigo-100 text-indigo-800 border border-indigo-200">
-                  <GraduationCap className="w-3 h-3 text-indigo-600" />
-                  <span>
-                    {userProfile.dreamUniversities[0].faculty} ({userProfile.dreamUniversities[0].universityName})
-                  </span>
-                </span>
-              ) : null}
-            </div>
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0 mt-0.5" />
           </div>
 
-          {/* Progress Bar & Quick Adjust Button */}
-          <div className="w-full md:w-64 space-y-2 shrink-0">
-            <div className="flex justify-between items-center text-xs font-bold text-slate-700">
-              <span>ความคืบหน้าสู่เป้าหมาย</span>
-              <span className="text-pink-600 font-black">{targetProgressPercent}%</span>
-            </div>
-            <div className="w-full h-3 bg-slate-100 rounded-full overflow-hidden border border-slate-200">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-pink-500 to-purple-600 transition-all duration-700"
-                style={{ width: `${targetProgressPercent}%` }}
-              />
-            </div>
-            <div className="flex justify-between items-center text-[10px] text-slate-600 font-bold">
-              <span>0.00</span>
-              <span>เป้าหมาย {userProfile.targetGpa.toFixed(2)}</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 3: 4-METRIC QUICK STAT GRID (2x2 Mobile, 4 Cols Desktop)          */}
-      {/* 📊 GPA | 📚 เวลาอ่าน | 📝 งาน | 🎓 พอร์ต                                  */}
-      {/* ========================================================================= */}
-      <div>
-        <div className="flex items-center justify-between mb-2.5 px-1">
-          <h3 className="text-sm font-black text-slate-900 flex items-center gap-1.5">
-            <span>ภาพรวมสถิติ</span>
-          </h3>
-          <span className="text-xs text-slate-600 font-bold">เทอม {currentSemester === 'term1' ? '1' : '2'}</span>
-        </div>
-
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
-          {/* Card 1: 📊 GPA */}
-          <div
-            onClick={() => onNavigate('analytics')}
-            className="bg-white p-4 rounded-3xl border border-pink-200/90 shadow-2xs hover:shadow-sm hover:border-pink-400 transition-all cursor-pointer flex flex-col justify-between space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-600">📊 GPA เทอมนี้</span>
-              <div className="w-8 h-8 rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                <Trophy className="w-4 h-4 text-pink-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">
-                {activeSemesterSummary.gpa.toFixed(2)}
-              </div>
-              <div className="text-xs text-slate-600 font-bold truncate mt-0.5">
-                เป้าหมาย: <strong className="text-pink-600 font-black">{userProfile.targetGpa.toFixed(2)}</strong>
-              </div>
-            </div>
-          </div>
-
-          {/* Card 2: 📚 อ่านหนังสือ */}
+          {/* • 3. สิ่งที่ควรอ่าน */}
           <div
             onClick={() => onNavigate('study')}
-            className="bg-white p-4 rounded-3xl border border-emerald-200/90 shadow-2xs hover:shadow-sm hover:border-emerald-400 transition-all cursor-pointer flex flex-col justify-between space-y-2 group"
+            className="p-3 rounded-xl bg-white/85 border border-emerald-200/80 shadow-2xs hover:border-emerald-300 transition-all cursor-pointer flex items-start gap-3 active:scale-[0.99] group"
           >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-600">📚 อ่านวันนี้</span>
-              <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                <Timer className="w-4 h-4 text-emerald-600" />
-              </div>
+            <div className="w-4 h-4 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 mt-0.5">
+              <Timer className="w-2.5 h-2.5" />
             </div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">
-                {todayStudyMinutes}{' '}
-                <span className="text-sm font-bold text-slate-600">นาที</span>
-              </div>
-              <div className="text-xs text-emerald-700 font-bold truncate mt-0.5 flex items-center gap-1">
-                <Flame className="w-3 h-3 text-orange-500 fill-orange-500 shrink-0" />
-                <span>Streak {studyStreakDays} วันต่อเนื่อง</span>
-              </div>
-            </div>
-          </div>
 
-          {/* Card 3: 📝 งานค้าง */}
-          <div
-            onClick={() => onNavigate('tasks')}
-            className="bg-white p-4 rounded-3xl border border-amber-200/90 shadow-2xs hover:shadow-sm hover:border-amber-400 transition-all cursor-pointer flex flex-col justify-between space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-600">📝 งานค้างส่ง</span>
-              <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                <CheckSquare className="w-4 h-4 text-amber-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">
-                {pendingTasks.length}{' '}
-                <span className="text-sm font-bold text-slate-600">งาน</span>
-              </div>
-              <div className="text-xs text-amber-700 font-bold truncate mt-0.5">
-                {urgentTasks.length > 0 ? (
-                  <span className="text-rose-600 font-black">ด่วน {urgentTasks.length} งาน</span>
-                ) : (
-                  <span>เรียบร้อยดี</span>
-                )}
-              </div>
-            </div>
-          </div>
-
-          {/* Card 4: 🎓 พอร์ตโฟลิโอ */}
-          <div
-            onClick={() => onNavigate('future')}
-            className="bg-white p-4 rounded-3xl border border-purple-200/90 shadow-2xs hover:shadow-sm hover:border-purple-400 transition-all cursor-pointer flex flex-col justify-between space-y-2 group"
-          >
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-bold text-slate-600">🎓 พอร์ตสะสม</span>
-              <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center font-bold group-hover:scale-105 transition-transform">
-                <FolderHeart className="w-4 h-4 text-purple-600" />
-              </div>
-            </div>
-            <div>
-              <div className="text-3xl font-black text-slate-900 tracking-tight">
-                {inPortfolioCount}{' '}
-                <span className="text-sm font-bold text-slate-600">ชิ้น</span>
-              </div>
-              <div className="text-xs text-purple-700 font-bold truncate mt-0.5">
-                ความพร้อม {readinessPercent}%
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 4: 📌 วันนี้ควรทำอะไร? (WHAT TO DO TODAY! ACTION CARDS)          */}
-      {/* 🔴 ด่วน | 🟠 ควรทำวันนี้ | 🟢 ทำเมื่อมีเวลา                              */}
-      {/* ========================================================================= */}
-      <div className="space-y-3">
-        <div className="flex items-center justify-between px-1">
-          <div className="flex items-center gap-2">
-            <span className="text-lg">📌</span>
-            <h3 className="text-base font-black text-slate-900">วันนี้ควรทำอะไร?</h3>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full bg-pink-100 text-pink-800 border border-pink-200">
-              ภารกิจประจำวัน
-            </span>
-          </div>
-          <button
-            type="button"
-            onClick={() => onNavigate('calendar')}
-            className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 px-3 py-1 rounded-xl transition-all inline-flex items-center gap-1 shadow-2xs cursor-pointer"
-            title="เปิดดูปฏิทินของฉัน"
-          >
-            <Calendar className="w-3.5 h-3.5" />
-            <span>เปิดปฏิทิน</span>
-          </button>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {/* Card 1: 🔴 ด่วน */}
-          <div className="bg-white rounded-3xl p-5 border-2 border-rose-200 shadow-2xs flex flex-col justify-between space-y-3 relative overflow-hidden">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-rose-500 text-white shadow-2xs">
-                  <AlertCircle className="w-3.5 h-3.5" />
-                  <span>🔴 ด่วน</span>
-                </div>
-                <span className="text-xs font-bold text-rose-700">
-                  {urgentTasks.length > 0 ? `${urgentTasks.length} รายการ` : 'ไม่มีงานด่วน'}
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center justify-between gap-1">
+                <span className="text-xs font-black text-slate-900 truncate">
+                  อ่านหนังสือ: {topFocusSubject?.name || 'ทบทวนวิชาที่ควรเน้น'}
+                </span>
+                <span className="text-[9px] font-black px-1.5 py-0.5 rounded-md bg-emerald-100 text-emerald-700 shrink-0 flex items-center gap-0.5">
+                  <Flame className="w-2.5 h-2.5 text-orange-500 fill-orange-500" />
+                  <span>{studyStreakDays} วัน</span>
                 </span>
               </div>
-
-              {urgentTasks.length > 0 ? (
-                <div className="space-y-2 pt-1">
-                  {urgentTasks.slice(0, 2).map((task) => {
-                    const days = getDaysRemaining(task.dueDate);
-                    const sub = activeSemesterSummary.subjectSummaries.find(
-                      (s) => s.subject.id === task.subjectId
-                    )?.subject;
-
-                    return (
-                      <div
-                        key={task.id}
-                        className="p-3 rounded-2xl bg-rose-50/70 border border-rose-200 flex items-start gap-2.5"
-                      >
-                        <button
-                          type="button"
-                          onClick={() => handleTaskCheckToggle(task)}
-                          className="text-rose-500 hover:text-emerald-600 mt-0.5 cursor-pointer shrink-0 transition-colors"
-                          title="กดเมื่อส่งงานแล้ว"
-                        >
-                          <Square className="w-4 h-4" />
-                        </button>
-                        <div className="min-w-0 flex-1">
-                          <p className="text-xs font-black text-slate-900 truncate">{task.title}</p>
-                          <p className="text-[11px] text-slate-600 font-semibold truncate">
-                            {sub?.name || 'รายวิชา'} • กำหนดส่ง {formatShortThaiDate(task.dueDate)}
-                          </p>
-                          <span className="inline-block text-[10px] font-black px-2 py-0.2 rounded-full bg-rose-100 text-rose-800 mt-1">
-                            {days < 0 ? 'เกินกำหนดส่ง' : days === 0 ? 'ส่งวันนี้!' : `อีก ${days} วัน`}
-                          </span>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              ) : (
-                <div className="py-4 text-center space-y-1">
-                  <CheckCircle2 className="w-8 h-8 text-emerald-500 mx-auto" />
-                  <p className="text-xs font-bold text-slate-800">ไม่มีงานเร่งด่วนในขณะนี้</p>
-                  <p className="text-[11px] text-slate-500">คุณจัดการเวลาได้ยอดเยี่ยมมาก! ✨</p>
-                </div>
-              )}
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('tasks')}
-              className="w-full py-2 px-3 rounded-2xl bg-rose-50 hover:bg-rose-100 text-rose-800 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 border border-rose-200"
-            >
-              <span>ดูงานทั้งหมด ({currentSemesterTasks.length})</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Card 2: 🟠 ควรทำวันนี้ */}
-          <div className="bg-white rounded-3xl p-5 border-2 border-amber-200 shadow-2xs flex flex-col justify-between space-y-3 relative overflow-hidden">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-2xs">
-                  <Clock className="w-3.5 h-3.5" />
-                  <span>🟠 ควรทำวันนี้</span>
-                </div>
-                <span className="text-xs font-bold text-amber-800">แนะนำสำหรับคุณ</span>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                {/* Study target item */}
-                <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-black text-slate-900">อ่านหนังสือทบทวนบทเรียน</span>
-                    <span className="text-[11px] font-bold text-amber-800">
-                      {todayStudyMinutes} / {studyGoal.dailyTargetMinutes} น.
-                    </span>
-                  </div>
-                  <p className="text-[11px] text-slate-600 font-semibold">
-                    {todayStudyMinutes >= studyGoal.dailyTargetMinutes
-                      ? 'ครบเป้าหมายอ่านหนังสือวันนี้แล้ว 🎉'
-                      : `ขาดอีก ${studyGoal.dailyTargetMinutes - todayStudyMinutes} นาทีเพื่อพิชิตเป้าหมาย`}
-                  </p>
-                </div>
-
-                {/* Focus subject or upcoming exam */}
-                {topFocusItem ? (
-                  <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1">
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-900 truncate">
-                        วิชา: {topFocusItem.subject.name}
-                      </span>
-                      <span className="text-[10px] font-bold px-1.5 py-0.2 rounded-full bg-amber-200 text-amber-900">
-                        เน้นพิเศษ
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-slate-600 font-semibold">
-                      ขาดอีก {topFocusItem.gapToTarget} คะแนนเพื่อเกรด {topFocusItem.subject.targetGrade}
-                    </p>
-                  </div>
-                ) : upcomingExams[0] ? (
-                  <div className="p-3 rounded-2xl bg-amber-50/70 border border-amber-200 space-y-1">
-                    <span className="text-xs font-black text-slate-900 truncate block">
-                      ใกล้สอบ: {upcomingExams[0].subjectName}
-                    </span>
-                    <p className="text-[11px] text-slate-600 font-semibold">
-                      สอบวันที่ {formatShortThaiDate(upcomingExams[0].examDate)}
-                    </p>
-                  </div>
-                ) : null}
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('study')}
-              className="w-full py-2 px-3 rounded-2xl bg-amber-50 hover:bg-amber-100 text-amber-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 border border-amber-200"
-            >
-              <span>เริ่มจับเวลาอ่านหนังสือ ⏱️</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Card 3: 🟢 ทำเมื่อมีเวลา */}
-          <div className="bg-white rounded-3xl p-5 border-2 border-emerald-200 shadow-2xs flex flex-col justify-between space-y-3 relative overflow-hidden">
-            <div className="space-y-2.5">
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-emerald-600 text-white shadow-2xs">
-                  <Sparkles className="w-3.5 h-3.5" />
-                  <span>🟢 ทำเมื่อมีเวลา</span>
-                </div>
-                <span className="text-xs font-bold text-emerald-800">วางแผนอนาคต</span>
-              </div>
-
-              <div className="space-y-2 pt-1">
-                <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
-                  <span className="text-xs font-black text-slate-900 block">อัปเดต Portfolio & กิจกรรม</span>
-                  <p className="text-[11px] text-slate-600 font-semibold">
-                    สะสมแล้ว {inPortfolioCount} ชิ้นงาน • เพิ่มผลงานเพื่อยื่นรอบพอร์ต TCAS
-                  </p>
-                </div>
-
-                <div className="p-3 rounded-2xl bg-emerald-50/70 border border-emerald-200 space-y-1">
-                  <span className="text-xs font-black text-slate-900 block">ตรวจเช็กเกรดและเป้าหมาย</span>
-                  <p className="text-[11px] text-slate-600 font-semibold">
-                    ความพร้อมสู่เป้าหมาย {readinessPercent}% (ทำแล้ว {completedChecklist}/{totalChecklist} ข้อ)
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            <button
-              type="button"
-              onClick={() => onNavigate('future')}
-              className="w-full py-2 px-3 rounded-2xl bg-emerald-50 hover:bg-emerald-100 text-emerald-900 text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer active:scale-95 border border-emerald-200"
-            >
-              <span>ไปที่แฟ้มสะสมผลงาน 🎓</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 5: QUICK ACTIONS (PILL SHORTCUTS)                                 */}
-      {/* ========================================================================= */}
-      <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none">
-        <button
-          type="button"
-          onClick={onOpenAddSubject}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-200 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
-        >
-          <Plus className="w-3.5 h-3.5 text-pink-600 stroke-[3]" />
-          <span>+ เพิ่มวิชา</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenAddTask}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-200 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
-        >
-          <Plus className="w-3.5 h-3.5 text-amber-600 stroke-[3]" />
-          <span>+ เพิ่มงาน</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={onOpenAddExam}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black bg-white hover:bg-slate-50 text-slate-900 border-2 border-slate-200 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
-        >
-          <Plus className="w-3.5 h-3.5 text-indigo-600 stroke-[3]" />
-          <span>+ เพิ่มการสอบ</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate('future')}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black bg-white hover:bg-pink-50 text-pink-700 border-2 border-pink-200 shadow-2xs transition-all cursor-pointer whitespace-nowrap active:scale-95"
-        >
-          <FolderHeart className="w-3.5 h-3.5 text-pink-600" />
-          <span>+ เพิ่ม Portfolio</span>
-        </button>
-
-        <button
-          type="button"
-          onClick={() => onNavigate('future')}
-          className="flex items-center gap-1.5 px-4 py-2.5 rounded-full text-xs font-black bg-gradient-to-r from-pink-600 to-purple-600 text-white shadow-xs hover:from-pink-700 hover:to-purple-700 transition-all cursor-pointer whitespace-nowrap active:scale-95 ml-auto"
-        >
-          <Target className="w-3.5 h-3.5" />
-          <span>🎯 แผนสู่อนาคต</span>
-        </button>
-      </div>
-
-      {/* ========================================================================= */}
-      {/* SECTION 6: คะแนน & วิชาที่ควรโฟกัส (ACADEMIC FOCUS & GRADES)               */}
-      {/* ========================================================================= */}
-      {topFocusItem && (
-        <div className="bg-gradient-to-r from-amber-50/90 via-orange-50/60 to-white rounded-3xl p-5 sm:p-6 border-2 border-amber-200/90 shadow-2xs relative overflow-hidden">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="space-y-2 min-w-0">
-              <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-black bg-amber-500 text-white shadow-2xs">
-                <Flame className="w-3.5 h-3.5 fill-white" />
-                <span>วิชาที่ควรโฟกัสเป็นพิเศษ</span>
-              </div>
-              <h3 className="text-xl font-black text-slate-900 truncate">
-                {topFocusItem.subject.name}
-                <span className="text-xs font-bold text-slate-600 ml-2">
-                  ({topFocusItem.subject.code})
-                </span>
-              </h3>
-              <p className="text-xs sm:text-sm text-slate-700 leading-relaxed max-w-2xl font-medium">
-                <span className="font-bold text-amber-900">คำแนะนำ: </span>
-                {topFocusItem.message} เหลือคะแนนให้เก็บอีก{' '}
-                <span className="font-black text-amber-800">
-                  {topFocusItem.remainingPoints} คะแนน
-                </span>{' '}
-                (ขาดอีก {topFocusItem.gapToTarget} คะแนนเพื่อเกรด {topFocusItem.subject.targetGrade})
+              <p className="text-[11px] text-slate-500 font-medium truncate mt-0.5">
+                วันนี้อ่านแล้ว {todayStudyMinutes}/{studyGoal.dailyTargetMinutes} นาที •{' '}
+                {todayStudyMinutes >= studyGoal.dailyTargetMinutes
+                  ? 'ครบตามเป้าหมายแล้ว 🌟'
+                  : `ขาดอีก ${Math.max(
+                      0,
+                      studyGoal.dailyTargetMinutes - todayStudyMinutes
+                    )} นาที`}
               </p>
             </div>
 
-            <button
-              type="button"
-              onClick={() => handleOpenSubjectPlan(topFocusItem.subject)}
-              className="px-5 py-2.5 rounded-2xl bg-amber-500 hover:bg-amber-600 text-white text-xs font-black transition-all shadow-xs flex items-center justify-center gap-1.5 shrink-0 cursor-pointer active:scale-95"
-            >
-              <span>ดูแผนคะแนน</span>
-              <ArrowRight className="w-3.5 h-3.5" />
-            </button>
+            <ChevronRight className="w-4 h-4 text-slate-300 group-hover:text-slate-500 shrink-0 mt-0.5" />
           </div>
-        </div>
-      )}
-
-      {/* ========================================================================= */}
-      {/* SECTION 7: 3 FOCUSED CONTENT COLUMNS (SUBJECTS, TASKS, EXAMS)             */}
-      {/* ========================================================================= */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
-        {/* 1. ภาพรวมคะแนน (Top 3 subjects) */}
-        <div className="glass-card rounded-3xl p-5 border border-white/80 shadow-md flex flex-col justify-between space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-pink-100 text-pink-700 flex items-center justify-center shadow-2xs">
-                  <BookOpen className="w-4 h-4 text-pink-600" />
-                </div>
-                <h4 className="font-black text-slate-900 text-sm">ภาพรวมคะแนน</h4>
-              </div>
-              <span className="text-xs text-slate-600 font-bold">3 วิชาล่าสุด</span>
-            </div>
-
-            <div className="space-y-2.5">
-              {activeSemesterSummary.subjectSummaries.slice(0, 3).map((subSummary) => {
-                const sub = subSummary.subject;
-                return (
-                  <div
-                    key={sub.id}
-                    onClick={() => handleOpenSubjectPlan(sub)}
-                    className="p-3 rounded-2xl glass-secondary hover:bg-white/80 border border-white/60 transition-all cursor-pointer group space-y-2"
-                  >
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="w-3 h-3 rounded-full shrink-0 shadow-2xs"
-                          style={{ backgroundColor: getSubjectColor(sub.color) }}
-                        />
-                        <span className="text-xs font-black text-slate-900 group-hover:text-pink-600 transition-colors truncate max-w-[140px]">
-                          {sub.name}
-                        </span>
-                      </div>
-                      <span className="text-xs font-black px-2.5 py-0.5 rounded-full bg-white/90 border border-slate-300 text-slate-900 shadow-2xs">
-                        เกรด {subSummary.estimatedGrade}
-                      </span>
-                    </div>
-
-                    {/* Progress Bar */}
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between text-[11px] text-slate-600 font-bold">
-                        <span>{subSummary.earnedScore} / 100 คะแนน</span>
-                        <span className="text-slate-900 font-black">
-                          {subSummary.currentPercentage.toFixed(0)}%
-                        </span>
-                      </div>
-                      <div className="w-full h-2 bg-slate-200/80 rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all duration-500 ease-out"
-                          style={{
-                            width: `${Math.min(100, subSummary.currentPercentage)}%`,
-                            backgroundColor: getSubjectColor(sub.color),
-                          }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {activeSemesterSummary.subjectSummaries.length === 0 && (
-                <div className="text-center py-6 text-slate-600 text-xs font-bold">
-                  ยังไม่มีข้อมูลรายวิชาในเทอมนี้
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('subjects')}
-            className="w-full py-2.5 rounded-2xl glass-secondary hover:bg-white/90 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 border border-white/70 active:scale-95"
-          >
-            <span>ดูวิชาทั้งหมด ({totalSubjects})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* 2. งานใกล้ส่ง (Max 3 items with quick check) */}
-        <div className="glass-card rounded-3xl p-5 border border-white/80 shadow-md flex flex-col justify-between space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-purple-100 text-purple-700 flex items-center justify-center shadow-2xs">
-                  <CheckSquare className="w-4 h-4 text-purple-600" />
-                </div>
-                <h4 className="font-black text-slate-900 text-sm">งานใกล้ส่ง</h4>
-              </div>
-              <span className="text-xs text-slate-600 font-bold">
-                ค้าง {pendingTasks.length} งาน
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {topPendingTasks.map((task) => {
-                const sub = subjects.find((s) => s.id === task.subjectId);
-                const days = getDaysRemaining(task.dueDate);
-                const isUrgent = days <= 2 && days >= 0;
-
-                return (
-                  <div
-                    key={task.id}
-                    className="p-3 rounded-2xl glass-secondary hover:bg-white/80 border border-white/60 transition-all flex items-center gap-2.5"
-                  >
-                    <button
-                      type="button"
-                      onClick={() => handleTaskCheckToggle(task)}
-                      className="text-slate-400 hover:text-emerald-600 transition-colors cursor-pointer shrink-0"
-                      title="กดเพื่อทำเครื่องหมายว่าส่งแล้ว"
-                    >
-                      <Square className="w-4 h-4" />
-                    </button>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-xs font-black text-slate-900 truncate">{task.title}</p>
-                      <p className="text-[11px] text-slate-600 font-semibold truncate">
-                        {sub?.name || 'ไม่พบข้อมูลวิชา'} • ส่ง {formatShortThaiDate(task.dueDate)}
-                      </p>
-                    </div>
-                    {isUrgent && (
-                      <span className="text-[10px] font-black px-2 py-0.5 rounded-full bg-rose-100 text-rose-800 shrink-0">
-                        {days === 0 ? 'วันนี้' : `อีก ${days} วัน`}
-                      </span>
-                    )}
-                  </div>
-                );
-              })}
-
-              {topPendingTasks.length === 0 && (
-                <div className="text-center py-6 text-slate-600 text-xs font-bold space-y-1">
-                  <CheckCircle2 className="w-6 h-6 text-emerald-500 mx-auto" />
-                  <p>ไม่มีงานค้างส่งในขณะนี้ 🎉</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('tasks')}
-            className="w-full py-2.5 rounded-2xl glass-secondary hover:bg-white/90 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 border border-white/70 active:scale-95"
-          >
-            <span>ดูงานทั้งหมด ({currentSemesterTasks.length})</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
-        </div>
-
-        {/* 3. การสอบที่ใกล้ที่สุด */}
-        <div className="glass-card rounded-3xl p-5 border border-white/80 shadow-md flex flex-col justify-between space-y-4">
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-700 flex items-center justify-center shadow-2xs">
-                  <Calendar className="w-4 h-4 text-indigo-600" />
-                </div>
-                <h4 className="font-black text-slate-900 text-sm">การสอบที่ใกล้ที่สุด</h4>
-              </div>
-              <span className="text-xs text-slate-600 font-bold">
-                รวม {currentSemesterExams.length} การสอบ
-              </span>
-            </div>
-
-            <div className="space-y-2">
-              {upcomingExams.map((exam) => {
-                const sub = subjects.find((s) => s.id === exam.subjectId);
-                const subName = sub?.name || 'ไม่พบข้อมูลวิชาของการสอบนี้';
-                const examTitle = exam.examType === 'midterm' ? 'สอบกลางภาค' : 'สอบปลายภาค';
-                const days = getDaysRemaining(exam.examDate);
-                const isPast = days < 0;
-
-                return (
-                  <div
-                    key={exam.id}
-                    className="p-3 rounded-2xl glass-secondary border border-white/60 space-y-1.5"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-xs font-black text-slate-900 truncate max-w-[150px]">
-                        {subName}
-                      </span>
-                      <span
-                        className={`text-[10px] font-black px-2 py-0.5 rounded-full ${
-                          isPast
-                            ? 'bg-slate-200/90 text-slate-700'
-                            : days <= 3
-                            ? 'bg-rose-100/90 text-rose-800'
-                            : 'bg-indigo-100/90 text-indigo-800'
-                        }`}
-                      >
-                        {isPast ? 'สอบแล้ว' : days === 0 ? 'สอบวันนี้' : `อีก ${days} วัน`}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-[11px] text-slate-600 font-semibold">
-                      <span>{examTitle}</span>
-                      <span className="font-bold text-slate-800">{formatShortThaiDate(exam.examDate)}</span>
-                    </div>
-                  </div>
-                );
-              })}
-
-              {upcomingExams.length === 0 && (
-                <div className="text-center py-6 text-slate-600 text-xs font-bold">
-                  ไม่มีตารางสอบเร็ว ๆ นี้
-                </div>
-              )}
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => onNavigate('exams')}
-            className="w-full py-2.5 rounded-2xl glass-secondary hover:bg-white/90 text-slate-800 text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer mt-2 border border-white/70 active:scale-95"
-          >
-            <span>ดูตารางสอบทั้งหมด</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
+
+      {/* ========================================================================= */}
+      {/* 4. QUICK ACTIONS: 2x2 GRID                                                */}
+      {/* [ 📚 วิชา ] [ 📝 งาน ]                                                    */}
+      {/* [ 📅 สอบ  ] [ 📖 อ่าน ]                                                    */}
+      {/* ========================================================================= */}
+      <div className="grid grid-cols-2 gap-2.5">
+        {/* [ 📚 วิชา ] */}
+        <button
+          type="button"
+          onClick={() => onNavigate('subjects')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-pink-100 shadow-xs hover:shadow-sm transition-all flex items-center gap-2.5 cursor-pointer active:scale-95 group text-left"
+        >
+          <div className="w-8 h-8 rounded-xl bg-pink-100 text-pink-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <BookOpen className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">
+              📚 วิชา
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block truncate">
+              {subjects.length} วิชา • คะแนนเก็บ
+            </span>
+          </div>
+        </button>
+
+        {/* [ 📝 งาน ] */}
+        <button
+          type="button"
+          onClick={() => onNavigate('tasks')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-amber-100 shadow-xs hover:shadow-sm transition-all flex items-center gap-2.5 cursor-pointer active:scale-95 group text-left"
+        >
+          <div className="w-8 h-8 rounded-xl bg-amber-100 text-amber-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <CheckSquare className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">
+              📝 งาน
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block truncate">
+              {pendingTasks.length} ค้าง • ส่งการบ้าน
+            </span>
+          </div>
+        </button>
+
+        {/* [ 📅 สอบ ] */}
+        <button
+          type="button"
+          onClick={() => onNavigate('exams')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-indigo-100 shadow-xs hover:shadow-sm transition-all flex items-center gap-2.5 cursor-pointer active:scale-95 group text-left"
+        >
+          <div className="w-8 h-8 rounded-xl bg-indigo-100 text-indigo-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <CalendarIcon className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">
+              📅 สอบ
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block truncate">
+              {currentSemesterExams.length} สอบ • ตารางสอบ
+            </span>
+          </div>
+        </button>
+
+        {/* [ 📖 อ่าน ] */}
+        <button
+          type="button"
+          onClick={() => onNavigate('study')}
+          className="glass-card p-3 sm:p-4 rounded-2xl border border-emerald-100 shadow-xs hover:shadow-sm transition-all flex items-center gap-2.5 cursor-pointer active:scale-95 group text-left"
+        >
+          <div className="w-8 h-8 rounded-xl bg-emerald-100 text-emerald-600 flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform">
+            <Timer className="w-4 h-4" />
+          </div>
+          <div className="min-w-0">
+            <span className="text-xs sm:text-sm font-black text-slate-900 block truncate">
+              📖 อ่าน
+            </span>
+            <span className="text-[10px] text-slate-500 font-medium block truncate">
+              Pomodoro • บันทึกเวลา
+            </span>
+          </div>
+        </button>
+      </div>
+
+      {/* ========================================================================= */}
+      {/* 5. จบหน้า Dashboard                                                       */}
+      {/* ========================================================================= */}
     </div>
   );
 };

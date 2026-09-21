@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
 import { useGrade } from '../context/GradeContext';
+import { useAiQuickFill } from '../context/AiQuickFillContext';
 import { Task, TaskStatus, ScorePeriodKey } from '../types';
 import { SemesterToggle } from './SemesterToggle';
 import { formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
@@ -33,6 +34,7 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
     updateTask,
     deleteTask,
   } = useGrade();
+  const { openAiQuickFill } = useAiQuickFill();
 
   // Top Filter: 'all' (ทั้งหมด), 'today' (วันนี้), 'urgent' (ใกล้ส่ง), 'completed' (เสร็จแล้ว)
   const [activeFilter, setActiveFilter] = useState<'all' | 'today' | 'urgent' | 'completed'>('all');
@@ -186,18 +188,18 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
   const completedCount = semesterTasks.filter((t) => isCompleted(t)).length;
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 sm:space-y-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 sm:p-6 rounded-3xl border border-white/80 shadow-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-card p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/80 shadow-md">
         <div>
           <div className="flex items-center gap-2">
-            <div className="w-9 h-9 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs">
-              <CheckSquare className="w-4.5 h-4.5" />
+            <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-sky-50 text-sky-600 flex items-center justify-center shadow-2xs">
+              <CheckSquare className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
             </div>
             <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               การบ้าน & งานที่มอบหมาย
             </h2>
-            <span className="text-xs font-bold px-3 py-0.5 rounded-full glass-secondary text-sky-700 border border-white/60">
+            <span className="text-[11px] sm:text-xs font-bold px-2.5 sm:px-3 py-0.5 rounded-full glass-secondary text-sky-700 border border-white/60">
               ค้าง {pendingCount} งาน
             </span>
           </div>
@@ -206,13 +208,13 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           <SemesterToggle size="sm" />
           {onNavigateToCalendar && (
             <button
               type="button"
               onClick={() => onNavigateToCalendar()}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold text-blue-700 bg-blue-50/90 hover:bg-blue-100 border border-blue-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
               title="เปิดดูปฏิทินงานและการเรียน"
             >
               <Calendar className="w-4 h-4" />
@@ -220,9 +222,23 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
             </button>
           )}
           <button
+            id="tasks-ai-quick-fill-btn"
+            type="button"
+            onClick={() => openAiQuickFill({ scope: 'tasks' })}
+            className="app-ai-btn px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+            style={{
+              backgroundColor: 'var(--theme-primary)',
+              color: 'var(--theme-primary-foreground, #ffffff)',
+              borderColor: 'var(--theme-primary)',
+            }}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 drop-shadow-xs animate-pulse" />
+            <span>✨ AI กรอกงานด่วน</span>
+          </button>
+          <button
             type="button"
             onClick={openAddModal}
-            className="px-4 py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3.5 py-1.5 sm:px-4 sm:py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มงานใหม่</span>
@@ -231,23 +247,23 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
       </div>
 
       {/* Task Summary Metric Grid: งานทั้งหมด | ใกล้ครบกำหนด | เสร็จแล้ว */}
-      <div className="grid grid-cols-3 gap-3">
+      <div className="grid grid-cols-3 gap-2 sm:gap-3">
         <div
           onClick={() => {
             setActiveFilter('all');
             setShowAllUrgent(false);
           }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all cursor-pointer ${
             activeFilter === 'all'
               ? 'glass-card border-indigo-300 shadow-xs'
               : 'glass-card border-white/80 hover:border-indigo-200 shadow-2xs'
           }`}
         >
-          <span className="text-xs font-bold text-slate-600 block">📝 งานทั้งหมด</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">📝 งานทั้งหมด</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
             {semesterTasks.length} <span className="text-xs font-bold text-slate-600">งาน</span>
           </div>
-          <span className="text-[11px] text-indigo-700 font-bold">รวมทุกรายวิชา</span>
+          <span className="text-[10px] sm:text-[11px] text-indigo-700 font-bold truncate block">รวมทุกวิชา</span>
         </div>
 
         <div
@@ -255,17 +271,17 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
             setActiveFilter('urgent');
             setShowAllUrgent(false);
           }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all cursor-pointer ${
             activeFilter === 'urgent'
               ? 'glass-card border-amber-300 shadow-xs'
               : 'glass-card border-white/80 hover:border-amber-200 shadow-2xs'
           }`}
         >
-          <span className="text-xs font-bold text-slate-600 block">⏰ ใกล้ครบกำหนด</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">⏰ ใกล้ครบกำหนด</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
             {pendingCount} <span className="text-xs font-bold text-slate-600">งาน</span>
           </div>
-          <span className="text-[11px] text-amber-700 font-bold">
+          <span className="text-[10px] sm:text-[11px] text-amber-700 font-bold truncate block">
             {todayCount > 0 ? `ส่งวันนี้ ${todayCount} งาน!` : 'ต้องรีบส่ง'}
           </span>
         </div>
@@ -275,17 +291,17 @@ export const TasksView: React.FC<TasksViewProps> = ({ onNavigateToCalendar }) =>
             setActiveFilter('completed');
             setShowAllUrgent(false);
           }}
-          className={`p-4 rounded-2xl border transition-all cursor-pointer ${
+          className={`p-2.5 sm:p-4 rounded-xl sm:rounded-2xl border transition-all cursor-pointer ${
             activeFilter === 'completed'
               ? 'glass-card border-emerald-300 shadow-xs'
               : 'glass-card border-white/80 hover:border-emerald-200 shadow-2xs'
           }`}
         >
-          <span className="text-xs font-bold text-slate-600 block">✓ เสร็จแล้ว</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">✓ เสร็จแล้ว</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
             {completedCount} <span className="text-xs font-bold text-slate-600">งาน</span>
           </div>
-          <span className="text-[11px] text-emerald-700 font-bold">ส่งเรียบร้อยแล้ว</span>
+          <span className="text-[10px] sm:text-[11px] text-emerald-700 font-bold truncate block">ส่งเรียบร้อย</span>
         </div>
       </div>
 

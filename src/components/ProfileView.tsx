@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
 import { useTheme } from '../context/ThemeContext';
+import { useAiQuickFill } from '../context/AiQuickFillContext';
 import { PRESET_THEME_COLORS } from '../utils/themeUtils';
 import { CUTE_AVATARS } from '../data/defaultData';
 import { GradeLevel, NumericGrade, UserProfile } from '../types';
@@ -59,6 +60,7 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
     updateGradeThresholds,
     resetGradeThresholds,
   } = useGrade();
+  const { openAiQuickFill } = useAiQuickFill();
 
   const { themeColor, setThemeColor, openThemeModal } = useTheme();
 
@@ -275,6 +277,22 @@ export const ProfileView: React.FC<ProfileViewProps> = ({ onNavigate }) => {
 
           {/* Actions */}
           <div className="flex flex-wrap items-center justify-center gap-2">
+            <button
+              id="profile-ai-quick-fill-btn"
+              type="button"
+              onClick={() => openAiQuickFill({ scope: 'profile' })}
+              className="app-ai-btn px-4 py-2 rounded-full text-xs font-black transition-all flex items-center gap-2 cursor-pointer shadow-md active:scale-95"
+              style={{
+                backgroundColor: 'var(--theme-primary)',
+                color: 'var(--theme-primary-foreground, #ffffff)',
+                borderColor: 'var(--theme-primary)',
+              }}
+              title="ให้ AI ช่วยกรอกข้อมูลส่วนตัวและเป้าหมาย"
+            >
+              <Sparkles className="w-3.5 h-3.5 text-amber-300 drop-shadow-xs animate-pulse" />
+              <span>✨ AI ช่วยกรอกโปรไฟล์</span>
+            </button>
+
             <button
               type="button"
               onClick={() => {

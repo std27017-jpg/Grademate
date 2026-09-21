@@ -3,6 +3,24 @@ import react from '@vitejs/plugin-react';
 import path from 'path';
 import fs from 'fs';
 import {defineConfig, Plugin} from 'vite';
+import { GoogleGenAI } from '@google/genai';
+
+let aiClient: GoogleGenAI | null = null;
+function getGeminiClient(): GoogleGenAI | null {
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey) return null;
+  if (!aiClient) {
+    aiClient = new GoogleGenAI({
+      apiKey,
+      httpOptions: {
+        headers: {
+          'User-Agent': 'aistudio-build',
+        },
+      },
+    });
+  }
+  return aiClient;
+}
 
 function fileStoragePlugin(): Plugin {
   return {
@@ -110,6 +128,173 @@ function fileStoragePlugin(): Plugin {
             res.statusCode = 500;
             res.setHeader('Content-Type', 'application/json');
             res.end(JSON.stringify({ success: false, error: 'Upload failed' }));
+          }
+          return;
+        }
+
+        // =========================================================================
+        // API Route: ✨ AI Quick Fill Parser (/api/ai-parse)
+        // Uses @google/genai with gemini-3.8-flash securely on the server
+        // =========================================================================
+        if (req.url === '/api/ai-parse' && req.method === 'POST') {
+          try {
+            const chunks: Buffer[] = [];
+            req.on('data', (chunk) => chunks.push(chunk));
+            req.on('end', async () => {
+              try {
+                const rawBody = Buffer.concat(chunks).toString('utf8');
+                const body = JSON.parse(rawBody || '{}');
+                const { text, scope = 'all', fileBase64, fileMimeType, userContext } = body;
+
+                const ai = getGeminiClient();
+                if (!ai) {
+                  // No Gemini API Key configured, client will gracefully fallback to rule engine
+                  res.statusCode = 200;
+                  res.setHeader('Content-Type', 'application/json');
+                  res.end(JSON.stringify({
+                    success: false,
+                    fallbackRequired: true,
+                    error: 'NO_API_KEY',
+                    message: 'Gemini API Key is not set, falling back to local smart parser'
+                  }));
+                  return;
+                }
+
+                // Prepare contents for Gemini 3.8 Flash
+                const existingSubjectsStr = userContext?.existingSubjects
+                  ? userContext.existingSubjects.map((s: any) => `${s.name} (รหัส: ${s.code || '-'}, ID: ${s.id})`).join(', ')
+                  : 'ไม่มีข้อมูลวิชาเดิม';
+
+                const promptParts: any[] = [];
+
+                if (fileBase64 && fileMimeType) {
+                  const cleanData = fileBase64.replace(/^data:[^;]+;base64,/, '');
+                  promptParts.push({
+                    inlineData: {
+                      mimeType: fileMimeType,
+                      data: cleanData,
+                    },
+                  });
+                }
+
+                const userPromptText = `วิเคราะห์และแยกข้อมูลจากข้อความ/เอกสาร/รูปภาพนี้:
+---
+${text || '(วิเคราะห์จากไฟล์/รูปภาพที่แนบมา)'}
+---
+บริบทของผู้ใช้:
+- วิชาเดิมในระบบของผู้ใช้: ${existingSubjectsStr}
+- ขอบเขตที่สนใจ (Scope): ${scope}
+- วันที่ปัจจุบัน: 21 กันยายน 2569 (2026-09-21)
+
+กรุณาแปลงข้อมูลเป็น JSON ตาม Schema ที่กำหนดไว้อย่างแม่นยำ ไม่สร้างข้อมูลเท็จที่ไม่มีในเอกสารหรือข้อความ`;
+
+                promptParts.push({ text: userPromptText });
+
+                const systemInstruction = `คุณคือ "AI ผู้ช่วยกรอกข้อมูลของ MyGrade" (MyGrade Smart Form Assistant)
+วันที่อ้างอิงปัจจุบัน: วันที่ 21 กันยายน พ.ศ. 2569 (2026-09-21)
+หน้าที่ของคุณ: วิเคราะห์ข้อความหรือรูปภาพตารางสอบ/การบ้านภาษาไทยของนักเรียน แยกข้อมูลเข้าฟิลด์ของระบบ MyGrade โดยไม่สร้างข้อมูลเท็จ
+
+กฎการแยกข้อมูล:
+1. วันที่: หากระบุแค่วันที่และเดือน (เช่น "28 ก.ย.", "25 กันยายน") ให้ถือเป็นปีการศึกษาปัจจุบัน พ.ศ. 2569 (2026) ในรูปแบบ YYYY-MM-DD
+2. เวลา: แปลงเป็น HH:mm เช่น "9 โมง" -> "09:00", "13:30 น." -> "13:30"
+3. ข้อมูลส่วนตัว (Profile): แยกชื่อ-นามสกุล, ระดับชั้น (เช่น ม.4), ห้อง (เช่น 2), เลขที่, เกรดเป้าหมาย (0-4), คณะ/อาชีพในฝัน, มหาวิทยาลัย
+4. งาน (Tasks): ชื่องาน, ชื่อวิชาที่ตรงกัน, กำหนดส่ง, เวลา, คะแนนเต็ม
+5. การสอบ (Exams): ชื่อวิชา, วันสอบ, เวลาเริ่ม-สิ้นสุด, ประเภท (midterm หรือ final), หัวข้อสอบ (topics เป็น array), ห้องสอบ
+6. วิชาใหม่ (Subjects): หากผู้ใช้บอกเพิ่มวิชาใหม่ ให้แยกชื่อวิชา รหัส หน่วยกิต เกรดเป้าหมาย
+7. เป้าหมาย (Goals): รายการเป้าหมายหรือ to-do ที่ไม่ใช่เกรด
+8. ผลงาน (Portfolio): ผลงาน เกียรติบัตร รางวัล
+9. แผนอ่านหนังสือ (Study): วิชา, หัวข้อ, วันที่, ระยะเวลาอ่าน (นาที)
+
+ผลลัพธ์ต้องเป็น JSON เท่านั้น โครงสร้าง:
+{
+  "summary": "สรุปสั้นๆ เป็นภาษาไทยว่าเข้าใจข้อมูลอะไรบ้าง",
+  "profile": {
+    "fullName": "...",
+    "gradeLevel": "...",
+    "room": "...",
+    "studentNumber": "...",
+    "schoolName": "...",
+    "targetGpa": 3.8,
+    "dreamCareer": "...",
+    "dreamFaculty": "...",
+    "dreamUniversity": "..."
+  },
+  "tasks": [
+    {
+      "title": "...",
+      "subjectQuery": "...",
+      "dueDate": "YYYY-MM-DD",
+      "dueTime": "HH:mm",
+      "periodKey": "preMidterm",
+      "maxScore": 10,
+      "notes": "..."
+    }
+  ],
+  "exams": [
+    {
+      "subjectQuery": "...",
+      "examDate": "YYYY-MM-DD",
+      "startTime": "HH:mm",
+      "endTime": "HH:mm",
+      "examType": "midterm",
+      "room": "...",
+      "topics": ["..."],
+      "tips": "..."
+    }
+  ],
+  "subjects": [],
+  "goals": [],
+  "portfolio": [],
+  "studyPlans": [],
+  "warnings": []
+}`;
+
+                const response = await ai.models.generateContent({
+                  model: 'gemini-3.8-flash',
+                  contents: [
+                    {
+                      role: 'user',
+                      parts: promptParts,
+                    },
+                  ],
+                  config: {
+                    responseMimeType: 'application/json',
+                    systemInstruction,
+                  },
+                });
+
+                const candidateText = response.text || '';
+                let parsedResult: any = {};
+                try {
+                  parsedResult = JSON.parse(candidateText);
+                } catch (parseError) {
+                  // If wrapped in markdown code fence
+                  const clean = candidateText.replace(/^```json\s*/i, '').replace(/\s*```$/, '').trim();
+                  parsedResult = JSON.parse(clean);
+                }
+
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: true,
+                  data: parsedResult,
+                  rawText: candidateText,
+                }));
+              } catch (genAiError: any) {
+                console.error('Gemini API Error:', genAiError);
+                res.statusCode = 200;
+                res.setHeader('Content-Type', 'application/json');
+                res.end(JSON.stringify({
+                  success: false,
+                  fallbackRequired: true,
+                  error: genAiError?.message || 'Gemini processing failed',
+                }));
+              }
+            });
+          } catch (err: any) {
+            res.statusCode = 500;
+            res.setHeader('Content-Type', 'application/json');
+            res.end(JSON.stringify({ success: false, fallbackRequired: true, error: err?.message }));
           }
           return;
         }

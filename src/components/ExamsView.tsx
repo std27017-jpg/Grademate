@@ -17,6 +17,7 @@ import {
   Lightbulb,
 } from 'lucide-react';
 import { useGrade } from '../context/GradeContext';
+import { useAiQuickFill } from '../context/AiQuickFillContext';
 import { Exam, StudyStatus } from '../types';
 import { SemesterToggle } from './SemesterToggle';
 import { formatShortThaiDate, getDaysRemaining } from '../utils/gradeCalculations';
@@ -36,6 +37,7 @@ export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) =>
     updateExam,
     deleteExam,
   } = useGrade();
+  const { openAiQuickFill } = useAiQuickFill();
 
   // Show all exams toggle (Section 8: Show next exam first, then [ดูตารางสอบทั้งหมด])
   const [showAllExams, setShowAllExams] = useState(false);
@@ -200,15 +202,15 @@ export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) =>
   };
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 sm:space-y-6 pb-8">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 sm:p-6 rounded-3xl border border-white/80 shadow-md">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-card p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/80 shadow-md">
         <div>
           <div className="flex items-center gap-2">
-            <h2 className="text-2xl font-black text-slate-900 tracking-tight">
+            <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               ตารางสอบ & แนวข้อสอบ
             </h2>
-            <span className="text-xs font-bold px-2.5 py-0.5 rounded-full glass-secondary text-slate-700 border border-white/60">
+            <span className="text-[11px] sm:text-xs font-bold px-2 sm:px-2.5 py-0.5 rounded-full glass-secondary text-slate-700 border border-white/60">
               {filteredExams.length} การสอบ
             </span>
           </div>
@@ -217,13 +219,13 @@ export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) =>
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 flex-wrap">
+        <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
           <SemesterToggle size="sm" />
           {onNavigateToCalendar && (
             <button
               type="button"
               onClick={() => onNavigateToCalendar()}
-              className="px-3.5 py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
+              className="px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-bold text-purple-700 bg-purple-50/90 hover:bg-purple-100 border border-purple-200/80 transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-2xs"
               title="เปิดดูปฏิทินตารางสอบ"
             >
               <Calendar className="w-4 h-4" />
@@ -231,9 +233,23 @@ export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) =>
             </button>
           )}
           <button
+            id="exams-ai-quick-fill-btn"
+            type="button"
+            onClick={() => openAiQuickFill({ scope: 'exams' })}
+            className="app-ai-btn px-3 py-1.5 sm:px-3.5 sm:py-2 rounded-xl text-xs font-black transition-all flex items-center gap-1.5 cursor-pointer active:scale-95 shadow-xs"
+            style={{
+              backgroundColor: 'var(--theme-primary)',
+              color: 'var(--theme-primary-foreground, #ffffff)',
+              borderColor: 'var(--theme-primary)',
+            }}
+          >
+            <Sparkles className="w-4 h-4 text-amber-300 drop-shadow-xs animate-pulse" />
+            <span>✨ AI สแกนตารางสอบ</span>
+          </button>
+          <button
             type="button"
             onClick={openAddModal}
-            className="px-4 py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+            className="px-3.5 py-1.5 sm:px-4 sm:py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
           >
             <Plus className="w-4 h-4" />
             <span>เพิ่มการสอบ</span>
@@ -242,13 +258,13 @@ export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) =>
       </div>
 
       {/* 4 Summary Cards: สอบที่กำลังจะถึง | ตารางสอบ | หัวข้อสอบ | Progress การอ่าน */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <div className="glass-card p-4 rounded-2xl border border-sky-200/90 shadow-xs">
-          <span className="text-xs font-bold text-slate-600 block">🎯 สอบที่กำลังจะถึง</span>
-          <div className="text-sm font-black text-slate-900 truncate mt-1">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+        <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-sky-200/90 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">🎯 สอบที่กำลังจะถึง</span>
+          <div className="text-xs sm:text-sm font-black text-slate-900 truncate mt-0.5 sm:mt-1">
             {nextExamSub?.name || 'ไม่มีการสอบเร็ว ๆ นี้'}
           </div>
-          <span className="text-[11px] text-sky-700 font-bold block truncate">
+          <span className="text-[10px] sm:text-[11px] text-sky-700 font-bold block truncate">
             {nextExamDays !== null
               ? nextExamDays === 0
                 ? 'สอบวันนี้!'
@@ -257,26 +273,26 @@ export const ExamsView: React.FC<ExamsViewProps> = ({ onNavigateToCalendar }) =>
           </span>
         </div>
 
-        <div className="glass-card p-4 rounded-2xl border border-indigo-200/90 shadow-xs">
-          <span className="text-xs font-bold text-slate-600 block">📅 ตารางสอบ</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
+        <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-indigo-200/90 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">📅 ตารางสอบ</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
             {semesterExams.length} <span className="text-xs font-bold text-slate-600">วิชา</span>
           </div>
-          <span className="text-[11px] text-indigo-700 font-bold">ในภาคเรียนนี้</span>
+          <span className="text-[10px] sm:text-[11px] text-indigo-700 font-bold">ในภาคเรียนนี้</span>
         </div>
 
-        <div className="glass-card p-4 rounded-2xl border border-purple-200/90 shadow-xs">
-          <span className="text-xs font-bold text-slate-600 block">📑 หัวข้อสอบทั้งหมด</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
+        <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-purple-200/90 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">📑 หัวข้อสอบทั้งหมด</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
             {semesterExams.reduce((acc, e) => acc + (e.topics?.length || 0), 0)}{' '}
             <span className="text-xs font-bold text-slate-600">หัวข้อ</span>
           </div>
-          <span className="text-[11px] text-purple-700 font-bold">บันทึกแนวข้อสอบแล้ว</span>
+          <span className="text-[10px] sm:text-[11px] text-purple-700 font-bold">บันทึกแนวข้อสอบแล้ว</span>
         </div>
 
-        <div className="glass-card p-4 rounded-2xl border border-emerald-200/90 shadow-xs">
-          <span className="text-xs font-bold text-slate-600 block">📚 Progress การอ่าน</span>
-          <div className="text-2xl font-black text-slate-900 mt-1">
+        <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-emerald-200/90 shadow-xs">
+          <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">📚 Progress การอ่าน</span>
+          <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
             {Object.values(checkedTopics).filter(Boolean).length}{' '}
             <span className="text-xs font-bold text-slate-600">หัวข้ออ่านแล้ว</span>
           </div>

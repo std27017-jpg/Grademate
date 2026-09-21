@@ -22,10 +22,14 @@ import { RegisterModal } from './components/RegisterModal';
 import { LoginModal } from './components/LoginModal';
 import { NotificationCenterModal } from './components/NotificationCenterModal';
 import { ThemeBackground } from './components/ThemeBackground';
+import { AiQuickFillProvider, useAiQuickFill } from './context/AiQuickFillContext';
+import { AiQuickFillModal } from './components/AiQuickFillModal';
+import { Sparkles } from 'lucide-react';
 import { Subject } from './types';
 
 function MainAppContent() {
   const { isLoggedIn } = useGrade();
+  const { openAiQuickFill } = useAiQuickFill();
   const [activeTab, setActiveTab] = useState<NavTab>('dashboard');
   const [selectedSubjectForDetail, setSelectedSubjectForDetail] = useState<Subject | null>(null);
   const [calendarTargetDate, setCalendarTargetDate] = useState<string | null>(null);
@@ -206,6 +210,25 @@ function MainAppContent() {
             onClose={() => setIsNotificationsOpen(false)}
             onNavigateTab={(tab) => setActiveTab(tab)}
           />
+
+          {/* Floating AI Quick Fill Button */}
+          <button
+            id="floating-ai-quick-fill-btn"
+            onClick={() => openAiQuickFill({ scope: 'all' })}
+            className="app-ai-btn fixed bottom-20 right-3.5 sm:bottom-6 sm:right-6 z-40 flex items-center gap-2 px-3.5 py-2.5 sm:px-4 sm:py-3 rounded-full shadow-lg hover:shadow-xl hover:scale-105 active:scale-95 transition-all duration-200 group cursor-pointer"
+            style={{
+              backgroundColor: 'var(--theme-primary)',
+              color: 'var(--theme-primary-foreground, #ffffff)',
+              borderColor: 'var(--theme-primary)',
+              boxShadow: '0 8px 24px 0 rgba(var(--app-primary-rgb, 219, 39, 119), 0.4)',
+            }}
+          >
+            <Sparkles className="w-4 h-4 sm:w-5 sm:h-5 text-amber-300 animate-pulse group-hover:rotate-12 transition-transform" />
+            <span className="font-black text-xs tracking-wide pr-0.5">✨ AI ช่วยกรอกข้อมูล</span>
+          </button>
+
+          {/* AI Quick Fill Modal */}
+          <AiQuickFillModal />
         </>
       )}
     </ThemeBackground>
@@ -216,7 +239,9 @@ export default function App() {
   return (
     <GradeProvider>
       <ThemeProvider>
-        <MainAppContent />
+        <AiQuickFillProvider>
+          <MainAppContent />
+        </AiQuickFillProvider>
       </ThemeProvider>
     </GradeProvider>
   );

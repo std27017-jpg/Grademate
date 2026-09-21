@@ -59,12 +59,12 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   // Mobile Bottom Navigation 5 essential tabs as required by User Specification:
-  // 🏠 หน้าหลัก, 📅 ปฏิทิน, 📚 วิชา, ✅ งาน, 👤 โปรไฟล์
+  // 🏠 หน้าหลัก, 📚 วิชา, 📝 งาน, 📅 ปฏิทิน, 👤 โปรไฟล์
   const mobileBottomTabs: { id: NavTab; label: string; iconName: IconName }[] = [
     { id: 'dashboard', label: 'หน้าหลัก', iconName: 'home' },
-    { id: 'calendar', label: 'ปฏิทิน', iconName: 'calendar' },
     { id: 'subjects', label: 'วิชา', iconName: 'subjects' },
     { id: 'tasks', label: 'งาน', iconName: 'tasks' },
+    { id: 'calendar', label: 'ปฏิทิน', iconName: 'calendar' },
     { id: 'profile', label: 'โปรไฟล์', iconName: 'profile' },
   ];
 
@@ -502,7 +502,7 @@ export const Navbar: React.FC<NavbarProps> = ({
       {/* ========================================================================= */}
       <nav
         aria-label="Mobile Navigation"
-        className="md:hidden fixed bottom-3 left-3 right-3 z-40 max-w-lg mx-auto pointer-events-none box-border"
+        className="md:hidden fixed bottom-2.5 left-2.5 right-2.5 z-40 max-w-lg mx-auto pointer-events-none box-border [padding-bottom:env(safe-area-inset-bottom,0px)]"
       >
         <div
           className="pointer-events-auto rounded-3xl p-1.5 sm:p-2 border border-white/80 shadow-xl transition-all"

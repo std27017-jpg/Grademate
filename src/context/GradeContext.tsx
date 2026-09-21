@@ -95,6 +95,7 @@ interface GradeContextType {
   allSubjects: Subject[];
   targetGpaAnalysis: {
     targetGpa: number;
+    hasTarget: boolean;
     currentGpa: number;
     totalPointsNeeded: number;
     pointsNeededMessage: string;
@@ -1285,9 +1286,22 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
   // Target GPA Analysis
   const targetGpaAnalysis = useMemo(() => {
-    const target = userProfile.targetGpa || 3.5;
-    const currentGpa = activeSemesterSummary.gpa;
+    const rawTarget = typeof userProfile?.targetGpa === 'number' ? userProfile.targetGpa : 0;
+    const hasTarget = rawTarget > 0;
+    const target = rawTarget;
+    const currentGpa = activeSemesterSummary.gpa || 0;
     const semesterSubs = subjects.filter((s) => s.semesterId === currentSemester);
+
+    if (!hasTarget) {
+      return {
+        targetGpa: 0,
+        hasTarget: false,
+        currentGpa,
+        totalPointsNeeded: 0,
+        pointsNeededMessage: '',
+        isAchieved: false,
+      };
+    }
     
     // Calculate points needed across subjects
     let needed = 0;
@@ -1315,12 +1329,13 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
     return {
       targetGpa: target,
+      hasTarget: true,
       currentGpa,
       totalPointsNeeded: Math.max(0, needed),
       pointsNeededMessage,
       isAchieved,
     };
-  }, [userProfile.targetGpa, activeSemesterSummary, subjects, currentSemester, gradeThresholds]);
+  }, [userProfile?.targetGpa, activeSemesterSummary, subjects, currentSemester, gradeThresholds]);
 
   // Dynamic Notifications
   const notifications = useMemo<AppNotification[]>(() => {
@@ -1385,16 +1400,18 @@ export const GradeProvider: React.FC<{ children: React.ReactNode }> = ({ childre
       });
     }
 
-    // 4. Grade Target Advice
-    list.push({
-      id: `notif_target_advice`,
-      type: 'grade_target',
-      title: `ความคืบหน้าเป้าหมายเกรด ${userProfile.targetGpa.toFixed(2)}`,
-      message: targetGpaAnalysis.pointsNeededMessage,
-      date: todayStr,
-      read: readNotifIds.includes('notif_target_advice'),
-      actionTab: 'future',
-    });
+    // 4. Grade Target Advice (Only if user has set a target GPA)
+    if (userProfile.targetGpa > 0 && targetGpaAnalysis.pointsNeededMessage) {
+      list.push({
+        id: `notif_target_advice`,
+        type: 'grade_target',
+        title: `ความคืบหน้าเป้าหมายเกรด ${userProfile.targetGpa.toFixed(2)}`,
+        message: targetGpaAnalysis.pointsNeededMessage,
+        date: todayStr,
+        read: readNotifIds.includes('notif_target_advice'),
+        actionTab: 'future',
+      });
+    }
 
     // 5. Future Checklist readiness
     const completedCount = futureChecklist.filter((i) => i.isCompleted).length;

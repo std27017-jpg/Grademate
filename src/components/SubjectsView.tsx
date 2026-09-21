@@ -433,32 +433,32 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
     };
 
     return (
-      <div className="space-y-6 pb-8">
+    <div className="space-y-4 sm:space-y-6 pb-8">
         {/* Header bar */}
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 glass-card p-5 sm:p-6 rounded-3xl border border-white/80 shadow-md">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 glass-card p-3.5 sm:p-6 rounded-2xl sm:rounded-3xl border border-white/80 shadow-md">
           <div>
             <div className="flex items-center gap-2">
-              <div className="w-9 h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
-                <BookOpen className="w-4.5 h-4.5" />
+              <div className="w-8 h-8 sm:w-9 sm:h-9 rounded-full bg-indigo-50 text-indigo-600 flex items-center justify-center shadow-2xs">
+                <BookOpen className="w-4 h-4 sm:w-4.5 sm:h-4.5" />
               </div>
               <h2 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 วิชาของฉัน
               </h2>
-              <span className="text-xs font-bold px-3 py-0.5 rounded-full glass-secondary text-indigo-700 border border-white/60">
+              <span className="text-[11px] sm:text-xs font-bold px-2 sm:px-3 py-0.5 rounded-full glass-secondary text-indigo-700 border border-white/60">
                 {activeSemesterSummary.subjectSummaries.length} วิชา
               </span>
             </div>
-            <p className="text-xs sm:text-sm text-slate-600 mt-1">
+            <p className="text-xs sm:text-sm text-slate-600 mt-0.5 sm:mt-1">
               คลิกที่การ์ดเพื่อดูรายละเอียดคะแนน งาน หรือกด "จับเวลาอ่าน" เพื่อเริ่มบันทึกเวลาเรียน
             </p>
           </div>
 
-          <div className="flex items-center gap-2.5 flex-wrap">
+          <div className="flex items-center gap-2 sm:gap-2.5 flex-wrap">
             <SemesterToggle size="sm" />
             <button
               type="button"
               onClick={onOpenAddSubject}
-              className="px-4 py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+              className="px-3.5 py-1.5 sm:px-4 sm:py-2 app-theme-btn text-white rounded-xl text-xs font-bold shadow-sm transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
             >
               <Plus className="w-4 h-4" />
               <span>เพิ่มวิชาใหม่</span>
@@ -467,44 +467,44 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         </div>
 
         {/* Overview Stats Bar: วิชาทั้งหมด, คะแนนเฉลี่ย, เกรด (GPA), วิชาที่ควรโฟกัส */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-          <div className="glass-card p-4 rounded-2xl border border-indigo-200/80 shadow-xs">
-            <span className="text-xs font-bold text-slate-600 block">📚 วิชาทั้งหมด</span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2.5 sm:gap-3">
+          <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-indigo-200/80 shadow-xs">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">📚 วิชาทั้งหมด</span>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
               {activeSemesterSummary.subjectSummaries.length}{' '}
               <span className="text-xs font-bold text-slate-600">วิชา</span>
             </div>
-            <span className="text-[11px] text-indigo-700 font-bold">
+            <span className="text-[10px] sm:text-[11px] text-indigo-700 font-bold block truncate">
               {activeSemesterSummary.totalCredits} หน่วยกิตรวม
             </span>
           </div>
 
-          <div className="glass-card p-4 rounded-2xl border border-pink-200/80 shadow-xs">
-            <span className="text-xs font-bold text-slate-600 block">📊 คะแนนเฉลี่ย</span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+          <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-pink-200/80 shadow-xs">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">📊 คะแนนเฉลี่ย</span>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
               {activeSemesterSummary.overallPercentage.toFixed(1)}%
             </div>
-            <span className="text-[11px] text-pink-700 font-bold">
+            <span className="text-[10px] sm:text-[11px] text-pink-700 font-bold block truncate">
               เก็บแล้ว {activeSemesterSummary.totalEarnedScore} คะแนน
             </span>
           </div>
 
-          <div className="glass-card p-4 rounded-2xl border border-purple-200/80 shadow-xs">
-            <span className="text-xs font-bold text-slate-600 block">🏆 เกรดเฉลี่ย (GPA)</span>
-            <div className="text-2xl font-black text-slate-900 mt-1">
+          <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-purple-200/80 shadow-xs">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">🏆 เกรดเฉลี่ย (GPA)</span>
+            <div className="text-xl sm:text-2xl font-black text-slate-900 mt-0.5 sm:mt-1">
               {activeSemesterSummary.gpa.toFixed(2)}
             </div>
-            <span className="text-[11px] text-purple-700 font-bold">
+            <span className="text-[10px] sm:text-[11px] text-purple-700 font-bold block truncate">
               เป้าหมายที่ตั้ง {userProfile.targetGpa.toFixed(2)}
             </span>
           </div>
 
-          <div className="glass-card p-4 rounded-2xl border border-amber-200/80 shadow-xs">
-            <span className="text-xs font-bold text-slate-600 block">🔥 วิชาที่ควรโฟกัส</span>
-            <div className="text-sm font-black text-slate-900 truncate mt-1">
+          <div className="glass-card p-3 sm:p-4 rounded-xl sm:rounded-2xl border border-amber-200/80 shadow-xs">
+            <span className="text-[11px] sm:text-xs font-bold text-slate-600 block">🔥 วิชาที่ควรโฟกัส</span>
+            <div className="text-xs sm:text-sm font-black text-slate-900 truncate mt-0.5 sm:mt-1">
               {activeSemesterSummary.focusAdvice[0]?.subject?.name || 'พร้อมทุกวิชา ✨'}
             </div>
-            <span className="text-[11px] text-amber-700 font-bold block truncate">
+            <span className="text-[10px] sm:text-[11px] text-amber-700 font-bold block truncate">
               {activeSemesterSummary.focusAdvice[0]
                 ? `ขาดอีก ${activeSemesterSummary.focusAdvice[0].gapToTarget} แต้มสู่เกรด ${activeSemesterSummary.focusAdvice[0].subject.targetGrade}`
                 : 'คะแนนอยู่ในเกณฑ์เป้าหมาย'}
@@ -513,7 +513,7 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
         </div>
 
         {/* Category Filters & View Toggle Bar */}
-        <div className="glass-card rounded-2xl p-3 border border-white/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-3">
+        <div className="glass-card rounded-xl sm:rounded-2xl p-2.5 sm:p-3 border border-white/80 shadow-xs flex flex-col md:flex-row items-center justify-between gap-2.5 sm:gap-3">
           {/* Category Filter Pills */}
           <div className="flex items-center gap-1.5 overflow-x-auto w-full md:w-auto scrollbar-none pb-1 md:pb-0">
             <button
@@ -772,13 +772,14 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
           </div>
         </div>
 
-        {/* 4 Tabs: [ ภาพรวม ] [ คะแนน ] [ งาน ] [ สอบ ] */}
+        {/* 5 Tabs: [ ภาพรวม ] [ คะแนน ] [ งาน ] [ สอบ ] [ ไฟล์สรุป ] */}
         <div className="flex items-center gap-2 pt-2 border-t border-slate-100 overflow-x-auto scrollbar-none">
           {[
             { id: 'overview' as const, label: 'ภาพรวม' },
             { id: 'scores' as const, label: 'คะแนน (100 แต้ม)' },
             { id: 'tasks' as const, label: `งาน (${subjectTasks.length})` },
             { id: 'exams' as const, label: `สอบ (${subjectExams.length})` },
+            { id: 'summaries' as const, label: `📚 ไฟล์สรุป (${getSubjectSummaryFileCount(sub.id)})` },
           ].map((tab) => {
             const isActive = detailTab === tab.id;
             return (
@@ -1313,6 +1314,20 @@ export const SubjectsView: React.FC<SubjectsViewProps> = ({
               </div>
             )}
           </div>
+        </div>
+      )}
+
+      {/* TAB 5: คลังไฟล์สรุป (SUMMARIES) */}
+      {detailTab === 'summaries' && (
+        <div className="animate-in fade-in duration-200">
+          <SubjectSummaryFilesView
+            subject={sub}
+            onBackToOverview={() => setDetailTab('overview')}
+            onNavigateToStudy={() => {
+              startStudyForSubject(sub.id);
+              if (onNavigateToStudy) onNavigateToStudy();
+            }}
+          />
         </div>
       )}
 

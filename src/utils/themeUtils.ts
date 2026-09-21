@@ -284,6 +284,7 @@ export function getThemeBackgroundPalette(rgb: { r: number; g: number; b: number
 export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId = 'flowers') {
   const rgb = hexToRgb(hexColor) || { r: 219, g: 39, b: 119 };
   const primary = hexColor;
+  const primaryForeground = (rgb.r * 299 + rgb.g * 587 + rgb.b * 114) / 1000 > 185 ? '#0f172a' : '#ffffff';
   const textColor = getReadableTextColor(rgb);
   const gradientEnd = getGradientSecondaryColor(rgb);
   const hoverRgb = hslToRgb(
@@ -301,6 +302,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
     '--theme-bg': palette.bgStart,
     '--theme-bg-secondary': palette.bgMid,
     '--theme-primary': primary,
+    '--theme-primary-foreground': primaryForeground,
     '--theme-primary-soft': `rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'})`,
     '--theme-secondary': gradientEnd,
     '--theme-background': palette.bgStart,
@@ -383,6 +385,7 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       --theme-bg: ${palette.bgStart};
       --theme-bg-secondary: ${palette.bgMid};
       --theme-primary: ${primary};
+      --theme-primary-foreground: ${primaryForeground};
       --theme-primary-soft: rgba(${rgb.r}, ${rgb.g}, ${rgb.b}, ${palette.isDark ? '0.22' : '0.14'});
       --theme-secondary: ${gradientEnd};
       --theme-background: ${palette.bgStart};
@@ -447,6 +450,45 @@ export function applyThemeColorToDOM(hexColor: string, patternId: ThemePatternId
       background: var(--theme-button) !important;
       color: var(--theme-button-text) !important;
       box-shadow: var(--theme-glow) !important;
+    }
+    .app-ai-btn {
+      background-color: var(--theme-primary) !important;
+      color: var(--theme-primary-foreground, #ffffff) !important;
+      border: 1.5px solid var(--theme-primary) !important;
+      box-shadow: 0 4px 14px 0 rgba(var(--app-primary-rgb), 0.35), 0 1px 3px 0 rgba(0, 0, 0, 0.08) !important;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      opacity: 1 !important;
+      display: inline-flex !important;
+      align-items: center !important;
+      justify-content: center !important;
+      text-decoration: none !important;
+    }
+    .app-ai-btn:hover {
+      filter: brightness(1.08) !important;
+      box-shadow: 0 6px 20px 0 rgba(var(--app-primary-rgb), 0.45), 0 2px 6px 0 rgba(0, 0, 0, 0.12) !important;
+      transform: translateY(-1px) scale(1.02) !important;
+    }
+    .app-ai-btn:active {
+      transform: translateY(0px) scale(0.98) !important;
+      filter: brightness(0.95) !important;
+    }
+    .app-ai-btn:focus-visible {
+      outline: 2px solid var(--theme-primary) !important;
+      outline-offset: 2px !important;
+    }
+    .app-progress-track {
+      width: 100% !important;
+      background-color: rgba(148, 163, 184, 0.22) !important;
+      border: 1px solid rgba(148, 163, 184, 0.35) !important;
+      border-radius: 9999px !important;
+      overflow: hidden !important;
+    }
+    .app-progress-fill {
+      height: 100% !important;
+      background-color: var(--theme-primary) !important;
+      border-radius: 9999px !important;
+      transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1) !important;
+      min-width: 0 !important;
     }
     .app-theme-icon-container {
       background-color: var(--theme-accent-soft) !important;
